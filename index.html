@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>JKME — Plan d'action</title>
+<link rel="icon" type="image/jpeg" href="jkme.jpg">
+<link rel="apple-touch-icon" href="jkme.jpg">
+<meta name="theme-color" content="#16324F">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -19,6 +22,7 @@
     --peche:#A97654;
     --ciel:#4C7699;
     --jaune:#B08D2E;
+    --navy:#16324F;
     --gris:#EEF0F3;
     --shadow: 0 6px 20px rgba(28,33,40,0.06);
     --shadow-sm: 0 2px 10px rgba(28,33,40,0.06);
@@ -40,7 +44,6 @@
     margin-bottom:30px; flex-wrap:wrap; padding-bottom:22px; border-bottom:1px solid var(--line);
   }
   .title-block{display:flex; align-items:center; gap:16px;}
-  .badge-mark{width:46px; height:46px; flex:0 0 auto;}
   h1{
     font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:1.7rem; margin:0;
     letter-spacing:-0.01em; color:var(--ink);
@@ -56,7 +59,7 @@
     transition:background .15s ease, color .15s ease, border-color .15s ease;
   }
   .tab-btn:hover{color:var(--ink); border-color:var(--ink);}
-  .tab-btn.active{color:var(--ink); background:var(--jaune); border-color:var(--ink);}
+  .tab-btn.active{color:#FFFFFF; background:var(--navy); border-color:var(--navy);}
   .tab-content{display:none;}
   .tab-content.active{display:block; animation:fadeIn .35s ease;}
   @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
@@ -330,7 +333,6 @@
     .wrap{padding:16px 14px 40px;}
     header{gap:10px; margin-bottom:18px; padding-bottom:14px;}
     .title-block{gap:10px;}
-    .badge-mark{width:30px; height:30px;}
     h1{font-size:1.25rem;}
     header p{font-size:0.76rem;}
     .user-bar{gap:8px; order:2;}
@@ -360,13 +362,6 @@
 
   <header>
     <div class="title-block">
-      <svg class="badge-mark" viewBox="0 0 100 100">
-        <rect x="18" y="12" width="50" height="66" rx="2" fill="none" stroke="var(--ink)" stroke-width="3"/>
-        <line x1="30" y1="30" x2="56" y2="30" stroke="var(--ink)" stroke-width="3"/>
-        <line x1="30" y1="42" x2="56" y2="42" stroke="var(--ink)" stroke-width="3"/>
-        <line x1="30" y1="54" x2="48" y2="54" stroke="var(--ink)" stroke-width="3"/>
-        <circle cx="74" cy="70" r="16" fill="none" stroke="var(--peche)" stroke-width="3"/>
-      </svg>
       <div>
         <h1>JKME</h1>
         <p>Plan d'action & calendrier de production</p>
