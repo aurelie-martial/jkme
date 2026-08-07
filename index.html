@@ -8,21 +8,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F6F3FF;
+    --bg:#F3F4F6;
     --panel:#FFFFFF;
-    --ink:#211E2E;
-    --ink-soft:#726C88;
-    --line:#E6E0F5;
-    --lavande:#B8A6F5;
-    --rose:#FF9EC4;
-    --menthe:#5FE0B0;
-    --peche:#FFB870;
-    --ciel:#6EC6F5;
-    --jaune:#FFD84D;
-    --gris:#ECE7FA;
-    --shadow: 0 10px 30px rgba(33,30,46,0.08);
-    --shadow-sm: 0 4px 14px rgba(33,30,46,0.08);
-    --radius: 14px;
+    --ink:#1C2128;
+    --ink-soft:#5B6472;
+    --line:#E1E4E9;
+    --lavande:#5B6B8C;
+    --rose:#93677A;
+    --menthe:#3F7D6C;
+    --peche:#A97654;
+    --ciel:#4C7699;
+    --jaune:#B08D2E;
+    --gris:#EEF0F3;
+    --shadow: 0 6px 20px rgba(28,33,40,0.06);
+    --shadow-sm: 0 2px 10px rgba(28,33,40,0.06);
+    --radius: 10px;
   }
   *{box-sizing:border-box;}
   body{
@@ -42,10 +42,8 @@
   .title-block{display:flex; align-items:center; gap:16px;}
   .badge-mark{width:46px; height:46px; flex:0 0 auto;}
   h1{
-    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:2rem; margin:0;
-    letter-spacing:-0.01em;
-    background:linear-gradient(100deg, var(--lavande), var(--rose) 55%, var(--peche));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:1.7rem; margin:0;
+    letter-spacing:-0.01em; color:var(--ink);
   }
   header p{margin:4px 0 0; color:var(--ink-soft); font-weight:500; font-size:0.9rem; letter-spacing:0.02em;}
 
@@ -89,13 +87,13 @@
   .add-task-form input[type=text]{flex:1; min-width:200px;}
   .btn{
     font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:0.88rem;
-    border:1px solid var(--ink); border-radius:10px; padding:10px 20px; cursor:pointer;
-    background:var(--lavande); color:var(--ink); box-shadow:none; transition:transform .12s ease, opacity .15s ease;
+    border:1px solid var(--ink); border-radius:8px; padding:10px 20px; cursor:pointer;
+    background:var(--lavande); color:#FFFFFF; box-shadow:none; transition:transform .12s ease, opacity .15s ease;
     letter-spacing:0.01em;
   }
   .btn:hover{opacity:0.88; transform:translateY(-1px);}
   .btn:active{opacity:0.75; transform:translateY(0);}
-  .btn-secondary{background:var(--menthe);}
+  .btn-secondary{background:var(--menthe); color:#FFFFFF;}
   .btn-ghost{background:var(--panel); color:var(--ink);}
 
   /* KANBAN */
@@ -172,7 +170,7 @@
   .cal-cell.today{background:var(--jaune); border:1px solid var(--ink);}
   .cal-cell.today .daynum{color:var(--ink); position:relative;}
   .cal-cell.has-events{background:var(--gris);}
-  .cal-cell.today.has-events{background:linear-gradient(135deg, var(--jaune), var(--menthe)); border:1px solid var(--ink);}
+  .cal-cell.today.has-events{background:var(--jaune); border:2px solid var(--menthe);}
   .ev-preview{
     font-size:0.62rem; font-weight:600; line-height:1.3; color:var(--ink);
     background:rgba(255,255,255,0.65); border-left:2px solid var(--ev-color, var(--lavande));
@@ -227,7 +225,7 @@
     border:1px solid var(--line); border-radius:8px; padding:9px 11px; margin-bottom:8px; background:var(--bg);
     display:flex; align-items:flex-start; gap:10px;
   }
-  .ev-item .time{font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:0.85rem; white-space:nowrap; color:#6B4FD1;}
+  .ev-item .time{font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:0.85rem; white-space:nowrap; color:var(--lavande);}
   .ev-item .info{flex:1;}
   .ev-item .info .t{font-weight:600; font-size:0.88rem;}
   .ev-item .info .n{font-size:0.78rem; color:var(--ink-soft);}
@@ -262,9 +260,7 @@
     padding:40px 36px; max-width:380px; width:100%; text-align:center;
   }
   .login-card h1{
-    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:1.6rem; margin:0 0 8px;
-    background:linear-gradient(100deg, var(--lavande), var(--rose) 55%, var(--peche));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:1.5rem; margin:0 0 8px; color:var(--ink);
   }
   .login-card p{color:var(--ink-soft); font-weight:500; font-size:0.9rem; margin:0 0 24px;}
   .google-btn{
@@ -274,14 +270,14 @@
     background:var(--panel); color:var(--ink); box-shadow:var(--shadow-sm);
   }
   .google-btn:hover{background:var(--gris);}
-  .login-error{color:#D64545; font-size:0.82rem; font-weight:600; margin-top:14px; min-height:1em;}
+  .login-error{color:#B54D4D; font-size:0.82rem; font-weight:600; margin-top:14px; min-height:1em;}
   #appRoot.hidden{display:none;}
   .sync-status{
     display:flex; align-items:center; gap:10px; font-size:0.78rem; font-weight:600; color:var(--ink-soft);
   }
   .sync-status .dot-sync{width:7px; height:7px; border-radius:50%; background:var(--menthe); flex:0 0 auto;}
   .sync-status.saving .dot-sync{background:var(--jaune);}
-  .sync-status.error .dot-sync{background:#D64545;}
+  .sync-status.error .dot-sync{background:#B54D4D;}
   #signOutBtn{
     border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:6px 12px;
     font-family:'Inter', sans-serif; font-weight:600; font-size:0.78rem; cursor:pointer; color:var(--ink-soft);
@@ -300,7 +296,7 @@
   .scene-pill:hover{color:var(--ink); border-color:var(--ink);}
   .scene-pill.active{color:var(--ink); background:var(--jaune); border-color:var(--ink);}
   .scene-pill.global{border-color:var(--peche); color:var(--ink-soft);}
-  .scene-pill.global.active{background:var(--peche); color:var(--ink); border-color:var(--ink);}
+  .scene-pill.global.active{background:var(--peche); color:#FFFFFF; border-color:var(--ink);}
   .scene-pill-sep{flex:0 0 auto; width:1px; background:var(--line); margin:2px 4px;}
   .scene-pill .dot-fill{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--menthe); margin-right:6px; opacity:0;}
   .scene-pill.filled .dot-fill{opacity:1;}
@@ -483,8 +479,6 @@
     <h3 id="modalDateLabel">Date</h3>
     <div id="modalEventList"></div>
     <form id="addEventForm">
-      <label>Heure (optionnel)</label>
-      <input type="time" id="evTime">
       <label>Titre du rendez-vous</label>
       <input type="text" id="evTitle" placeholder="Ex : RDV éditeur" required>
       <label>Jusqu'au (optionnel, pour un événement sur plusieurs jours)</label>
@@ -503,7 +497,7 @@
     <h3>Catégories</h3>
     <div id="catList"></div>
     <form id="addCatForm">
-      <input type="color" id="newCatColor" value="#B8A6F5">
+      <input type="color" id="newCatColor" value="#5B6B8C">
       <input type="text" id="newCatName" placeholder="Nouvelle catégorie" required>
       <button type="submit" class="btn">+ Ajouter</button>
     </form>
@@ -513,13 +507,13 @@
 <script>
   // ---------- DATA ----------
   const DEFAULT_CATS = [
-    {id:1, name:'Scénario', color:'#B8A6F5'},
-    {id:2, name:'Storyboard', color:'#6EC6F5'},
-    {id:3, name:'Crayonné', color:'#FFB870'},
-    {id:4, name:'Encrage', color:'#CFC9E8'},
-    {id:5, name:'Couleur', color:'#FF9EC4'},
-    {id:6, name:'Lettrage', color:'#5FE0B0'},
-    {id:7, name:'Édition', color:'#FFD84D'}
+    {id:1, name:'Scénario', color:'#5B6B8C'},
+    {id:2, name:'Storyboard', color:'#4C7699'},
+    {id:3, name:'Crayonné', color:'#A97654'},
+    {id:4, name:'Encrage', color:'#7C7264'},
+    {id:5, name:'Couleur', color:'#93677A'},
+    {id:6, name:'Lettrage', color:'#3F7D6C'},
+    {id:7, name:'Édition', color:'#B08D2E'}
   ];
 
   function defaultScenes(){
@@ -546,7 +540,7 @@
 
   function getCategoryColor(name){
     const c = categories.find(x=>x.name===name);
-    return c ? c.color : '#E4E0D8';
+    return c ? c.color : '#C7CBD1';
   }
 
   // ---------- TABS ----------
@@ -942,7 +936,6 @@
 
   document.getElementById('addEventForm').addEventListener('submit', e=>{
     e.preventDefault();
-    const time = document.getElementById('evTime').value;
     const title = document.getElementById('evTitle').value.trim();
     const note = document.getElementById('evNote').value.trim();
     const endDateVal = document.getElementById('evEndDate').value;
@@ -953,10 +946,10 @@
     const range = getDateRange(startDate, endDate);
     range.forEach(d=>{
       if(!events[d]) events[d] = [];
-      events[d].push({id, time, title, note, startDate, endDate});
+      events[d].push({id, time:'', title, note, startDate, endDate});
     });
     saveEvents();
-    document.getElementById('evTitle').value=''; document.getElementById('evNote').value=''; document.getElementById('evTime').value=''; document.getElementById('evEndDate').value='';
+    document.getElementById('evTitle').value=''; document.getElementById('evNote').value=''; document.getElementById('evEndDate').value='';
     renderEventList(); renderCalendar();
   });
 
