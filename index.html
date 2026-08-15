@@ -301,6 +301,8 @@
   .scene-pill.active{color:#FFFFFF; background:var(--jaune); border-color:var(--jaune);}
   .scene-pill.global{border-color:var(--peche); color:var(--ink-soft);}
   .scene-pill.global.active{background:var(--peche); color:#FFFFFF; border-color:var(--ink);}
+  .scene-pill.partipris{border-color:var(--rose); color:var(--ink-soft);}
+  .scene-pill.partipris.active{background:var(--rose); color:#FFFFFF; border-color:var(--ink);}
   .scene-pill-sep{flex:0 0 auto; width:1px; background:var(--line); margin:2px 4px;}
   .scene-pill .dot-fill{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--menthe); margin-right:6px; opacity:0;}
   .scene-pill.filled .dot-fill{opacity:1;}
@@ -413,9 +415,8 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="plan">Plan d'action</button>
     <button class="tab-btn" data-tab="scenes">Scènes</button>
-    <button class="tab-btn" data-tab="livre">Livre</button>
-    <button class="tab-btn" data-tab="projet">Projet</button>
     <button class="tab-btn" data-tab="cal">Calendrier</button>
+    <button class="tab-btn" data-tab="livre">Livre</button>
   </div>
 
   <!-- PLAN D'ACTION -->
@@ -488,6 +489,18 @@
     <div class="panel" id="globalModeBlock" style="display:none;">
       <textarea id="notesArea" class="notes-textarea" placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></textarea>
     </div>
+
+    <div id="partiModeBlock" style="display:none;">
+      <form class="parti-form" id="addPartiForm">
+        <input type="text" id="partiTitle" placeholder="Ex : Personnage principal" required>
+        <textarea id="partiContent" placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..." required></textarea>
+        <div class="parti-form-actions">
+          <button type="submit" class="btn" id="partiSubmitBtn">+ Ajouter le parti pris</button>
+          <button type="button" class="btn btn-ghost" id="partiCancelBtn" style="display:none;">Annuler</button>
+        </div>
+      </form>
+      <div class="parti-grid" id="partiGrid"></div>
+    </div>
   </div>
 
   <!-- LIVRE -->
@@ -512,20 +525,6 @@
     <div id="bookViewer" class="book-viewer" style="display:none;">
       <iframe id="bookIframe" class="book-iframe" allow="autoplay" allowfullscreen></iframe>
     </div>
-  </div>
-
-
-  <!-- PROJET / PARTIS PRIS -->
-  <div class="tab-content" id="tab-projet">
-    <form class="parti-form" id="addPartiForm">
-      <input type="text" id="partiTitle" placeholder="Ex : Personnage principal" required>
-      <textarea id="partiContent" placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..." required></textarea>
-      <div class="parti-form-actions">
-        <button type="submit" class="btn" id="partiSubmitBtn">+ Ajouter le parti pris</button>
-        <button type="button" class="btn btn-ghost" id="partiCancelBtn" style="display:none;">Annuler</button>
-      </div>
-    </form>
-    <div class="parti-grid" id="partiGrid"></div>
   </div>
 
 </div>
@@ -1100,16 +1099,26 @@
   const sceneContentInput = document.getElementById('sceneContentInput');
   const sceneModeBlock = document.getElementById('sceneModeBlock');
   const globalModeBlock = document.getElementById('globalModeBlock');
+  const partiModeBlock = document.getElementById('partiModeBlock');
   const sceneImageBox = document.getElementById('sceneImageBox');
   const sceneImagePlaceholder = document.getElementById('sceneImagePlaceholder');
   const sceneImageRemoveBtn = document.getElementById('sceneImageRemoveBtn');
   const sceneImageInput = document.getElementById('sceneImageInput');
-  let currentView = 'scene'; // 'scene' ou 'global'
+  let currentView = 'scene'; // 'scene', 'global' ou 'parti'
+
+  function hideAllSceneBlocks(){
+    sceneModeBlock.style.display = 'none';
+    globalModeBlock.style.display = 'none';
+    partiModeBlock.style.display = 'none';
+  }
 
   function renderScenePills(){
-    const globalHtml = `
+    const specialHtml = `
       <button type="button" class="scene-pill global ${currentView==='global'?'active':''}" data-idx="global">
         Global
+      </button>
+      <button type="button" class="scene-pill partipris ${currentView==='parti'?'active':''}" data-idx="parti">
+        Parti pris
       </button>
       <div class="scene-pill-sep"></div>
     `;
@@ -1118,10 +1127,11 @@
         <span class="dot-fill"></span>${escapeHtml(s.title || ('Scène '+(i+1)))}
       </button>
     `).join('');
-    scenePillsEl.innerHTML = globalHtml + scenesHtml;
+    scenePillsEl.innerHTML = specialHtml + scenesHtml;
     scenePillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         if(btn.dataset.idx === 'global') selectGlobal();
+        else if(btn.dataset.idx === 'parti') selectParti();
         else selectScene(parseInt(btn.dataset.idx, 10));
       });
     });
@@ -1145,8 +1155,8 @@
   function selectScene(i){
     currentView = 'scene';
     currentSceneIndex = i;
+    hideAllSceneBlocks();
     sceneModeBlock.style.display = '';
-    globalModeBlock.style.display = 'none';
     const s = scenes[i];
     sceneTitleInput.value = s.title || '';
     sceneContentInput.value = s.content || '';
@@ -1156,8 +1166,15 @@
 
   function selectGlobal(){
     currentView = 'global';
-    sceneModeBlock.style.display = 'none';
+    hideAllSceneBlocks();
     globalModeBlock.style.display = '';
+    renderScenePills();
+  }
+
+  function selectParti(){
+    currentView = 'parti';
+    hideAllSceneBlocks();
+    partiModeBlock.style.display = '';
     renderScenePills();
   }
 
@@ -1232,12 +1249,13 @@
   function renderScenes(){
     if(currentSceneIndex >= scenes.length) currentSceneIndex = 0;
     renderScenePills();
+    hideAllSceneBlocks();
     if(currentView === 'global'){
-      sceneModeBlock.style.display = 'none';
       globalModeBlock.style.display = '';
+    } else if(currentView === 'parti'){
+      partiModeBlock.style.display = '';
     } else {
       sceneModeBlock.style.display = '';
-      globalModeBlock.style.display = 'none';
       const s = scenes[currentSceneIndex];
       sceneTitleInput.value = s.title || '';
       sceneContentInput.value = s.content || '';
