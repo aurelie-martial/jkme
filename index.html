@@ -306,6 +306,8 @@
   .scene-pill.global.active{background:var(--peche); color:#FFFFFF; border-color:var(--ink);}
   .scene-pill.partipris{border-color:var(--rose); color:var(--ink-soft);}
   .scene-pill.partipris.active{background:var(--rose); color:#FFFFFF; border-color:var(--ink);}
+  .scene-pill.mecanisme{border-color:var(--lavande); color:var(--ink-soft);}
+  .scene-pill.mecanisme.active{background:var(--lavande); color:#FFFFFF; border-color:var(--ink);}
   .scene-pill-sep{flex:0 0 auto; width:1px; background:var(--line); margin:2px 4px;}
   .scene-pill .dot-fill{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--menthe); margin-right:6px; opacity:0;}
   .scene-pill.filled .dot-fill{opacity:1;}
@@ -390,7 +392,6 @@
 
   <header>
     <div class="title-block">
-      <!-- Logo mis à jour basé sur l'image fournie (recadré sur la tête) -->
       <img src="jkme.jpg" class="badge-mark" alt="JKME Logo">
       <div>
         <h1>JKME</h1>
@@ -405,7 +406,7 @@
 
   <div class="tabs-container">
     <div class="tabs" id="mainTabsList">
-      <!-- Les onglets sont générés dynamiquement pour permettre d'en ajouter/supprimer -->
+      <!-- Les onglets sont générés dynamiquement -->
     </div>
     <button type="button" class="btn-add-tab" id="addTabBtn">+ Ajouter un onglet</button>
   </div>
@@ -453,7 +454,7 @@
     </div>
   </div>
 
-  <!-- SCÈNES -->
+  <!-- SCÈNES (Contient Global, Parti pris, Mécanisme et les scènes) -->
   <div class="tab-content" id="content-scenes">
     <div class="scene-pills" id="scenePills"></div>
 
@@ -466,7 +467,6 @@
       <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
       <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
       
-      <!-- Éditeur étendu : gras, souligné, etc. -->
       <div class="scene-toolbar" id="sceneToolbar">
         <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
         <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
@@ -482,6 +482,7 @@
       <textarea id="notesArea" class="notes-textarea" placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></textarea>
     </div>
 
+    <!-- Section Parti pris -->
     <div id="partiModeBlock" style="display:none;">
       <form class="parti-form" id="addPartiForm">
         <input type="text" id="partiTitle" placeholder="Ex : Personnage principal" required>
@@ -493,11 +494,9 @@
       </form>
       <div class="parti-grid" id="partiGrid"></div>
     </div>
-  </div>
 
-  <!-- MÉCANISME (Nouvel onglet avec éditeur étendu) -->
-  <div class="tab-content" id="content-mecanisme">
-    <div class="panel">
+    <!-- Section Mécanisme (sous-onglet intégré) -->
+    <div class="panel" id="mecanismeModeBlock" style="display:none;">
       <input type="text" class="scene-editor-title" id="mecanismeTitleInput" placeholder="Titre de la section mécanisme">
       <div class="scene-toolbar" id="mecanismeToolbar">
         <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
@@ -511,15 +510,13 @@
     </div>
   </div>
 
-  <!-- LIVRE (Visualisation PDF double page hébergé à la racine) -->
+  <!-- LIVRE -->
   <div class="tab-content" id="content-livre">
     <div class="book-viewer">
-      <!-- Affichage du PDF en mode double page / flipbook natif ou lecteur intégré -->
       <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf#view=FitH&pagemode=thumbs" allow="autoplay"></iframe>
     </div>
   </div>
 
-  <!-- Conteneur dynamique pour les nouveaux onglets créés par l'utilisateur -->
   <div id="dynamicTabContents"></div>
 
 </div>
@@ -570,7 +567,6 @@
 </div>
 
 <script>
-  // ---------- DATA ----------
   const DEFAULT_CATS = [
     {id:1, name:'Scénario', color:'#6366F1'},
     {id:2, name:'Storyboard', color:'#0EA5E9'},
@@ -592,7 +588,6 @@
   let scenes = JSON.parse(localStorage.getItem('rg_scenes') || 'null') || defaultScenes();
   let currentSceneIndex = 0;
 
-  // Gestion dynamique des onglets
   let customTabs = JSON.parse(localStorage.getItem('rg_custom_tabs') || '[]');
   let mecanismeData = JSON.parse(localStorage.getItem('rg_mecanisme') || '{"title":"","content":""}');
   let customTabsData = JSON.parse(localStorage.getItem('rg_custom_tabs_data') || '{}');
@@ -620,11 +615,10 @@
     return c ? c.color : '#C7CBD1';
   }
 
-  // ---------- RENDER TABS SYSTEM ----------
+  // ---------- RENDER TABS SYSTEM (Mécanisme retiré de la navigation principale) ----------
   const BASE_TABS = [
     {id: 'plan', label: "Plan d'action"},
     {id: 'scenes', label: 'Scènes'},
-    {id: 'mecanisme', label: 'Mécanisme'},
     {id: 'cal', label: 'Calendrier'},
     {id: 'livre', label: 'Livre'}
   ];
@@ -647,7 +641,6 @@
       `;
     }).join('');
 
-    // Générer les conteneurs pour les onglets personnalisés s'ils n'existent pas
     let dynHtml = '';
     customTabs.forEach(ct => {
       if(!customTabsData[ct.id]) customTabsData[ct.id] = {title: '', content: ''};
@@ -671,7 +664,6 @@
     });
     dynamicContainer.innerHTML = dynHtml;
 
-    // Événements clic sur les onglets
     listEl.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         if(e.target.classList.contains('tab-del')) {
@@ -695,7 +687,6 @@
       });
     });
 
-    // Écouteurs pour les onglets personnalisés dynamiques (éditeur étendu)
     document.querySelectorAll('.custom-tab-title').forEach(inp => {
       inp.addEventListener('input', () => {
         const id = inp.dataset.id;
@@ -732,7 +723,6 @@
     });
   }
 
-  // Ajout d'onglet modal
   const tabOverlay = document.getElementById('tabOverlay');
   document.getElementById('addTabBtn').addEventListener('click', () => {
     document.getElementById('newTabNameInput').value = '';
@@ -755,7 +745,7 @@
   });
 
 
-  // ---------- ÉDITEUR MÉCANISME ----------
+  // ---------- ÉDITEUR MÉCANISME (Sous-onglet) ----------
   const mecanismeTitleInput = document.getElementById('mecanismeTitleInput');
   const mecanismeContentInput = document.getElementById('mecanismeContentInput');
 
@@ -1254,13 +1244,14 @@
 
   document.getElementById('partiCancelBtn').addEventListener('click', cancelPartiEdit);
 
-  // ---------- SCÈNES ----------
+  // ---------- SCÈNES & SOUS-ONGLETS (Global, Parti pris, Mécanisme) ----------
   const scenePillsEl = document.getElementById('scenePills');
   const sceneTitleInput = document.getElementById('sceneTitleInput');
   const sceneContentInput = document.getElementById('sceneContentInput');
   const sceneModeBlock = document.getElementById('sceneModeBlock');
   const globalModeBlock = document.getElementById('globalModeBlock');
   const partiModeBlock = document.getElementById('partiModeBlock');
+  const mecanismeModeBlock = document.getElementById('mecanismeModeBlock');
   const sceneImageBox = document.getElementById('sceneImageBox');
   const sceneImagePlaceholder = document.getElementById('sceneImagePlaceholder');
   const sceneImageRemoveBtn = document.getElementById('sceneImageRemoveBtn');
@@ -1271,6 +1262,7 @@
     sceneModeBlock.style.display = 'none';
     globalModeBlock.style.display = 'none';
     partiModeBlock.style.display = 'none';
+    mecanismeModeBlock.style.display = 'none';
   }
 
   function stripHtml(html){
@@ -1287,6 +1279,9 @@
       <button type="button" class="scene-pill partipris ${currentView==='parti'?'active':''}" data-idx="parti">
         Parti pris
       </button>
+      <button type="button" class="scene-pill mecanisme ${currentView==='mecanisme'?'active':''}" data-idx="mecanisme">
+        Mécanisme
+      </button>
       <div class="scene-pill-sep"></div>
     `;
     const scenesHtml = scenes.map((s,i)=>`
@@ -1299,6 +1294,7 @@
       btn.addEventListener('click', ()=>{
         if(btn.dataset.idx === 'global') selectGlobal();
         else if(btn.dataset.idx === 'parti') selectParti();
+        else if(btn.dataset.idx === 'mecanisme') selectMecanismeSub();
         else selectScene(parseInt(btn.dataset.idx, 10));
       });
     });
@@ -1342,6 +1338,13 @@
     currentView = 'parti';
     hideAllSceneBlocks();
     partiModeBlock.style.display = '';
+    renderScenePills();
+  }
+
+  function selectMecanismeSub(){
+    currentView = 'mecanisme';
+    hideAllSceneBlocks();
+    mecanismeModeBlock.style.display = '';
     renderScenePills();
   }
 
@@ -1433,6 +1436,7 @@
     renderScenePills();
     if(currentView === 'global') selectGlobal();
     else if(currentView === 'parti') selectParti();
+    else if(currentView === 'mecanisme') selectMecanismeSub();
     else selectScene(currentSceneIndex);
   }
   window.__rg_renderAll = renderAll;
