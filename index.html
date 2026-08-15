@@ -71,15 +71,6 @@
     box-shadow:var(--shadow); padding:22px;
   }
 
-  /* OVERVIEW */
-  .overview{display:block; max-width:340px; margin-bottom:24px;}
-  @media(max-width:760px){.overview{max-width:none;}}
-  .progress-wrap{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center;}
-  .progress-num{font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:2.3rem;}
-  .progress-label{font-weight:600; color:var(--ink-soft); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em;}
-  .progress-bar-track{width:100%; height:10px; border-radius:999px; background:var(--gris); overflow:hidden; margin-top:10px;}
-  .progress-bar-fill{height:100%; background:linear-gradient(90deg, var(--ciel), var(--menthe)); transition:width .4s ease;}
-
   /* ADD TASK FORM */
   .add-task-form{
     display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; align-items:stretch;
@@ -312,11 +303,23 @@
     padding:6px 2px 12px; margin-bottom:14px;
   }
   .scene-editor-title:focus{outline:none; border-color:var(--ink);}
-  .scene-editor-textarea{
-    width:100%; min-height:420px; resize:vertical; border:none; background:transparent;
+  .scene-toolbar{display:flex; align-items:center; gap:4px; margin-bottom:10px; flex-wrap:wrap;}
+  .scene-toolbar button{
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.78rem;
+    border:1px solid var(--line); border-radius:8px; padding:6px 11px; cursor:pointer;
+    background:var(--panel); color:var(--ink-soft); transition:background .15s ease, color .15s ease;
+  }
+  .scene-toolbar button:hover{background:var(--gris); color:var(--ink);}
+  .scene-toolbar-sep{width:1px; align-self:stretch; background:var(--line); margin:0 4px;}
+  .scene-editor-content{
+    width:100%; min-height:420px; border:none; background:transparent;
     font-family:'Plus Jakarta Sans', sans-serif; font-size:0.98rem; line-height:1.65; color:var(--ink);
   }
-  .scene-editor-textarea:focus{outline:none;}
+  .scene-editor-content:focus{outline:none;}
+  .scene-editor-content:empty:before{content:attr(data-placeholder); color:var(--ink-soft);}
+  .scene-editor-content h2{font-size:1.35em; font-weight:700; margin:0.7em 0 0.3em; font-family:'Plus Jakarta Sans', sans-serif;}
+  .scene-editor-content h3{font-size:1.12em; font-weight:700; margin:0.6em 0 0.25em; font-family:'Plus Jakarta Sans', sans-serif;}
+  .scene-editor-content p{margin:0 0 0.6em;}
   .scene-image-box{
     width:120px; height:120px; border-radius:12px; border:1.5px dashed var(--line);
     display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden;
@@ -372,7 +375,7 @@
     .tabs{gap:2px; margin-bottom:18px; width:100%;}
     .tab-btn{flex:1;}
     .tab-btn{padding:7px 12px; font-size:0.8rem;}
-    .scene-editor-textarea{min-height:300px;}
+    .scene-editor-content{min-height:300px;}
   }
 </style>
 </head>
@@ -421,14 +424,6 @@
 
   <!-- PLAN D'ACTION -->
   <div class="tab-content active" id="tab-plan">
-
-    <div class="overview">
-      <div class="panel progress-wrap">
-        <div class="progress-num" id="progressNum">0%</div>
-        <div class="progress-label">Avancement global</div>
-        <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
-      </div>
-    </div>
 
     <form class="add-task-form" id="addTaskForm">
       <input type="text" id="taskTitle" placeholder="Ex : Finaliser le script du chapitre 2..." required>
@@ -483,7 +478,15 @@
       <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
       <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
       <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
-      <textarea class="scene-editor-textarea" id="sceneContentInput" placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></textarea>
+      <div class="scene-toolbar" id="sceneToolbar">
+        <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
+        <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+        <div class="scene-toolbar-sep"></div>
+        <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
+        <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
+        <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+      </div>
+      <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
     </div>
 
     <div class="panel" id="globalModeBlock" style="display:none;">
@@ -814,19 +817,9 @@
             const tmp = tasks[i1]; tasks[i1] = tasks[i2]; tasks[i2] = tmp;
           }
         }
-        saveTasks(); renderTasks(); renderProgress();
+        saveTasks(); renderTasks();
       });
     });
-  }
-
-  function renderProgress(){
-    const total = tasks.length;
-    const done = tasks.filter(t=>t.status==='done').length;
-    const doing = tasks.filter(t=>t.status==='doing').length;
-    const todo = tasks.filter(t=>t.status==='todo').length;
-    const pct = total ? Math.round(done/total*100) : 0;
-    document.getElementById('progressNum').textContent = pct+'%';
-    document.getElementById('progressFill').style.width = pct+'%';
   }
 
   document.getElementById('addTaskForm').addEventListener('submit', e=>{
@@ -837,7 +830,7 @@
     tasks.push({id: Date.now()+Math.random(), title, category, status:'todo'});
     saveTasks();
     document.getElementById('taskTitle').value='';
-    renderTasks(); renderProgress();
+    renderTasks();
   });
 
   // ---------- CALENDAR ----------
@@ -1112,6 +1105,12 @@
     partiModeBlock.style.display = 'none';
   }
 
+  function stripHtml(html){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return tmp.textContent || tmp.innerText || '';
+  }
+
   function renderScenePills(){
     const specialHtml = `
       <button type="button" class="scene-pill global ${currentView==='global'?'active':''}" data-idx="global">
@@ -1123,7 +1122,7 @@
       <div class="scene-pill-sep"></div>
     `;
     const scenesHtml = scenes.map((s,i)=>`
-      <button type="button" class="scene-pill ${currentView==='scene' && i===currentSceneIndex?'active':''} ${s.content.trim()?'filled':''}" data-idx="${i}">
+      <button type="button" class="scene-pill ${currentView==='scene' && i===currentSceneIndex?'active':''} ${stripHtml(s.content).trim()?'filled':''}" data-idx="${i}">
         <span class="dot-fill"></span>${escapeHtml(s.title || ('Scène '+(i+1)))}
       </button>
     `).join('');
@@ -1159,7 +1158,7 @@
     sceneModeBlock.style.display = '';
     const s = scenes[i];
     sceneTitleInput.value = s.title || '';
-    sceneContentInput.value = s.content || '';
+    sceneContentInput.innerHTML = s.content || '';
     renderSceneImage();
     renderScenePills();
   }
@@ -1184,8 +1183,19 @@
     renderScenePills();
   });
   sceneContentInput.addEventListener('input', ()=>{
-    scenes[currentSceneIndex].content = sceneContentInput.value;
+    scenes[currentSceneIndex].content = sceneContentInput.innerHTML;
     saveScenes();
+  });
+
+  // Barre d'outils : gras, souligné, hiérarchie de titres (Titre / Sous-titre / Normal)
+  document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
+    btn.addEventListener('mousedown', (e)=> e.preventDefault()); // garde la sélection active dans l'éditeur
+    btn.addEventListener('click', ()=>{
+      sceneContentInput.focus();
+      document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+      scenes[currentSceneIndex].content = sceneContentInput.innerHTML;
+      saveScenes();
+    });
   });
 
   // Recadre en carré, redimensionne et compresse une image jusqu'à ~5 Ko.
@@ -1258,7 +1268,7 @@
       sceneModeBlock.style.display = '';
       const s = scenes[currentSceneIndex];
       sceneTitleInput.value = s.title || '';
-      sceneContentInput.value = s.content || '';
+      sceneContentInput.innerHTML = s.content || '';
       renderSceneImage();
     }
   }
@@ -1330,7 +1340,6 @@
   function renderAll(){
     renderCategorySelect();
     renderTasks();
-    renderProgress();
     renderCalendar();
     renderPartis();
     renderScenes();
