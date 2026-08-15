@@ -44,7 +44,7 @@
     margin-bottom:30px; flex-wrap:wrap; padding-bottom:22px; border-bottom:1px solid var(--line);
   }
   .title-block{display:flex; align-items:center; gap:16px;}
-  .badge-mark{width:48px; height:48px; flex:0 0 auto;}
+  .badge-mark{width:48px; height:48px; flex:0 0 auto; border-radius:50%; object-fit:cover; border:2px solid var(--lavande);}
   h1{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.7rem; margin:0;
     letter-spacing:-0.01em; color:var(--ink);
@@ -52,18 +52,30 @@
   header p{margin:4px 0 0; color:var(--ink-soft); font-weight:500; font-size:0.9rem; letter-spacing:0.02em;}
 
   /* TABS */
-  .tabs{display:flex; gap:4px; margin-bottom:26px; flex-wrap:wrap; background:var(--gris); padding:5px; border-radius:14px; width:fit-content;}
+  .tabs-container{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:26px;}
+  .tabs{display:flex; gap:4px; flex-wrap:wrap; background:var(--gris); padding:5px; border-radius:14px; width:fit-content;}
   .tab-btn{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.85rem;
     padding:8px 16px; border:none; border-radius:10px;
     background:transparent; color:var(--ink-soft); cursor:pointer; letter-spacing:0.01em;
     transition:background .15s ease, color .15s ease, box-shadow .15s ease;
+    display:inline-flex; align-items:center; gap:6px;
   }
   .tab-btn:hover{color:var(--ink);}
   .tab-btn.active{color:var(--lavande); background:var(--panel); box-shadow:var(--shadow-sm);}
+  .tab-btn .tab-del{font-size:0.7rem; opacity:0.6; padding:0 2px; border-radius:4px;}
+  .tab-btn .tab-del:hover{opacity:1; background:var(--rose); color:#fff;}
   .tab-content{display:none;}
   .tab-content.active{display:block; animation:fadeIn .35s ease;}
   @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .btn-add-tab{
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.82rem;
+    padding:8px 14px; border:1px dashed var(--line); border-radius:12px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer;
+    transition:all .15s ease;
+  }
+  .btn-add-tab:hover{border-color:var(--lavande); color:var(--lavande); background:var(--gris);}
 
   /* PANEL / CARD BASE */
   .panel{
@@ -280,7 +292,7 @@
   #signOutBtn:hover{background:var(--gris); color:var(--ink);}
   .user-bar{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
 
-  /* SCÈNES */
+  /* SCÈNES & ÉDITEURS UNIFIÉS */
   .scene-pills{display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:18px; -webkit-overflow-scrolling:touch;}
   .scene-pill{
     flex:0 0 auto; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.85rem;
@@ -297,6 +309,7 @@
   .scene-pill-sep{flex:0 0 auto; width:1px; background:var(--line); margin:2px 4px;}
   .scene-pill .dot-fill{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--menthe); margin-right:6px; opacity:0;}
   .scene-pill.filled .dot-fill{opacity:1;}
+  
   .scene-editor-title{
     width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.15rem;
     border:none; border-bottom:1px solid var(--line); background:transparent; color:var(--ink);
@@ -320,6 +333,7 @@
   .scene-editor-content h2{font-size:1.35em; font-weight:700; margin:0.7em 0 0.3em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content h3{font-size:1.12em; font-weight:700; margin:0.6em 0 0.25em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content p{margin:0 0 0.6em;}
+  
   .scene-image-box{
     width:120px; height:120px; border-radius:12px; border:1.5px dashed var(--line);
     display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden;
@@ -333,49 +347,28 @@
   }
   .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0 0 16px;}
 
-  /* LIVRE (lien Drive + visionneuse intégrée) */
-  .book-toolbar{
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-    margin-bottom:10px; padding:14px 18px;
-  }
-  .book-link-form{display:flex; align-items:center; gap:10px; flex:1; min-width:240px;}
-  .book-link-form input[type=url]{
-    flex:1; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.88rem;
-    border:1px solid var(--line); border-radius:10px; padding:10px 14px; background:var(--panel); color:var(--ink);
-  }
-  .book-toolbar-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-  .book-remove-btn{background:var(--rose);}
-  .book-hint{font-size:0.76rem; color:var(--ink-soft); margin:0 0 18px;}
-  .book-empty-state{
-    text-align:center; padding:60px 24px; color:var(--ink-soft);
-  }
-  .book-empty-icon{font-size:2.4rem; margin-bottom:10px;}
-  .book-empty-state p{margin:0; font-size:0.92rem;}
+  /* LIVRE (Visionneuse PDF double page / Magazine local) */
   .book-viewer{
     background:var(--gris); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
   }
-  .book-iframe{width:100%; height:75vh; min-height:420px; border:none; display:block; background:#fff;}
-  @media(max-width:760px){
-    .book-link-form{flex-direction:column; align-items:stretch;}
-    .book-iframe{height:65vh;}
-  }
+  .book-iframe{width:100%; height:80vh; min-height:500px; border:none; display:block; background:#fff;}
 
-  /* MOBILE : évite le zoom auto au focus d'un champ + header compact */
+  /* MOBILE */
   @media(max-width:640px){
     input, select, textarea, button{font-size:16px;}
     .wrap{padding:16px 14px 40px;}
     header{gap:10px; margin-bottom:18px; padding-bottom:14px;}
     .title-block{gap:10px;}
-    .badge-mark{width:32px; height:32px;}
+    .badge-mark{width:36px; height:36px;}
     h1{font-size:1.25rem;}
     header p{font-size:0.76rem;}
     .user-bar{gap:8px; order:2;}
     .sync-status{font-size:0.68rem;}
     #signOutBtn{padding:5px 9px; font-size:0.7rem;}
     .tabs{gap:2px; margin-bottom:18px; width:100%;}
-    .tab-btn{flex:1;}
-    .tab-btn{padding:7px 12px; font-size:0.8rem;}
+    .tab-btn{flex:1; padding:7px 12px; font-size:0.8rem;}
     .scene-editor-content{min-height:300px;}
+    .book-iframe{height:65vh;}
   }
 </style>
 </head>
@@ -397,13 +390,8 @@
 
   <header>
     <div class="title-block">
-      <svg class="badge-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <path d="M15 20 h55 a8 8 0 0 1 8 8 v30 a8 8 0 0 1 -8 8 h-28 l-16 15 v-15 h-11 a8 8 0 0 1 -8 -8 v-30 a8 8 0 0 1 8 -8 z"
-              fill="none" stroke="var(--lavande)" stroke-width="4.5" stroke-linejoin="round"/>
-        <line x1="27" y1="49" x2="57" y2="29" stroke="var(--ink)" stroke-width="4.5" stroke-linecap="round"/>
-        <polygon points="57,29 66,24 61,33" fill="var(--peche)"/>
-        <path d="M80 60 l3.2 7.5 l7.5 3.2 l-7.5 3.2 l-3.2 7.5 l-3.2 -7.5 l-7.5 -3.2 l7.5 -3.2 z" fill="var(--rose)"/>
-      </svg>
+      <!-- Logo mis à jour basé sur l'image fournie (recadré sur la tête) -->
+      <img src="jkme.jpg" class="badge-mark" alt="JKME Logo">
       <div>
         <h1>JKME</h1>
         <p>Aider les femmes sous violence psychologique</p>
@@ -415,16 +403,15 @@
     </div>
   </header>
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="plan">Plan d'action</button>
-    <button class="tab-btn" data-tab="scenes">Scènes</button>
-    <button class="tab-btn" data-tab="cal">Calendrier</button>
-    <button class="tab-btn" data-tab="livre">Livre</button>
+  <div class="tabs-container">
+    <div class="tabs" id="mainTabsList">
+      <!-- Les onglets sont générés dynamiquement pour permettre d'en ajouter/supprimer -->
+    </div>
+    <button type="button" class="btn-add-tab" id="addTabBtn">+ Ajouter un onglet</button>
   </div>
 
   <!-- PLAN D'ACTION -->
-  <div class="tab-content active" id="tab-plan">
-
+  <div class="tab-content" id="content-plan">
     <form class="add-task-form" id="addTaskForm">
       <input type="text" id="taskTitle" placeholder="Ex : Finaliser le script du chapitre 2..." required>
       <select id="taskCategory"></select>
@@ -449,7 +436,7 @@
   </div>
 
   <!-- CALENDRIER -->
-  <div class="tab-content" id="tab-cal">
+  <div class="tab-content" id="content-cal">
     <div class="panel">
       <div class="cal-header">
         <h2 id="calMonthLabel">Mois</h2>
@@ -467,7 +454,7 @@
   </div>
 
   <!-- SCÈNES -->
-  <div class="tab-content" id="tab-scenes">
+  <div class="tab-content" id="content-scenes">
     <div class="scene-pills" id="scenePills"></div>
 
     <div class="panel" id="sceneModeBlock">
@@ -478,6 +465,8 @@
       <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
       <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
       <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
+      
+      <!-- Éditeur étendu : gras, souligné, etc. -->
       <div class="scene-toolbar" id="sceneToolbar">
         <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
         <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
@@ -506,29 +495,32 @@
     </div>
   </div>
 
-  <!-- LIVRE -->
-  <div class="tab-content" id="tab-livre">
-    <div class="panel book-toolbar">
-      <form id="bookLinkForm" class="book-link-form">
-        <input type="url" id="bookLinkInput" placeholder="Colle ici le lien de partage Google Drive de ton PDF...">
-        <button type="submit" class="btn">Enregistrer</button>
-      </form>
-      <div class="book-toolbar-right" id="bookOpenWrap" style="display:none;">
-        <a href="#" target="_blank" rel="noopener noreferrer" id="bookOpenLink" class="btn btn-ghost">Ouvrir dans un nouvel onglet ↗</a>
-        <button type="button" class="btn book-remove-btn" id="bookRemoveBtn">Retirer le lien</button>
+  <!-- MÉCANISME (Nouvel onglet avec éditeur étendu) -->
+  <div class="tab-content" id="content-mecanisme">
+    <div class="panel">
+      <input type="text" class="scene-editor-title" id="mecanismeTitleInput" placeholder="Titre de la section mécanisme">
+      <div class="scene-toolbar" id="mecanismeToolbar">
+        <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
+        <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+        <div class="scene-toolbar-sep"></div>
+        <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
+        <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
+        <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
       </div>
-    </div>
-    <p class="book-hint">Le fichier doit être partagé sur Drive en mode <strong>"Tous les utilisateurs disposant du lien"</strong>, sinon la visionneuse n'affichera rien.</p>
-
-    <div id="bookEmptyState" class="panel book-empty-state">
-      <div class="book-empty-icon">📚</div>
-      <p>Colle le lien Google Drive de ton livre pour le consulter ici.</p>
-    </div>
-
-    <div id="bookViewer" class="book-viewer" style="display:none;">
-      <iframe id="bookIframe" class="book-iframe" allow="autoplay" allowfullscreen></iframe>
+      <div class="scene-editor-content" id="mecanismeContentInput" contenteditable="true" data-placeholder="Décris ici les mécanismes de la violence psychologique, les schémas comportementaux..."></div>
     </div>
   </div>
+
+  <!-- LIVRE (Visualisation PDF double page hébergé à la racine) -->
+  <div class="tab-content" id="content-livre">
+    <div class="book-viewer">
+      <!-- Affichage du PDF en mode double page / flipbook natif ou lecteur intégré -->
+      <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf#view=FitH&pagemode=thumbs" allow="autoplay"></iframe>
+    </div>
+  </div>
+
+  <!-- Conteneur dynamique pour les nouveaux onglets créés par l'utilisateur -->
+  <div id="dynamicTabContents"></div>
 
 </div>
 
@@ -564,6 +556,19 @@
   </div>
 </div>
 
+<!-- MODAL AJOUT D'ONGLET -->
+<div class="overlay" id="tabOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeTabModal">✕</button>
+    <h3>Ajouter un onglet</h3>
+    <form id="addTabForm">
+      <label>Nom du nouvel onglet</label>
+      <input type="text" id="newTabNameInput" placeholder="Ex : Ressources, Contacts..." required>
+      <button type="submit" class="btn" style="margin-top:10px;">Créer l'onglet</button>
+    </form>
+  </div>
+</div>
+
 <script>
   // ---------- DATA ----------
   const DEFAULT_CATS = [
@@ -587,16 +592,26 @@
   let scenes = JSON.parse(localStorage.getItem('rg_scenes') || 'null') || defaultScenes();
   let currentSceneIndex = 0;
 
+  // Gestion dynamique des onglets
+  let customTabs = JSON.parse(localStorage.getItem('rg_custom_tabs') || '[]');
+  let mecanismeData = JSON.parse(localStorage.getItem('rg_mecanisme') || '{"title":"","content":""}');
+  let customTabsData = JSON.parse(localStorage.getItem('rg_custom_tabs_data') || '{}');
+
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); };
   const saveTasks = () => { localStorage.setItem('rg_tasks', JSON.stringify(tasks)); syncCloud(); };
   const saveEvents = () => { localStorage.setItem('rg_events', JSON.stringify(events)); syncCloud(); };
   const saveCategories = () => { localStorage.setItem('rg_categories', JSON.stringify(categories)); syncCloud(); };
   const savePartis = () => { localStorage.setItem('rg_partis', JSON.stringify(partis)); syncCloud(); };
   const saveScenes = () => { localStorage.setItem('rg_scenes', JSON.stringify(scenes)); syncCloud(); };
-  let bookLink = localStorage.getItem('rg_book_link') || '';
-  const saveBookLink = () => { localStorage.setItem('rg_book_link', bookLink); syncCloud(); };
+  const saveMecanisme = () => { localStorage.setItem('rg_mecanisme', JSON.stringify(mecanismeData)); syncCloud(); };
+  const saveCustomTabs = () => { 
+    localStorage.setItem('rg_custom_tabs', JSON.stringify(customTabs)); 
+    localStorage.setItem('rg_custom_tabs_data', JSON.stringify(customTabsData));
+    syncCloud(); 
+  };
 
   function escapeHtml(s){
+    if(!s) return '';
     return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
@@ -605,15 +620,169 @@
     return c ? c.color : '#C7CBD1';
   }
 
-  // ---------- TABS ----------
-  document.querySelectorAll('.tab-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  // ---------- RENDER TABS SYSTEM ----------
+  const BASE_TABS = [
+    {id: 'plan', label: "Plan d'action"},
+    {id: 'scenes', label: 'Scènes'},
+    {id: 'mecanisme', label: 'Mécanisme'},
+    {id: 'cal', label: 'Calendrier'},
+    {id: 'livre', label: 'Livre'}
+  ];
+
+  let activeTabId = 'plan';
+
+  function renderTabs(){
+    const listEl = document.getElementById('mainTabsList');
+    const dynamicContainer = document.getElementById('dynamicTabContents');
+    
+    let allTabs = [...BASE_TABS, ...customTabs];
+    
+    listEl.innerHTML = allTabs.map(t => {
+      const isCustom = customTabs.some(ct => ct.id === t.id);
+      return `
+        <button class="tab-btn ${activeTabId === t.id ? 'active' : ''}" data-tab="${t.id}">
+          ${escapeHtml(t.label)}
+          ${isCustom ? `<span class="tab-del" data-id="${t.id}" title="Supprimer l'onglet">✕</span>` : ''}
+        </button>
+      `;
+    }).join('');
+
+    // Générer les conteneurs pour les onglets personnalisés s'ils n'existent pas
+    let dynHtml = '';
+    customTabs.forEach(ct => {
+      if(!customTabsData[ct.id]) customTabsData[ct.id] = {title: '', content: ''};
+      const d = customTabsData[ct.id];
+      dynHtml += `
+        <div class="tab-content ${activeTabId === ct.id ? 'active' : ''}" id="content-${ct.id}">
+          <div class="panel">
+            <input type="text" class="scene-editor-title custom-tab-title" data-id="${ct.id}" value="${escapeHtml(d.title)}" placeholder="Titre de la section">
+            <div class="scene-toolbar custom-tab-toolbar" data-id="${ct.id}">
+              <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
+              <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+              <div class="scene-toolbar-sep"></div>
+              <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
+              <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
+              <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            </div>
+            <div class="scene-editor-content custom-tab-content" data-id="${ct.id}" contenteditable="true" data-placeholder="Écris ton contenu ici...">${d.content || ''}</div>
+          </div>
+        </div>
+      `;
+    });
+    dynamicContainer.innerHTML = dynHtml;
+
+    // Événements clic sur les onglets
+    listEl.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if(e.target.classList.contains('tab-del')) {
+          e.stopPropagation();
+          const idToRemove = e.target.dataset.id;
+          if(confirm("Supprimer cet onglet et son contenu ?")) {
+            customTabs = customTabs.filter(t => t.id !== idToRemove);
+            delete customTabsData[idToRemove];
+            saveCustomTabs();
+            if(activeTabId === idToRemove) activeTabId = 'plan';
+            renderTabs();
+          }
+          return;
+        }
+        activeTabId = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const targetContent = document.getElementById('content-' + activeTabId);
+        if(targetContent) targetContent.classList.add('active');
+      });
+    });
+
+    // Écouteurs pour les onglets personnalisés dynamiques (éditeur étendu)
+    document.querySelectorAll('.custom-tab-title').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const id = inp.dataset.id;
+        if(customTabsData[id]) {
+          customTabsData[id].title = inp.value;
+          saveCustomTabs();
+        }
+      });
+    });
+
+    document.querySelectorAll('.custom-tab-toolbar button').forEach(btn => {
+      const toolbar = btn.closest('.custom-tab-toolbar');
+      const id = toolbar.dataset.id;
+      const contentEditable = document.querySelector(`.custom-tab-content[data-id="${id}"]`);
+      btn.addEventListener('mousedown', e => e.preventDefault());
+      btn.addEventListener('click', () => {
+        contentEditable.focus();
+        document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+        if(customTabsData[id]) {
+          customTabsData[id].content = contentEditable.innerHTML;
+          saveCustomTabs();
+        }
+      });
+    });
+
+    document.querySelectorAll('.custom-tab-content').forEach(div => {
+      div.addEventListener('input', () => {
+        const id = div.dataset.id;
+        if(customTabsData[id]) {
+          customTabsData[id].content = div.innerHTML;
+          saveCustomTabs();
+        }
+      });
+    });
+  }
+
+  // Ajout d'onglet modal
+  const tabOverlay = document.getElementById('tabOverlay');
+  document.getElementById('addTabBtn').addEventListener('click', () => {
+    document.getElementById('newTabNameInput').value = '';
+    tabOverlay.classList.add('active');
+  });
+  document.getElementById('closeTabModal').addEventListener('click', () => tabOverlay.classList.remove('active'));
+  tabOverlay.addEventListener('click', e => { if(e.target === tabOverlay) tabOverlay.classList.remove('active'); });
+
+  document.getElementById('addTabForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('newTabNameInput').value.trim();
+    if(!name) return;
+    const id = 'custom_' + Date.now();
+    customTabs.push({id, label: name});
+    customTabsData[id] = {title: name, content: ''};
+    saveCustomTabs();
+    tabOverlay.classList.remove('active');
+    activeTabId = id;
+    renderTabs();
+  });
+
+
+  // ---------- ÉDITEUR MÉCANISME ----------
+  const mecanismeTitleInput = document.getElementById('mecanismeTitleInput');
+  const mecanismeContentInput = document.getElementById('mecanismeContentInput');
+
+  function initMecanismeEditor(){
+    mecanismeTitleInput.value = mecanismeData.title || '';
+    mecanismeContentInput.innerHTML = mecanismeData.content || '';
+  }
+
+  mecanismeTitleInput.addEventListener('input', () => {
+    mecanismeData.title = mecanismeTitleInput.value;
+    saveMecanisme();
+  });
+  mecanismeContentInput.addEventListener('input', () => {
+    mecanismeData.content = mecanismeContentInput.innerHTML;
+    saveMecanisme();
+  });
+
+  document.querySelectorAll('#mecanismeToolbar button').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', () => {
+      mecanismeContentInput.focus();
+      document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+      mecanismeData.content = mecanismeContentInput.innerHTML;
+      saveMecanisme();
     });
   });
+
 
   // ---------- CATEGORIES ----------
   function renderCategorySelect(){
@@ -868,8 +1037,7 @@
 
   function formatShort(key){
     const [y,m,d] = key.split('-').map(Number);
-    const label = new Date(y,m-1,d).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
-    return label;
+    return new Date(y,m-1,d).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
   }
 
   function migrateEvents(){
@@ -1097,7 +1265,7 @@
   const sceneImagePlaceholder = document.getElementById('sceneImagePlaceholder');
   const sceneImageRemoveBtn = document.getElementById('sceneImageRemoveBtn');
   const sceneImageInput = document.getElementById('sceneImageInput');
-  let currentView = 'scene'; // 'scene', 'global' ou 'parti'
+  let currentView = 'scene';
 
   function hideAllSceneBlocks(){
     sceneModeBlock.style.display = 'none';
@@ -1187,9 +1355,8 @@
     saveScenes();
   });
 
-  // Barre d'outils : gras, souligné, hiérarchie de titres (Titre / Sous-titre / Normal)
   document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
-    btn.addEventListener('mousedown', (e)=> e.preventDefault()); // garde la sélection active dans l'éditeur
+    btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       sceneContentInput.focus();
       document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
@@ -1198,7 +1365,6 @@
     });
   });
 
-  // Recadre en carré, redimensionne et compresse une image jusqu'à ~5 Ko.
   function compressImageSquare(file, {targetKB=5, startSize=320, minSize=48} = {}){
     return new Promise((resolve, reject)=>{
       const url = URL.createObjectURL(file);
@@ -1251,102 +1417,29 @@
       saveScenes();
       renderSceneImage();
     }catch(err){
-      console.error('Erreur de compression image :', err);
-      alert("Impossible de traiter cette image.");
+      console.error('Erreur image :', err);
     }
   });
 
-  function renderScenes(){
-    if(currentSceneIndex >= scenes.length) currentSceneIndex = 0;
-    renderScenePills();
-    hideAllSceneBlocks();
-    if(currentView === 'global'){
-      globalModeBlock.style.display = '';
-    } else if(currentView === 'parti'){
-      partiModeBlock.style.display = '';
-    } else {
-      sceneModeBlock.style.display = '';
-      const s = scenes[currentSceneIndex];
-      sceneTitleInput.value = s.title || '';
-      sceneContentInput.innerHTML = s.content || '';
-      renderSceneImage();
-    }
-  }
 
-  // ---------- LIVRE (lien Google Drive) ----------
-  function extractDriveFileId(url){
-    if(!url) return null;
-    const patterns = [
-      /\/d\/([a-zA-Z0-9_-]{10,})/,      // .../file/d/FILE_ID/view
-      /[?&]id=([a-zA-Z0-9_-]{10,})/       // ...?id=FILE_ID
-    ];
-    for(const re of patterns){
-      const m = url.match(re);
-      if(m) return m[1];
-    }
-    return null;
-  }
-
-  const bookLinkForm = document.getElementById('bookLinkForm');
-  const bookLinkInput = document.getElementById('bookLinkInput');
-  const bookEmptyState = document.getElementById('bookEmptyState');
-  const bookViewerEl = document.getElementById('bookViewer');
-  const bookIframe = document.getElementById('bookIframe');
-  const bookOpenWrap = document.getElementById('bookOpenWrap');
-  const bookOpenLink = document.getElementById('bookOpenLink');
-  const bookRemoveBtn = document.getElementById('bookRemoveBtn');
-
-  function renderBookViewer(){
-    bookLinkInput.value = bookLink || '';
-    const fileId = extractDriveFileId(bookLink);
-    if(bookLink && fileId){
-      bookIframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
-      bookOpenLink.href = `https://drive.google.com/file/d/${fileId}/view`;
-      bookViewerEl.style.display = '';
-      bookOpenWrap.style.display = '';
-      bookEmptyState.style.display = 'none';
-    } else {
-      bookIframe.src = '';
-      bookViewerEl.style.display = 'none';
-      bookOpenWrap.style.display = 'none';
-      bookEmptyState.style.display = '';
-    }
-  }
-
-  bookLinkForm.addEventListener('submit', (e)=>{
-    e.preventDefault();
-    const val = bookLinkInput.value.trim();
-    if(!val) return;
-    if(!extractDriveFileId(val)){
-      alert("Ce lien Google Drive n'est pas reconnu. Utilise le lien de partage obtenu via le bouton \"Partager\" > \"Copier le lien\" sur Drive.");
-      return;
-    }
-    bookLink = val;
-    saveBookLink();
-    renderBookViewer();
-  });
-
-  bookRemoveBtn.addEventListener('click', ()=>{
-    if(!confirm('Retirer ce lien ?')) return;
-    bookLink = '';
-    saveBookLink();
-    renderBookViewer();
-  });
-
-
-  // ---------- INIT ----------
-  // Regroupé en fonction : appelé une fois les données chargées (depuis Firestore
-  // si connecté, sinon depuis le cache local) — voir le script Firebase ci-dessous.
+  // ---------- INIT ALL ----------
   function renderAll(){
+    renderTabs();
+    initMecanismeEditor();
     renderCategorySelect();
     renderTasks();
     renderCalendar();
     renderPartis();
-    renderScenes();
-    renderBookViewer();
+    renderScenePills();
+    if(currentView === 'global') selectGlobal();
+    else if(currentView === 'parti') selectParti();
+    else selectScene(currentSceneIndex);
   }
   window.__rg_renderAll = renderAll;
-  window.__rg_getState = () => ({ tasks, events, categories, partis, scenes, notes: notesArea.value, bookLink });
+  window.__rg_getState = () => ({ 
+    tasks, events, categories, partis, scenes, 
+    notes: notesArea.value, customTabs, customTabsData, mecanismeData 
+  });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
     events = state.events || {};
@@ -1354,20 +1447,13 @@
     partis = state.partis || [];
     scenes = (Array.isArray(state.scenes) && state.scenes.length) ? state.scenes : defaultScenes();
     if(typeof state.notes === 'string') notesArea.value = state.notes;
-    bookLink = typeof state.bookLink === 'string' ? state.bookLink : '';
+    customTabs = state.customTabs || [];
+    customTabsData = state.customTabsData || {};
+    if(state.mecanismeData) mecanismeData = state.mecanismeData;
   };
 </script>
 
-<!-- ==================== FIREBASE : AUTH + SYNCHRO ====================
-     1. Va sur https://console.firebase.google.com → ton projet → icône ⚙ "Paramètres du projet"
-        → onglet "Général" → section "Vos applications" → ajoute une "application Web" (si pas déjà fait)
-        → copie l'objet firebaseConfig et colle-le ci-dessous à la place des "VOTRE_...".
-     2. Dans le menu de gauche → "Authentication" → "Sign-in method" → active le fournisseur "Google".
-     3. Dans le menu de gauche → "Firestore Database" → crée une base (mode production).
-     4. Onglet "Règles" de Firestore → colle les règles fournies dans ma réponse (pas ici, elles se
-        configurent sur le site Firebase, pas dans ce fichier) → Publier.
-     Sans les étapes 1 à 4, la connexion et la synchro ne fonctionneront pas.
-==================================================================== -->
+<!-- ==================== FIREBASE : AUTH + SYNCHRO ==================== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
   import {
@@ -1377,7 +1463,6 @@
     getFirestore, doc, getDoc, setDoc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
-  // Config de ton projet Firebase (jkme-5bad3).
   const firebaseConfig = {
     apiKey: "AIzaSyAL06MCePH_S9PMdWTICLZf6jVBPBdcJp4",
     authDomain: "jkme-5bad3.firebaseapp.com",
@@ -1403,7 +1488,7 @@
 
   let userDocRef = null;
   let syncTimer = null;
-  let applyingRemoteState = false; // évite de resynchroniser ce qu'on vient de recevoir
+  let applyingRemoteState = false;
 
   function setSyncStatus(state){
     syncStatus.classList.remove('saving','error');
@@ -1412,7 +1497,6 @@
     else { syncStatusLabel.textContent = 'Synchronisé'; }
   }
 
-  // Appelée par le script principal (via window.__rg_scheduleSync) à chaque modification locale.
   window.__rg_scheduleSync = function(){
     if(!userDocRef || applyingRemoteState) return;
     setSyncStatus('saving');
@@ -1423,7 +1507,7 @@
         await setDoc(userDocRef, { ...state, updatedAt: serverTimestamp() });
         setSyncStatus('idle');
       }catch(err){
-        console.error('Erreur de synchro Firestore :', err);
+        console.error('Erreur Firestore :', err);
         setSyncStatus('error');
       }
     }, 700);
@@ -1431,12 +1515,8 @@
 
   googleSignInBtn.addEventListener('click', async ()=>{
     loginError.textContent = '';
-    try{
-      await signInWithPopup(auth, provider);
-    }catch(err){
-      console.error(err);
-      loginError.textContent = "Connexion impossible. Réessaie.";
-    }
+    try{ await signInWithPopup(auth, provider); }
+    catch(err){ loginError.textContent = "Connexion impossible. Réessaie."; }
   });
 
   signOutBtn.addEventListener('click', ()=>{ signOut(auth); });
@@ -1457,11 +1537,8 @@
       const snap = await getDoc(userDocRef);
       applyingRemoteState = true;
       if(snap.exists()){
-        // Un espace existe déjà sur ce compte : on charge les données du cloud.
         window.__rg_setState(snap.data());
       } else {
-        // Première connexion : on part des données déjà présentes localement (localStorage)
-        // et on les envoie dans Firestore pour initialiser l'espace cloud.
         const initialState = window.__rg_getState();
         await setDoc(userDocRef, { ...initialState, updatedAt: serverTimestamp() });
       }
@@ -1470,8 +1547,6 @@
       setSyncStatus('idle');
     }catch(err){
       applyingRemoteState = false;
-      console.error('Erreur de chargement Firestore :', err);
-      // En cas d'erreur réseau, on affiche quand même les données locales existantes.
       window.__rg_renderAll();
       setSyncStatus('error');
     }
