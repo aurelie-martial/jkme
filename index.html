@@ -317,14 +317,17 @@
   .scene-pill-row .scene-pill{flex:1; min-width:0;}
   .scene-pill-actions{display:flex; align-items:center; gap:3px; flex:0 0 auto; opacity:0; transition:opacity .15s ease;}
   .scene-pill-row:hover .scene-pill-actions, .scene-divider-row:hover .scene-pill-actions{opacity:1;}
-  .scene-pill-move, .scene-pill-del{
+  .scene-drag-handle{
+    flex:0 0 auto; width:14px; height:20px; display:flex; align-items:center; justify-content:center;
+    color:var(--ink-soft); cursor:grab; font-size:0.85rem; line-height:1; touch-action:none; user-select:none;
+  }
+  .scene-drag-handle:hover{color:var(--ink);}
+  .scene-pill-row.dragging, .scene-divider-row.dragging{opacity:0.45;}
+  .scene-pill-del{
     flex:0 0 auto; width:20px; height:20px; border:1px solid var(--line); border-radius:6px;
     background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.6rem; line-height:1; padding:0;
     transition:opacity .15s ease, background .15s ease, color .15s ease;
   }
-  .scene-pill-move:hover{background:var(--gris); color:var(--ink);}
-  .scene-pill-move:disabled{opacity:0.3; cursor:default;}
-  .scene-pill-move:disabled:hover{background:var(--panel); color:var(--ink-soft);}
   .scene-pill-del:hover{background:var(--rose); color:#fff; border-color:var(--rose);}
   .scene-pill-color{
     flex:0 0 auto; width:20px; height:20px; padding:0; border:1px solid var(--line); border-radius:50%;
@@ -333,15 +336,9 @@
   .scene-pill-color::-webkit-color-swatch-wrapper{padding:0;}
   .scene-pill-color::-webkit-color-swatch{border:none; border-radius:50%;}
   .scene-pill-color::-moz-color-swatch{border:none; border-radius:50%;}
-  .scene-divider-row{display:flex; align-items:center; gap:4px; margin:8px 0 2px;}
-  .scene-divider-row .scene-pill-actions{opacity:0.55;}
-  .scene-divider-label{
-    flex:1; min-width:0; border:none; border-bottom:1px dashed var(--line); background:transparent;
-    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.68rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:0.06em; color:var(--ink-soft); padding:4px 2px;
-  }
-  .scene-divider-label:focus{outline:none; border-bottom-color:var(--ink);}
-  
+  .scene-divider-row{display:flex; align-items:center; gap:6px; margin:10px 0;}
+  .scene-divider-line{flex:1; height:1px; background:var(--line);}
+
   .scene-editor-title{
     width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.15rem;
     border:none; border-bottom:1px solid var(--line); background:transparent; color:var(--ink);
@@ -392,23 +389,28 @@
     position:absolute; top:5px; right:5px; background:rgba(20,20,20,0.6); color:#fff; border:none;
     border-radius:50%; width:20px; height:20px; font-size:11px; cursor:pointer; line-height:20px; padding:0;
   }
-  .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0;}
+  .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0 0 8px;}
 
-  .scene-top-row{display:flex; gap:20px; align-items:flex-start; margin-bottom:18px;}
-  .scene-image-col{flex:0 0 auto;}
-  .scene-mechanism-col{flex:1; min-width:220px; display:flex; flex-direction:column; gap:6px;}
-  .scene-field-label{
-    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.68rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:0.06em; color:var(--ink-soft); margin-top:6px;
+  /* Bloc photo + mécanisme(s), collés ensemble en haut de la fiche scène */
+  .scene-photo-block{width:160px; margin-bottom:18px;}
+  .scene-tags-input{
+    display:flex; flex-wrap:wrap; align-items:center; gap:5px;
+    border:1px solid var(--line); border-radius:10px; padding:6px 7px; min-height:36px;
+    background:var(--panel);
   }
-  .scene-field-label:first-child{margin-top:0;}
-  .scene-field-input, .scene-field-textarea{
-    width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.88rem;
-    border:1px solid var(--line); border-radius:10px; padding:9px 12px; background:var(--panel); color:var(--ink);
+  .scene-tags-input:focus-within{border-color:var(--lavande);}
+  .scene-tag{
+    display:inline-flex; align-items:center; gap:4px; background:var(--gris); color:var(--ink);
+    font-size:0.74rem; font-weight:600; padding:3px 5px 3px 9px; border-radius:999px; white-space:nowrap;
   }
-  .scene-field-textarea{resize:vertical; min-height:64px; line-height:1.45;}
-  @media(max-width:640px){
-    .scene-top-row{flex-direction:column;}
+  .scene-tag-del{
+    flex:0 0 auto; border:none; background:transparent; color:var(--ink-soft); cursor:pointer; font-size:0.6rem;
+    width:15px; height:15px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .scene-tag-del:hover{background:rgba(0,0,0,0.08); color:var(--ink);}
+  .scene-tag-add-input{
+    flex:1; min-width:50px; border:none; outline:none; font-family:'Plus Jakarta Sans', sans-serif;
+    font-size:0.8rem; padding:3px 2px; background:transparent; color:var(--ink);
   }
 
   /* --- STYLES POST-IT (Parti pris / Bloc-notes) --- */
@@ -510,10 +512,11 @@
     .scene-pill{width:auto;}
     .scene-pill-actions{opacity:0.85;}
     .scene-pill-row{flex:0 0 auto;}
-    .scene-divider-row{flex:0 0 auto;}
-    .scene-divider-label{width:110px;}
+    .scene-divider-row{flex:0 0 auto; margin:0 4px;}
+    .scene-divider-line{width:1px; height:28px; flex:0 0 auto;}
     .scene-pill-sep{width:1px; height:auto; align-self:stretch; margin:0 4px;}
     .btn-add-subtab{flex:0 0 auto; white-space:nowrap;}
+    .scene-photo-block{width:100%; max-width:220px;}
   }
 </style>
 </head>
@@ -612,21 +615,14 @@
             <div class="last-modified" id="sceneLastModified"></div>
             <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteSceneBtn">Supprimer cette scène</button>
           </div>
-          <div class="scene-top-row">
-            <div class="scene-image-col">
-              <div class="scene-image-box" id="sceneImageBox">
-                <span class="placeholder-txt" id="sceneImagePlaceholder">+ Image</span>
-                <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
-              </div>
-              <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
-              <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
+          <div class="scene-photo-block">
+            <div class="scene-image-box" id="sceneImageBox">
+              <span class="placeholder-txt" id="sceneImagePlaceholder">+ Image</span>
+              <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
             </div>
-            <div class="scene-mechanism-col">
-              <label class="scene-field-label" for="sceneMechanismInput">Mécanisme identifié dans cette scène</label>
-              <input type="text" id="sceneMechanismInput" class="scene-field-input" placeholder="Ex : Dévalorisation, gaslighting, isolement...">
-              <label class="scene-field-label" for="sceneExampleInput">Exemple vécu</label>
-              <textarea id="sceneExampleInput" class="scene-field-textarea" rows="3" placeholder="Décris ici l'exemple concret que tu as vécu, en lien avec ce mécanisme..."></textarea>
-            </div>
+            <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
+            <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
+            <div class="scene-tags-input" id="sceneMechanismTags"></div>
           </div>
           <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
 
@@ -842,7 +838,7 @@
   ];
 
   function defaultScenes(){
-    return Array.from({length:20}, (_,i)=>({id:i+1, title:'Scène '+(i+1), content:'', image:null, mechanism:'', example:'', updatedAt:null}));
+    return Array.from({length:20}, (_,i)=>({id:i+1, title:'Scène '+(i+1), content:'', image:null, mechanismTags:[], updatedAt:null}));
   }
 
   let tasks = JSON.parse(localStorage.getItem('rg_tasks') || '[]');
@@ -889,13 +885,55 @@
   function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
 
   // Déplace une entrée d'une liste ordonnée (scène/sous-onglet ou séparateur) d'un cran, en place.
-  function moveOrderEntry(orderArr, key, dir){
-    const idx = orderArr.findIndex(e => String(e.id) === String(key));
-    if(idx === -1) return false;
-    const newIdx = dir === 'up' ? idx - 1 : idx + 1;
-    if(newIdx < 0 || newIdx >= orderArr.length) return false;
-    const tmp = orderArr[idx]; orderArr[idx] = orderArr[newIdx]; orderArr[newIdx] = tmp;
-    return true;
+  // Active le réordonnancement par glisser-déposer d'une liste de pastilles (scènes ou sous-onglets
+  // Bloc-notes). On ne s'appuie pas sur l'API HTML5 drag-and-drop (mal supportée au toucher sur
+  // mobile) mais sur les Pointer Events, qui fonctionnent uniformément à la souris et au doigt.
+  // getOrderArray() renvoie le tableau d'ordre courant ; onOrderChanged(newOrder) est appelé avec
+  // le nouvel ordre une fois le glisser terminé.
+  function enableDragReorder(containerEl, getOrderArray, onOrderChanged){
+    let dragState = null;
+
+    function onPointerMove(e){
+      if(!dragState || e.pointerId !== dragState.pointerId) return;
+      const isRow = getComputedStyle(containerEl).flexDirection === 'row';
+      const siblings = Array.from(containerEl.children).filter(r=>r!==dragState.row);
+      const pos = isRow ? e.clientX : e.clientY;
+      let insertBeforeEl = null;
+      for(const r of siblings){
+        const rect = r.getBoundingClientRect();
+        const mid = isRow ? (rect.left + rect.width/2) : (rect.top + rect.height/2);
+        if(pos < mid){ insertBeforeEl = r; break; }
+      }
+      if(insertBeforeEl) containerEl.insertBefore(dragState.row, insertBeforeEl);
+      else containerEl.appendChild(dragState.row);
+    }
+
+    function endDrag(e){
+      if(!dragState || (e && e.pointerId !== dragState.pointerId)) return;
+      dragState.row.classList.remove('dragging');
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', endDrag);
+      document.removeEventListener('pointercancel', endDrag);
+      const newOrderKeys = Array.from(containerEl.children).map(r=>r.dataset.orderKey).filter(Boolean);
+      const orderArr = getOrderArray();
+      const byKey = new Map(orderArr.map(en=>[String(en.id), en]));
+      const newOrder = newOrderKeys.map(k=>byKey.get(k)).filter(Boolean);
+      dragState = null;
+      if(newOrder.length === orderArr.length) onOrderChanged(newOrder);
+    }
+
+    containerEl.addEventListener('pointerdown', (e)=>{
+      const handle = e.target.closest('.scene-drag-handle');
+      if(!handle) return;
+      const row = handle.closest('[data-order-key]');
+      if(!row) return;
+      e.preventDefault();
+      dragState = { pointerId: e.pointerId, row };
+      row.classList.add('dragging');
+      document.addEventListener('pointermove', onPointerMove);
+      document.addEventListener('pointerup', endDrag);
+      document.addEventListener('pointercancel', endDrag);
+    });
   }
 
   function pillColorStyleAttr(key){
@@ -1775,11 +1813,70 @@
   const sceneImagePlaceholder = document.getElementById('sceneImagePlaceholder');
   const sceneImageRemoveBtn = document.getElementById('sceneImageRemoveBtn');
   const sceneImageInput = document.getElementById('sceneImageInput');
-  const sceneMechanismInput = document.getElementById('sceneMechanismInput');
-  const sceneExampleInput = document.getElementById('sceneExampleInput');
+  const sceneMechanismTagsEl = document.getElementById('sceneMechanismTags');
   let currentSceneId = scenes.length ? scenes[0].id : null;
 
   function currentScene(){ return scenes.find(s => s.id === currentSceneId); }
+
+  // Compatibilité : les scènes créées avant l'ajout des tags stockaient un mécanisme sous forme
+  // de texte libre dans "mechanism" ; on le convertit à la volée en tableau d'un seul tag.
+  function getSceneMechanismTags(s){
+    if(Array.isArray(s.mechanismTags)) return s.mechanismTags;
+    if(typeof s.mechanism === 'string' && s.mechanism.trim()) return [s.mechanism.trim()];
+    return [];
+  }
+
+  function renderMechanismTags(){
+    const s = currentScene();
+    if(!s || !sceneMechanismTagsEl) return;
+    const tags = getSceneMechanismTags(s);
+    sceneMechanismTagsEl.innerHTML = tags.map((t,i)=>`
+      <span class="scene-tag">${escapeHtml(t)}<button type="button" class="scene-tag-del" data-tag-idx="${i}" title="Retirer">✕</button></span>
+    `).join('') + `<input type="text" class="scene-tag-add-input" id="sceneMechanismTagInput" placeholder="${tags.length ? 'Ajouter…' : 'Mécanisme (ex : gaslighting)'}">`;
+
+    sceneMechanismTagsEl.querySelectorAll('.scene-tag-del').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const cs = currentScene(); if(!cs) return;
+        const cur = getSceneMechanismTags(cs).slice();
+        cur.splice(parseInt(btn.dataset.tagIdx, 10), 1);
+        cs.mechanismTags = cur;
+        stampSceneModified();
+        saveScenes();
+        renderMechanismTags();
+      });
+    });
+
+    const input = document.getElementById('sceneMechanismTagInput');
+    function commitTag(){
+      const cs = currentScene(); if(!cs) return;
+      const val = input.value.trim().replace(/,+$/, '');
+      if(!val) return;
+      const cur = getSceneMechanismTags(cs).slice();
+      cur.push(val);
+      cs.mechanismTags = cur;
+      stampSceneModified();
+      saveScenes();
+      renderMechanismTags();
+      const freshInput = document.getElementById('sceneMechanismTagInput');
+      if(freshInput) freshInput.focus();
+    }
+    input.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ','){
+        e.preventDefault();
+        commitTag();
+      } else if(e.key === 'Backspace' && input.value === ''){
+        const cs = currentScene(); if(!cs) return;
+        const cur = getSceneMechanismTags(cs);
+        if(cur.length){
+          cs.mechanismTags = cur.slice(0, -1);
+          stampSceneModified();
+          saveScenes();
+          renderMechanismTags();
+        }
+      }
+    });
+    input.addEventListener('blur', commitTag);
+  }
 
   function stripHtml(html){
     const tmp = document.createElement('div');
@@ -1812,17 +1909,13 @@
   function renderScenePills(){
     reconcileSceneOrder();
     let html = '';
-    sceneOrder.forEach((entry, idx)=>{
-      const isFirst = idx === 0, isLast = idx === sceneOrder.length - 1;
+    sceneOrder.forEach((entry)=>{
       if(entry.type === 'divider'){
         html += `
           <div class="scene-divider-row" data-order-key="${entry.id}">
-            <input type="text" class="scene-divider-label" data-divider-label="${entry.id}" value="${escapeHtml(entry.label||'')}" placeholder="Séparateur">
-            <div class="scene-pill-actions">
-              <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="up" title="Monter" ${isFirst?'disabled':''}>▲</button>
-              <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="down" title="Descendre" ${isLast?'disabled':''}>▼</button>
-              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
-            </div>
+            <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
+            <div class="scene-divider-line"></div>
+            <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
           </div>`;
         return;
       }
@@ -1831,13 +1924,12 @@
       const colorKey = 'scene:' + s.id;
       html += `
         <div class="scene-pill-row" data-order-key="${entry.id}">
+          <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
           <button type="button" class="scene-pill ${s.id===currentSceneId?'active':''}" data-idx="${s.id}"${pillColorStyleAttr(colorKey)}>
             ${escapeHtml(s.title || 'Scène')}
           </button>
           <div class="scene-pill-actions">
             <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur du contour">
-            <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="up" title="Monter" ${isFirst?'disabled':''}>▲</button>
-            <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="down" title="Descendre" ${isLast?'disabled':''}>▼</button>
             <button type="button" class="scene-pill-del" data-del-key="${s.id}" data-del-kind="scene" title="Supprimer cette scène">✕</button>
           </div>
         </div>`;
@@ -1847,23 +1939,6 @@
 
     scenePillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
       btn.addEventListener('click', ()=> selectScene(parseFloat(btn.dataset.idx)) );
-    });
-
-    scenePillsEl.querySelectorAll('.scene-pill-move').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        if(moveOrderEntry(sceneOrder, btn.dataset.moveKey, btn.dataset.moveDir)){
-          saveSceneOrder();
-          renderScenePills();
-        }
-      });
-    });
-
-    scenePillsEl.querySelectorAll('.scene-divider-label').forEach(inp=>{
-      inp.addEventListener('input', ()=>{
-        const entry = sceneOrder.find(e=>String(e.id)===inp.dataset.dividerLabel);
-        if(entry){ entry.label = inp.value; saveSceneOrder(); }
-      });
     });
 
     scenePillsEl.querySelectorAll('.scene-pill-color').forEach(inp=>{
@@ -1909,7 +1984,13 @@
 
   document.getElementById('addSceneDividerBtn').addEventListener('click', ()=>{
     reconcileSceneOrder();
-    sceneOrder.push({type:'divider', id: makeOrderId(), label:''});
+    sceneOrder.push({type:'divider', id: makeOrderId()});
+    saveSceneOrder();
+    renderScenePills();
+  });
+
+  enableDragReorder(scenePillsEl, ()=>sceneOrder, (newOrder)=>{
+    sceneOrder = newOrder;
     saveSceneOrder();
     renderScenePills();
   });
@@ -1940,10 +2021,9 @@
     currentSceneId = id;
     sceneTitleInput.value = s.title || '';
     sceneContentInput.innerHTML = s.content || '';
-    sceneMechanismInput.value = s.mechanism || '';
-    sceneExampleInput.value = s.example || '';
     document.getElementById('sceneLastModified').textContent = formatUpdatedAt(s.updatedAt);
     renderSceneImage();
+    renderMechanismTags();
     renderScenePills();
   }
 
@@ -1967,19 +2047,6 @@
     stampSceneModified();
     saveScenes();
   });
-  sceneMechanismInput.addEventListener('input', ()=>{
-    const s = currentScene(); if(!s) return;
-    s.mechanism = sceneMechanismInput.value;
-    stampSceneModified();
-    saveScenes();
-  });
-  sceneExampleInput.addEventListener('input', ()=>{
-    const s = currentScene(); if(!s) return;
-    s.example = sceneExampleInput.value;
-    stampSceneModified();
-    saveScenes();
-  });
-
   document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
     btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
@@ -2062,20 +2129,13 @@
     reconcileBlocNotesOrder();
     let html = '';
 
-    blocNotesOrder.forEach((entry, idx)=>{
-      const isFirst = idx === 0, isLast = idx === blocNotesOrder.length - 1;
-      const moveButtons = `
-        <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="blocnotes" data-move-dir="up" title="Monter" ${isFirst?'disabled':''}>▲</button>
-        <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="blocnotes" data-move-dir="down" title="Descendre" ${isLast?'disabled':''}>▼</button>`;
-
+    blocNotesOrder.forEach((entry)=>{
       if(entry.type === 'divider'){
         html += `
           <div class="scene-divider-row" data-order-key="${entry.id}">
-            <input type="text" class="scene-divider-label" data-divider-label="${entry.id}" value="${escapeHtml(entry.label||'')}" placeholder="Séparateur">
-            <div class="scene-pill-actions">
-              ${moveButtons}
-              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
-            </div>
+            <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
+            <div class="scene-divider-line"></div>
+            <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
           </div>`;
         return;
       }
@@ -2085,10 +2145,10 @@
         const active = currentBlocView === key;
         html += `
           <div class="scene-pill-row" data-order-key="${entry.id}">
+            <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
             <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
             <div class="scene-pill-actions">
               <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur du contour">
-              ${moveButtons}
               <button type="button" class="scene-pill-del" data-del-key="${key}" data-del-kind="special" title="Supprimer cet onglet">✕</button>
             </div>
           </div>`;
@@ -2102,12 +2162,12 @@
       const active = currentBlocView==='custom' && currentCustomTabId===ct.id;
       html += `
         <div class="scene-pill-row" data-order-key="${entry.id}">
+          <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
           <button type="button" class="scene-pill custom ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
             ${escapeHtml(ct.label)}
           </button>
           <div class="scene-pill-actions">
             <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur du contour">
-            ${moveButtons}
             <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer ce sous-onglet">✕</button>
           </div>
         </div>`;
@@ -2122,23 +2182,6 @@
         else if(idx === 'parti') selectParti();
         else if(idx === 'mecanisme') selectMecanismeSub();
         else if(idx.startsWith('custom:')) selectCustomSubTab(idx.slice(7));
-      });
-    });
-
-    blocNotesPillsEl.querySelectorAll('.scene-pill-move').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        if(moveOrderEntry(blocNotesOrder, btn.dataset.moveKey, btn.dataset.moveDir)){
-          saveBlocNotesOrder();
-          renderBlocNotesPills();
-        }
-      });
-    });
-
-    blocNotesPillsEl.querySelectorAll('.scene-divider-label').forEach(inp=>{
-      inp.addEventListener('input', ()=>{
-        const entry = blocNotesOrder.find(e=>String(e.id)===inp.dataset.dividerLabel);
-        if(entry){ entry.label = inp.value; saveBlocNotesOrder(); }
       });
     });
 
@@ -2179,6 +2222,12 @@
   document.getElementById('addBlocNotesDividerBtn').addEventListener('click', ()=>{
     reconcileBlocNotesOrder();
     blocNotesOrder.push({type:'divider', id: makeOrderId(), label:''});
+    saveBlocNotesOrder();
+    renderBlocNotesPills();
+  });
+
+  enableDragReorder(blocNotesPillsEl, ()=>blocNotesOrder, (newOrder)=>{
+    blocNotesOrder = newOrder;
     saveBlocNotesOrder();
     renderBlocNotesPills();
   });
