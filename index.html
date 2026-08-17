@@ -315,10 +315,9 @@
   .scene-pill-sep{flex:0 0 auto; width:100%; height:1px; background:var(--line); margin:6px 0;}
   .scene-pill-row{display:flex; align-items:center; gap:4px;}
   .scene-pill-row .scene-pill{flex:1; min-width:0;}
-  .scene-pill-actions{display:flex; align-items:center; gap:3px; flex:0 0 auto; opacity:0; transition:opacity .15s ease;}
-  .scene-pill-row:hover .scene-pill-actions, .scene-divider-row:hover .scene-pill-actions{opacity:1;}
+  .scene-pill-actions{display:none; align-items:center; gap:3px; flex:0 0 auto;}
   .scene-drag-handle{
-    flex:0 0 auto; width:14px; height:20px; display:flex; align-items:center; justify-content:center;
+    display:none; flex:0 0 auto; width:14px; height:20px; align-items:center; justify-content:center;
     color:var(--ink-soft); cursor:grab; font-size:0.85rem; line-height:1; touch-action:none; user-select:none;
   }
   .scene-drag-handle:hover{color:var(--ink);}
@@ -328,6 +327,7 @@
     background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.6rem; line-height:1; padding:0;
     transition:opacity .15s ease, background .15s ease, color .15s ease;
   }
+  .scene-divider-row .scene-pill-del{display:none;}
   .scene-pill-del:hover{background:var(--rose); color:#fff; border-color:var(--rose);}
   .scene-pill-color{
     flex:0 0 auto; width:20px; height:20px; padding:0; border:1px solid var(--line); border-radius:50%;
@@ -338,6 +338,21 @@
   .scene-pill-color::-moz-color-swatch{border:none; border-radius:50%;}
   .scene-divider-row{display:flex; align-items:center; gap:6px; margin:10px 0;}
   .scene-divider-line{flex:1; height:1px; background:var(--line);}
+
+  /* Mode "organiser" : révèle la poignée de glisser-déposer, le sélecteur de couleur et les
+     boutons de suppression sur les onglets, autrement masqués pour ne pas prendre de largeur. */
+  .scene-pills.organize-mode .scene-drag-handle{display:flex;}
+  .scene-pills.organize-mode .scene-pill-actions{display:flex;}
+  .scene-pills.organize-mode .scene-divider-row .scene-pill-del{display:inline-flex;}
+  .btn-organize-toggle{
+    display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:8px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.72rem; font-weight:600;
+    padding:6px 10px; font-family:'Plus Jakarta Sans', sans-serif; white-space:nowrap;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .btn-organize-toggle:hover{color:var(--ink); border-color:var(--ink);}
+  .btn-organize-toggle.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .scene-sidebar-actions{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
 
   .scene-editor-title{
     width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.15rem;
@@ -515,7 +530,6 @@
     }
     .scene-pills{flex-direction:row; max-height:none; overflow-x:auto; overflow-y:visible; padding-bottom:6px;}
     .scene-pill{width:auto;}
-    .scene-pill-actions{opacity:0.85;}
     .scene-pill-row{flex:0 0 auto;}
     .scene-divider-row{flex:0 0 auto; margin:0 4px;}
     .scene-divider-line{width:1px; height:28px; flex:0 0 auto;}
@@ -609,7 +623,10 @@
     <div class="scenes-layout">
       <div class="scene-sidebar">
         <div class="scene-pills" id="scenePills"></div>
-        <button type="button" class="btn-add-subtab" id="addSceneDividerBtn">+ Ajouter un séparateur</button>
+        <div class="scene-sidebar-actions">
+          <button type="button" class="btn-add-subtab" id="addSceneDividerBtn">+ Ajouter un séparateur</button>
+          <button type="button" class="btn-organize-toggle" id="toggleSceneOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
+        </div>
       </div>
 
       <div class="scene-editor-area">
@@ -651,9 +668,10 @@
     <div class="scenes-layout">
       <div class="scene-sidebar">
         <div class="scene-pills" id="blocNotesPills"></div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <div class="scene-sidebar-actions">
           <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter un sous-onglet</button>
           <button type="button" class="btn-add-subtab" id="addBlocNotesDividerBtn">+ Séparateur</button>
+          <button type="button" class="btn-organize-toggle" id="toggleBlocNotesOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
         </div>
       </div>
 
@@ -664,8 +682,7 @@
         </div>
 
         <div class="panel" id="globalModeBlock" style="display:none;">
-          <div class="subtab-header">
-            <div class="last-modified" id="globalLastModified"></div>
+          <div class="subtab-header" style="justify-content:flex-end;">
             <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteGlobalBtn">Supprimer cet onglet</button>
           </div>
           <div class="scene-toolbar" id="globalToolbar">
@@ -695,8 +712,7 @@
 
         <!-- Section Mécanisme (sous-onglet intégré) -->
         <div class="panel" id="mecanismeModeBlock" style="display:none;">
-          <div class="subtab-header">
-            <div class="last-modified" id="mecanismeLastModified"></div>
+          <div class="subtab-header" style="justify-content:flex-end;">
             <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteMecanismeBtn">Supprimer cet onglet</button>
           </div>
           <input type="text" class="scene-editor-title" id="mecanismeTitleInput" placeholder="Titre de la section mécanisme">
@@ -1262,13 +1278,11 @@
   function initMecanismeEditor(){
     mecanismeTitleInput.value = mecanismeData.title || '';
     mecanismeContentInput.innerHTML = mecanismeData.content || '';
-    document.getElementById('mecanismeLastModified').textContent = formatUpdatedAt(mecanismeData.updatedAt);
   }
 
   function saveMecanismeStamped(){
     mecanismeData.updatedAt = Date.now();
     saveMecanisme();
-    document.getElementById('mecanismeLastModified').textContent = formatUpdatedAt(mecanismeData.updatedAt);
   }
 
   mecanismeTitleInput.addEventListener('input', () => {
@@ -1725,7 +1739,8 @@
   };
 
   function renderGlobalLastModified(){
-    document.getElementById('globalLastModified').textContent = formatUpdatedAt(notesData.updatedAt);
+    // L'horodatage n'est affiché que pour les sous-onglets de type "scènes" ; ce sous-onglet
+    // (Global) n'en a plus besoin, mais on garde cette fonction (no-op) pour ne pas casser ses appels.
   }
 
   notesArea.addEventListener('input', ()=>{
@@ -1766,7 +1781,6 @@
         </div>
         <h4>${escapeHtml(p.title)}</h4>
         <div class="parti-content">${toEditableHtml(p.content)}</div>
-        ${p.updatedAt ? `<div class="last-modified">${formatUpdatedAt(p.updatedAt)}</div>` : ''}
       </div>
     `;
     }).join('');
@@ -1810,6 +1824,13 @@
 
   // ---------- SCÈNES (onglet "Scènes", uniquement les scènes) ----------
   const scenePillsEl = document.getElementById('scenePills');
+  let sceneOrganizeMode = false;
+  const toggleSceneOrganizeBtn = document.getElementById('toggleSceneOrganizeBtn');
+  toggleSceneOrganizeBtn.addEventListener('click', ()=>{
+    sceneOrganizeMode = !sceneOrganizeMode;
+    toggleSceneOrganizeBtn.classList.toggle('active', sceneOrganizeMode);
+    scenePillsEl.classList.toggle('organize-mode', sceneOrganizeMode);
+  });
   const sceneTitleInput = document.getElementById('sceneTitleInput');
   const sceneContentInput = document.getElementById('sceneContentInput');
   const sceneImageBox = document.getElementById('sceneImageBox');
@@ -2099,6 +2120,13 @@
 
   // ---------- BLOC-NOTES (onglet "Bloc-notes" : Global, Parti pris, Mécanisme, sous-onglets perso) ----------
   const blocNotesPillsEl = document.getElementById('blocNotesPills');
+  let blocNotesOrganizeMode = false;
+  const toggleBlocNotesOrganizeBtn = document.getElementById('toggleBlocNotesOrganizeBtn');
+  toggleBlocNotesOrganizeBtn.addEventListener('click', ()=>{
+    blocNotesOrganizeMode = !blocNotesOrganizeMode;
+    toggleBlocNotesOrganizeBtn.classList.toggle('active', blocNotesOrganizeMode);
+    blocNotesPillsEl.classList.toggle('organize-mode', blocNotesOrganizeMode);
+  });
   const blocNotesEmptyState = document.getElementById('blocNotesEmptyState');
   const globalModeBlock = document.getElementById('globalModeBlock');
   const partiModeBlock = document.getElementById('partiModeBlock');
@@ -2314,7 +2342,6 @@
     currentCustomTabId = null;
     hideAllBlocNotesBlocks();
     mecanismeModeBlock.style.display = '';
-    document.getElementById('mecanismeLastModified').textContent = formatUpdatedAt(mecanismeData.updatedAt);
     renderBlocNotesPills();
   }
 
@@ -2465,8 +2492,7 @@
     } else {
       block.innerHTML = `
         <div class="panel">
-          <div class="subtab-header">
-            <div class="last-modified" id="customSimpleLastModified">${formatUpdatedAt(data.updatedAt)}</div>
+          <div class="subtab-header" style="justify-content:flex-end;">
             <button type="button" class="btn btn-ghost btn-remove-subtab" id="removeCustomTabBtn">Supprimer ce sous-onglet</button>
           </div>
           <div class="scene-toolbar" id="customSimpleToolbar">${toolbarButtonsHtml}</div>
@@ -2483,7 +2509,6 @@
     const contentEl = document.getElementById('customSimpleContent');
     const stamp = () => {
       data.updatedAt = Date.now();
-      document.getElementById('customSimpleLastModified').textContent = formatUpdatedAt(data.updatedAt);
       saveCustomSceneTabs();
     };
     contentEl.addEventListener('input', ()=>{ data.content = contentEl.innerHTML; stamp(); });
@@ -2571,7 +2596,6 @@
           </div>
           <h4>${escapeHtml(n.title)}</h4>
           <div class="parti-content">${toEditableHtml(n.content)}</div>
-          ${n.updatedAt ? `<div class="last-modified">${formatUpdatedAt(n.updatedAt)}</div>` : ''}
         </div>
       `;
       }).join('');
