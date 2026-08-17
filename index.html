@@ -134,15 +134,6 @@
   }
   .chip:focus{outline:2px solid var(--ink); outline-offset:1px;}
   .task-card p{margin:0 0 10px; font-weight:500; font-size:0.9rem; line-height:1.35; color:var(--ink); padding-right:56px;}
-  .task-due{
-    display:inline-flex; align-items:center; gap:5px; font-size:0.7rem; font-weight:600;
-    color:var(--ink-soft); background:var(--gris); border-radius:6px; padding:3px 8px; margin:0 0 10px;
-  }
-  .task-due.overdue{color:#B54D4D; background:#FDEAEA;}
-  .task-due-edit{
-    display:block; width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.8rem;
-    border:1px solid var(--line); border-radius:6px; padding:5px 7px; margin:0 0 10px; background:var(--panel); color:var(--ink);
-  }
   .card-actions{display:flex; gap:6px;}
   .card-actions button{
     border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer;
@@ -588,12 +579,11 @@
     </div>
   </div>
 
-  <!-- PLAN D'ACTION -->
+  <!-- TODO -->
   <div class="tab-content" id="content-plan">
     <form class="add-task-form" id="addTaskForm">
       <input type="text" id="taskTitle" placeholder="Ex : Finaliser le script du chapitre 2..." required>
       <select id="taskCategory"></select>
-      <input type="date" id="taskDueDate" title="Date d'échéance (optionnel)">
       <button type="button" id="manageCatsBtn" class="btn btn-ghost">⚙ Catégories</button>
       <button type="submit" class="btn">+ Ajouter l'étape</button>
     </form>
@@ -1259,7 +1249,7 @@
 
   // ---------- RENDER TABS SYSTEM ----------
   const BASE_TABS = [
-    {id: 'plan', label: "Plan d'action"},
+    {id: 'plan', label: "Todo"},
     {id: 'scenes', label: 'Scènes'},
     {id: 'blocnotes', label: 'Bloc-notes'},
     {id: 'cal', label: 'Calendrier'},
@@ -1405,15 +1395,6 @@
   // ---------- TASKS ----------
   let editingTaskId = null;
 
-  function todayKeyStr(){
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function formatDueDateShort(dateStr){
-    const [y,m,d] = dateStr.split('-').map(Number);
-    return new Date(y,m-1,d).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
-  }
-
   function catIndex(name){
     const i = categories.findIndex(c=>c.name===name);
     return i===-1 ? categories.length : i;
@@ -1457,13 +1438,8 @@
           catOptions = [{id:'orphan-'+t.id, name:t.category}, ...catOptions];
         }
         const titleHtml = isEditing
-          ? `<input type="text" class="edit-title-input" data-id="${t.id}" value="${escapeHtml(t.title)}">
-             <input type="date" class="task-due-edit edit-due-input" data-id="${t.id}" value="${t.dueDate || ''}">`
+          ? `<input type="text" class="edit-title-input" data-id="${t.id}" value="${escapeHtml(t.title)}">`
           : `<p>${escapeHtml(t.title)}</p>`;
-        const isOverdue = t.dueDate && t.status !== 'done' && t.dueDate < todayKeyStr();
-        const dueBadgeHtml = (!isEditing && t.dueDate)
-          ? `<div class="task-due ${isOverdue ? 'overdue' : ''}">📅 ${formatDueDateShort(t.dueDate)}</div>`
-          : '';
         const iconsHtml = isEditing
           ? `<button data-act="save-edit" data-id="${t.id}" title="Enregistrer">✓</button>
              <button data-act="cancel-edit" data-id="${t.id}" title="Annuler">✕</button>`
@@ -1474,7 +1450,6 @@
           <select class="chip cat-select" data-id="${t.id}">
             ${catOptions.map(c=>`<option value="${escapeHtml(c.name)}" ${c.name===t.category?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}
           </select>
-          ${dueBadgeHtml}
           ${titleHtml}
           <div class="card-actions">
             ${!isFirstInRun ? `<button data-act="up" data-id="${t.id}" title="Monter">▲</button>` : ''}
@@ -1499,12 +1474,10 @@
 
     function commitEdit(id){
       const input = document.querySelector(`.edit-title-input[data-id="${id}"]`);
-      const dueInput = document.querySelector(`.edit-due-input[data-id="${id}"]`);
       if(!input) return;
       const t = tasks.find(x=>String(x.id)===String(id));
       const newTitle = input.value.trim();
       if(t && newTitle) t.title = newTitle;
-      if(t) t.dueDate = dueInput ? (dueInput.value || null) : t.dueDate;
       editingTaskId = null;
       saveTasks();
       renderTasks();
@@ -1551,12 +1524,10 @@
     e.preventDefault();
     const title = document.getElementById('taskTitle').value.trim();
     const category = document.getElementById('taskCategory').value;
-    const dueDate = document.getElementById('taskDueDate').value || null;
     if(!title || !category) return;
-    tasks.push({id: Date.now()+Math.random(), title, category, status:'todo', dueDate});
+    tasks.push({id: Date.now()+Math.random(), title, category, status:'todo'});
     saveTasks();
     document.getElementById('taskTitle').value='';
-    document.getElementById('taskDueDate').value='';
     renderTasks();
   });
 
