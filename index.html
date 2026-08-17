@@ -373,7 +373,24 @@
     position:absolute; top:5px; right:5px; background:rgba(20,20,20,0.6); color:#fff; border:none;
     border-radius:50%; width:20px; height:20px; font-size:11px; cursor:pointer; line-height:20px; padding:0;
   }
-  .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0 0 16px;}
+  .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0;}
+
+  .scene-top-row{display:flex; gap:20px; align-items:flex-start; margin-bottom:18px;}
+  .scene-image-col{flex:0 0 auto;}
+  .scene-mechanism-col{flex:1; min-width:220px; display:flex; flex-direction:column; gap:6px;}
+  .scene-field-label{
+    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.68rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--ink-soft); margin-top:6px;
+  }
+  .scene-field-label:first-child{margin-top:0;}
+  .scene-field-input, .scene-field-textarea{
+    width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.88rem;
+    border:1px solid var(--line); border-radius:10px; padding:9px 12px; background:var(--panel); color:var(--ink);
+  }
+  .scene-field-textarea{resize:vertical; min-height:64px; line-height:1.45;}
+  @media(max-width:640px){
+    .scene-top-row{flex-direction:column;}
+  }
 
   /* --- STYLES POST-IT (Parti pris / Bloc-notes) --- */
   .parti-form{
@@ -573,12 +590,22 @@
             <div class="last-modified" id="sceneLastModified"></div>
             <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteSceneBtn">Supprimer cette scène</button>
           </div>
-          <div class="scene-image-box" id="sceneImageBox">
-            <span class="placeholder-txt" id="sceneImagePlaceholder">+ Image</span>
-            <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
+          <div class="scene-top-row">
+            <div class="scene-image-col">
+              <div class="scene-image-box" id="sceneImageBox">
+                <span class="placeholder-txt" id="sceneImagePlaceholder">+ Image</span>
+                <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
+              </div>
+              <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
+              <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
+            </div>
+            <div class="scene-mechanism-col">
+              <label class="scene-field-label" for="sceneMechanismInput">Mécanisme identifié dans cette scène</label>
+              <input type="text" id="sceneMechanismInput" class="scene-field-input" placeholder="Ex : Dévalorisation, gaslighting, isolement...">
+              <label class="scene-field-label" for="sceneExampleInput">Exemple vécu</label>
+              <textarea id="sceneExampleInput" class="scene-field-textarea" rows="3" placeholder="Décris ici l'exemple concret que tu as vécu, en lien avec ce mécanisme..."></textarea>
+            </div>
           </div>
-          <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
-          <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
           <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
 
           <div class="scene-toolbar" id="sceneToolbar">
@@ -632,28 +659,13 @@
 
         <!-- Section Parti pris -->
         <div id="partiModeBlock" style="display:none;">
-          <div class="subtab-header" style="margin-bottom:12px;">
+          <div class="subtab-header" style="margin-bottom:14px;">
             <div class="subtab-title">Parti pris</div>
             <button type="button" class="btn btn-ghost btn-remove-subtab" id="deletePartiBtn">Supprimer cet onglet</button>
           </div>
-          <form class="parti-form" id="addPartiForm">
-            <input type="text" id="partiTitle" placeholder="Ex : Personnage principal" required>
-            <div class="scene-toolbar" id="partiToolbar">
-              <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
-              <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
-              <div class="scene-toolbar-sep"></div>
-              <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
-              <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
-              <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
-              <div class="scene-toolbar-sep"></div>
-              <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
-            </div>
-            <div class="parti-content-editable" id="partiContent" contenteditable="true" data-placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..."></div>
-            <div class="parti-form-actions">
-              <button type="submit" class="btn" id="partiSubmitBtn">+ Ajouter le post-it</button>
-              <button type="button" class="btn btn-ghost" id="partiCancelBtn" style="display:none;">Annuler</button>
-            </div>
-          </form>
+          <div style="margin-bottom:18px;">
+            <button type="button" class="btn" id="addPartiBtn">+ Ajouter un post-it</button>
+          </div>
           <div class="parti-grid" id="partiGrid"></div>
         </div>
 
@@ -768,6 +780,31 @@
   </div>
 </div>
 
+<!-- MODAL AJOUT / EDITION D'UN POST-IT (Parti pris + sous-onglets Bloc-notes de type "Bloc-notes") -->
+<div class="overlay" id="postitOverlay">
+  <div class="modal" style="max-width:520px;">
+    <button class="close-x" id="closePostitModal">✕</button>
+    <h3 id="postitModalHeading">Ajouter un post-it</h3>
+    <form id="postitForm">
+      <label>Titre</label>
+      <input type="text" id="postitTitleInput" placeholder="Ex : Personnage principal" required>
+      <label style="margin-top:4px;">Contenu</label>
+      <div class="scene-toolbar" id="postitToolbar">
+        <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
+        <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+        <div class="scene-toolbar-sep"></div>
+        <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
+        <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
+        <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+        <div class="scene-toolbar-sep"></div>
+        <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
+      </div>
+      <div class="parti-content-editable" id="postitContentInput" contenteditable="true" data-placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..."></div>
+      <button type="submit" class="btn" id="postitSubmitBtn" style="margin-top:14px;">+ Ajouter le post-it</button>
+    </form>
+  </div>
+</div>
+
 <script>
   const DEFAULT_CATS = [
     {id:1, name:'Scénario', color:'#6366F1'},
@@ -780,7 +817,7 @@
   ];
 
   function defaultScenes(){
-    return Array.from({length:20}, (_,i)=>({id:i+1, title:'Scène '+(i+1), content:'', image:null, updatedAt:null}));
+    return Array.from({length:20}, (_,i)=>({id:i+1, title:'Scène '+(i+1), content:'', image:null, mechanism:'', example:'', updatedAt:null}));
   }
 
   let tasks = JSON.parse(localStorage.getItem('rg_tasks') || '[]');
@@ -817,12 +854,69 @@
   }
 
   // Exécute une commande de la barre d'outils enrichie (gras, souligné, formatBlock...).
-  // Pour formatBlock, on utilise la syntaxe avec chevrons ("<p>", "<h2>"...) qui est la seule
-  // fiable sur tous les navigateurs (Safari en particulier refuse la syntaxe sans chevrons et
-  // ignore silencieusement la commande, ce qui donnait l'impression que le bouton "Normal" ne
-  // faisait rien pour repasser un titre ou un texte en paragraphe normal).
-  function runToolbarCmd(cmd, value){
-    if(cmd === 'formatBlock' && value){
+  // "formatBlock" via document.execCommand est peu fiable selon les navigateurs (certains,
+  // notamment sur mobile/webview, l'ignorent silencieusement sans rien changer, ce qui donnait
+  // l'impression que le bouton "Normal" ne faisait rien pour repasser un titre en texte normal).
+  // On implémente donc le changement de bloc "à la main" en manipulant le DOM directement,
+  // ce qui fonctionne partout puisque ça ne dépend d'aucune API dépréciée.
+  function placeCursorAtEnd(el, sel){
+    const newRange = document.createRange();
+    newRange.selectNodeContents(el);
+    newRange.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  }
+
+  function applyBlockFormat(editableRoot, tagName){
+    editableRoot.focus();
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    if(!editableRoot.contains(range.commonAncestorContainer)) return;
+
+    // Si la sélection est dans une cellule de tableau, on limite la transformation à cette cellule
+    // (on ne veut pas transformer la cellule elle-même en <h2>, seulement son contenu).
+    let scopeContainer = editableRoot;
+    let scanNode = range.startContainer;
+    while(scanNode && scanNode !== editableRoot){
+      if(scanNode.nodeType === 1 && scanNode.tagName === 'TD'){ scopeContainer = scanNode; break; }
+      scanNode = scanNode.parentNode;
+    }
+
+    const BLOCK_TAGS = ['P','H2','H3','DIV','BLOCKQUOTE','LI'];
+
+    // Trouve l'enfant direct de scopeContainer qui contient le point de départ de la sélection
+    // (ou scopeContainer lui-même si la sélection porte sur tout son contenu, ex : Ctrl+A).
+    let block = range.startContainer;
+    while(block && block !== scopeContainer && block.parentNode && block.parentNode !== scopeContainer){
+      block = block.parentNode;
+    }
+    if(block && block.nodeType !== 1) block = block.parentNode;
+    if(!block) return;
+
+    if(block === scopeContainer){
+      // Contenu texte "brut" non enveloppé dans un bloc (typiquement la toute première ligne
+      // avant d'appuyer sur Entrée) : on enveloppe tout le contenu dans le nouveau bloc.
+      if(!scopeContainer.firstChild) return;
+      const newBlock = document.createElement(tagName);
+      while(scopeContainer.firstChild) newBlock.appendChild(scopeContainer.firstChild);
+      scopeContainer.appendChild(newBlock);
+      placeCursorAtEnd(newBlock, sel);
+      return;
+    }
+
+    if(!BLOCK_TAGS.includes(block.tagName)) return;
+
+    const newBlock = document.createElement(tagName);
+    newBlock.innerHTML = block.innerHTML;
+    block.parentNode.replaceChild(newBlock, block);
+    placeCursorAtEnd(newBlock, sel);
+  }
+
+  function runToolbarCmd(cmd, value, containerEl){
+    if(cmd === 'formatBlock' && value && containerEl){
+      applyBlockFormat(containerEl, value.toUpperCase());
+    } else if(cmd === 'formatBlock' && value){
       document.execCommand(cmd, false, '<' + value.toLowerCase() + '>');
     } else {
       document.execCommand(cmd, false, value || null);
@@ -871,8 +965,9 @@
       // Déclencher la mise à jour correspondante
       if(activeContentEditableEl === notesArea) { notesData.content = notesArea.innerHTML; saveNotes(); }
       else if(activeContentEditableEl === sceneContentInput) { scenes[currentSceneIndex].content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
-      else if(activeContentEditableEl === partiContentEl) { /* géré par formulaire */ }
       else if(activeContentEditableEl === mecanismeContentInput) { mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
+      // Les autres éditeurs (post-it, sous-onglets personnalisés) se sauvegardent via leur
+      // propre écouteur "input", déclenché automatiquement par insertHTML.
     }
   });
 
@@ -980,6 +1075,52 @@
   window.addEventListener('scroll', hideTableCellToolbar, true);
   window.addEventListener('resize', hideTableCellToolbar);
 
+  // --- Modal partagé pour ajouter/éditer un post-it (Parti pris + sous-onglets Bloc-notes) ---
+  const postitOverlay = document.getElementById('postitOverlay');
+  const postitModalHeading = document.getElementById('postitModalHeading');
+  const postitTitleInput = document.getElementById('postitTitleInput');
+  const postitContentInput = document.getElementById('postitContentInput');
+  const postitSubmitBtn = document.getElementById('postitSubmitBtn');
+  const postitForm = document.getElementById('postitForm');
+  let postitOnSubmit = null;
+
+  function openPostitModal({ heading, title = '', content = '', submitLabel, onSubmit }){
+    postitModalHeading.textContent = heading;
+    postitTitleInput.value = title;
+    postitContentInput.innerHTML = toEditableHtml(content);
+    postitSubmitBtn.textContent = submitLabel;
+    postitOnSubmit = onSubmit;
+    postitOverlay.classList.add('active');
+    setTimeout(()=> postitTitleInput.focus(), 30);
+  }
+
+  function closePostitModal(){
+    postitOverlay.classList.remove('active');
+    postitOnSubmit = null;
+  }
+
+  document.getElementById('closePostitModal').addEventListener('click', closePostitModal);
+  postitOverlay.addEventListener('click', e=>{ if(e.target === postitOverlay) closePostitModal(); });
+
+  postitForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    const title = postitTitleInput.value.trim();
+    const content = postitContentInput.innerHTML;
+    if(!title || !stripHtml(content).trim()) return;
+    const handler = postitOnSubmit;
+    closePostitModal();
+    if(handler) handler(title, content);
+  });
+
+  document.querySelectorAll('#postitToolbar button').forEach(btn=>{
+    btn.addEventListener('mousedown', e=> e.preventDefault());
+    btn.addEventListener('click', ()=>{
+      postitContentInput.focus();
+      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(postitContentInput); }
+      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, postitContentInput); }
+    });
+  });
+
   function getCategoryColor(name){
     const c = categories.find(x=>x.name===name);
     return c ? c.color : '#C7CBD1';
@@ -1048,7 +1189,7 @@
     btn.addEventListener('click', () => {
       mecanismeContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
+      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, mecanismeContentInput); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
     });
   });
 
@@ -1501,7 +1642,7 @@
     btn.addEventListener('click', ()=>{
       notesArea.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value); notesData.content = notesArea.innerHTML; saveNotes(); }
+      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, notesArea); notesData.content = notesArea.innerHTML; saveNotes(); }
     });
   });
 
@@ -1513,13 +1654,10 @@
     { bg: '#BBF7D0', rotate: '1.2deg'}, // Vert pastel
     { bg: '#FBCFE8', rotate: '-1.5deg'}  // Rose pastel
   ];
-  let editingPartiId = null;
-  const partiContentEl = document.getElementById('partiContent');
-
   function renderPartis(){
     const grid = document.getElementById('partiGrid');
     if(partis.length===0){
-      grid.innerHTML = `<div class="empty-msg">Aucun parti pris pour l'instant. Note ici tes choix créatifs : personnages, univers, ton, règles du récit...</div>`;
+      grid.innerHTML = `<div class="empty-msg">Aucun parti pris pour l'instant. Clique sur « + Ajouter un post-it » pour noter tes choix créatifs : personnages, univers, ton, règles du récit...</div>`;
       return;
     }
     grid.innerHTML = partis.map((p,i) => {
@@ -1545,55 +1683,34 @@
         if(btn.dataset.act==='del'){
           partis = partis.filter(x=>String(x.id)!==id);
           savePartis(); renderPartis();
-          if(editingPartiId===id) cancelPartiEdit();
         } else if(btn.dataset.act==='edit'){
-          editingPartiId = id;
-          document.getElementById('partiTitle').value = p.title;
-          partiContentEl.innerHTML = toEditableHtml(p.content);
-          document.getElementById('partiSubmitBtn').textContent = 'Enregistrer les modifications';
-          document.getElementById('partiCancelBtn').style.display = 'inline-flex';
-          document.getElementById('partiTitle').scrollIntoView({behavior:'smooth', block:'center'});
+          openPostitModal({
+            heading: 'Modifier le post-it',
+            title: p.title,
+            content: p.content,
+            submitLabel: 'Enregistrer les modifications',
+            onSubmit: (title, content) => {
+              p.title = title; p.content = content; p.updatedAt = Date.now();
+              savePartis();
+              renderPartis();
+            }
+          });
         }
       });
     });
   }
 
-  function cancelPartiEdit(){
-    editingPartiId = null;
-    document.getElementById('partiSubmitBtn').textContent = "+ Ajouter le post-it";
-    document.getElementById('partiCancelBtn').style.display = 'none';
-    document.getElementById('partiTitle').value = '';
-    partiContentEl.innerHTML = '';
-  }
-
-  document.getElementById('addPartiForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const title = document.getElementById('partiTitle').value.trim();
-    const content = partiContentEl.innerHTML;
-    if(!title || !stripHtml(content).trim()) return;
-    if(editingPartiId){
-      const p = partis.find(x=>String(x.id)===editingPartiId);
-      if(p){ p.title = title; p.content = content; p.updatedAt = Date.now(); }
-      cancelPartiEdit();
-    } else {
-      partis.push({id: Date.now()+Math.random(), title, content, updatedAt: Date.now()});
-      document.getElementById('partiTitle').value = '';
-      partiContentEl.innerHTML = '';
-    }
-    savePartis();
-    renderPartis();
-  });
-
-  document.querySelectorAll('#partiToolbar button').forEach(btn=>{
-    btn.addEventListener('mousedown', e=> e.preventDefault());
-    btn.addEventListener('click', ()=>{
-      partiContentEl.focus();
-      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(partiContentEl); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value); }
+  document.getElementById('addPartiBtn').addEventListener('click', ()=>{
+    openPostitModal({
+      heading: 'Ajouter un post-it',
+      submitLabel: "+ Ajouter le post-it",
+      onSubmit: (title, content) => {
+        partis.push({id: Date.now()+Math.random(), title, content, updatedAt: Date.now()});
+        savePartis();
+        renderPartis();
+      }
     });
   });
-
-  document.getElementById('partiCancelBtn').addEventListener('click', cancelPartiEdit);
 
   // ---------- SCÈNES (onglet "Scènes", uniquement les scènes) ----------
   const scenePillsEl = document.getElementById('scenePills');
@@ -1603,6 +1720,8 @@
   const sceneImagePlaceholder = document.getElementById('sceneImagePlaceholder');
   const sceneImageRemoveBtn = document.getElementById('sceneImageRemoveBtn');
   const sceneImageInput = document.getElementById('sceneImageInput');
+  const sceneMechanismInput = document.getElementById('sceneMechanismInput');
+  const sceneExampleInput = document.getElementById('sceneExampleInput');
 
   function stripHtml(html){
     const tmp = document.createElement('div');
@@ -1679,6 +1798,8 @@
     const s = scenes[i];
     sceneTitleInput.value = s.title || '';
     sceneContentInput.innerHTML = s.content || '';
+    sceneMechanismInput.value = s.mechanism || '';
+    sceneExampleInput.value = s.example || '';
     document.getElementById('sceneLastModified').textContent = formatUpdatedAt(s.updatedAt);
     renderSceneImage();
     renderScenePills();
@@ -1700,13 +1821,23 @@
     stampSceneModified();
     saveScenes();
   });
+  sceneMechanismInput.addEventListener('input', ()=>{
+    scenes[currentSceneIndex].mechanism = sceneMechanismInput.value;
+    stampSceneModified();
+    saveScenes();
+  });
+  sceneExampleInput.addEventListener('input', ()=>{
+    scenes[currentSceneIndex].example = sceneExampleInput.value;
+    stampSceneModified();
+    saveScenes();
+  });
 
   document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
     btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       sceneContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(sceneContentInput); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value); scenes[currentSceneIndex].content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
+      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, sceneContentInput); scenes[currentSceneIndex].content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
     });
   });
 
@@ -1970,15 +2101,9 @@
           <h3 class="subtab-title">${escapeHtml(ct.label)}</h3>
           <button type="button" class="btn btn-ghost btn-remove-subtab" id="removeCustomTabBtn">Supprimer ce sous-onglet</button>
         </div>
-        <form class="parti-form" id="customNotesForm">
-          <input type="text" id="customNoteTitle" placeholder="Titre du post-it" required>
-          <div class="scene-toolbar" id="customNotesToolbar">${toolbarButtonsHtml}</div>
-          <div class="parti-content-editable" id="customNoteContent" contenteditable="true" data-placeholder="Contenu du post-it..."></div>
-          <div class="parti-form-actions">
-            <button type="submit" class="btn" id="customNoteSubmitBtn">+ Ajouter le post-it</button>
-            <button type="button" class="btn btn-ghost" id="customNoteCancelBtn" style="display:none;">Annuler</button>
-          </div>
-        </form>
+        <div style="margin-bottom:18px;">
+          <button type="button" class="btn" id="customAddNoteBtn">+ Ajouter un post-it</button>
+        </div>
         <div class="parti-grid" id="customNotesGrid"></div>
       `;
       wireCustomNotesFormat(ct, data);
@@ -2032,7 +2157,7 @@
       btn.addEventListener('click', ()=>{
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
-        else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value); data.content = contentEl.innerHTML; stamp(); }
+        else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
   }
@@ -2058,7 +2183,7 @@
       btn.addEventListener('click', ()=>{
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
-        else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value); data.content = contentEl.innerHTML; stamp(); }
+        else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
 
@@ -2094,15 +2219,11 @@
 
   function wireCustomNotesFormat(ct, data){
     const grid = document.getElementById('customNotesGrid');
-    const titleInput = document.getElementById('customNoteTitle');
-    const contentEl = document.getElementById('customNoteContent');
-    const submitBtn = document.getElementById('customNoteSubmitBtn');
-    const cancelBtn = document.getElementById('customNoteCancelBtn');
-    let editingNoteId = null;
+    const addBtn = document.getElementById('customAddNoteBtn');
 
     function renderGrid(){
       if(!data.items || data.items.length===0){
-        grid.innerHTML = `<div class="empty-msg">Aucun post-it pour l'instant.</div>`;
+        grid.innerHTML = `<div class="empty-msg">Aucun post-it pour l'instant. Clique sur « + Ajouter un post-it » pour en créer un.</div>`;
         return;
       }
       grid.innerHTML = data.items.map((n,i) => {
@@ -2128,55 +2249,36 @@
           if(btn.dataset.act==='del'){
             data.items = data.items.filter(x=>String(x.id)!==id);
             saveCustomSceneTabs(); renderGrid();
-            if(editingNoteId===id) cancelEdit();
           } else if(btn.dataset.act==='edit'){
-            editingNoteId = id;
-            titleInput.value = n.title;
-            contentEl.innerHTML = toEditableHtml(n.content);
-            submitBtn.textContent = 'Enregistrer les modifications';
-            cancelBtn.style.display = 'inline-flex';
-            titleInput.scrollIntoView({behavior:'smooth', block:'center'});
+            openPostitModal({
+              heading: 'Modifier le post-it',
+              title: n.title,
+              content: n.content,
+              submitLabel: 'Enregistrer les modifications',
+              onSubmit: (title, content) => {
+                n.title = title; n.content = content; n.updatedAt = Date.now();
+                saveCustomSceneTabs();
+                renderGrid();
+              }
+            });
           }
         });
       });
     }
 
-    function cancelEdit(){
-      editingNoteId = null;
-      submitBtn.textContent = '+ Ajouter le post-it';
-      cancelBtn.style.display = 'none';
-      titleInput.value = '';
-      contentEl.innerHTML = '';
-    }
-
-    document.getElementById('customNotesForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      const title = titleInput.value.trim();
-      const content = contentEl.innerHTML;
-      if(!title || !stripHtml(content).trim()) return;
-      if(!data.items) data.items = [];
-      if(editingNoteId){
-        const n = data.items.find(x=>String(x.id)===editingNoteId);
-        if(n){ n.title = title; n.content = content; n.updatedAt = Date.now(); }
-        cancelEdit();
-      } else {
-        data.items.push({id: Date.now()+Math.random(), title, content, updatedAt: Date.now()});
-        titleInput.value = ''; contentEl.innerHTML = '';
-      }
-      saveCustomSceneTabs();
-      renderGrid();
-    });
-
-    document.querySelectorAll('#customNotesToolbar button').forEach(btn=>{
-      btn.addEventListener('mousedown', e=>e.preventDefault());
-      btn.addEventListener('click', ()=>{
-        contentEl.focus();
-        if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
-        else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value); }
+    addBtn.addEventListener('click', ()=>{
+      openPostitModal({
+        heading: 'Ajouter un post-it',
+        submitLabel: "+ Ajouter le post-it",
+        onSubmit: (title, content) => {
+          if(!data.items) data.items = [];
+          data.items.push({id: Date.now()+Math.random(), title, content, updatedAt: Date.now()});
+          saveCustomSceneTabs();
+          renderGrid();
+        }
       });
     });
 
-    cancelBtn.addEventListener('click', cancelEdit);
     renderGrid();
   }
 
