@@ -113,6 +113,9 @@
     margin-bottom:10px; box-shadow:none; position:relative; overflow:hidden;
     animation:fadeIn .3s ease; border-left:4px solid var(--cat-color);
   }
+  .task-card.is-done{background:var(--gris); border-left-color:var(--ink-soft); opacity:0.72;}
+  .task-card.is-done p{text-decoration:line-through; color:var(--ink-soft);}
+  .task-card.is-done .chip{opacity:0.7;}
   .card-icons{position:absolute; top:10px; right:10px; display:flex; gap:4px;}
   .card-icons button{
     border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer;
@@ -354,6 +357,13 @@
   .btn-organize-toggle.active{background:var(--ink); color:#fff; border-color:var(--ink);}
   .scene-sidebar-actions{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
 
+  /* Sélecteur déroulant remplaçant la liste de pastilles sur mobile (voir media query) */
+  .scene-mobile-select{
+    display:none; width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.85rem;
+    padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--panel); color:var(--ink);
+    margin-bottom:4px;
+  }
+
   .scene-editor-title{
     width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.15rem;
     border:none; border-bottom:1px solid var(--line); background:transparent; color:var(--ink);
@@ -506,6 +516,11 @@
     background:var(--gris); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
   }
   .book-iframe{width:100%; height:80vh; min-height:500px; border:none; display:block; background:#fff;}
+  .book-fallback-link{
+    display:block; text-align:center; margin-top:10px; font-size:0.78rem; font-weight:600;
+    color:var(--ink-soft); text-decoration:none; padding:8px;
+  }
+  .book-fallback-link:hover{color:var(--lavande); text-decoration:underline;}
 
   /* MOBILE */
   @media(max-width:640px){
@@ -519,22 +534,21 @@
     .user-bar{gap:8px; order:2;}
     .sync-status{font-size:0.68rem;}
     #signOutBtn{padding:5px 9px; font-size:0.7rem;}
-    .tabs{gap:2px; margin-bottom:18px; width:100%;}
-    .tab-btn{flex:1; padding:7px 12px; font-size:0.8rem;}
-    .scene-editor-content{min-height:300px;}
-    .book-iframe{height:65vh;}
-    .scenes-layout{flex-direction:column;}
-    .scene-sidebar{
-      position:static; flex:0 0 auto; width:100%; flex-direction:row; flex-wrap:nowrap;
-      overflow-x:auto; -webkit-overflow-scrolling:touch;
+    .tabs{
+      gap:3px; margin-bottom:18px; width:100%; flex-wrap:nowrap;
+      overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
     }
-    .scene-pills{flex-direction:row; max-height:none; overflow-x:auto; overflow-y:visible; padding-bottom:6px;}
-    .scene-pill{width:auto;}
-    .scene-pill-row{flex:0 0 auto;}
-    .scene-divider-row{flex:0 0 auto; margin:0 4px;}
-    .scene-divider-line{width:1px; height:28px; flex:0 0 auto;}
-    .scene-pill-sep{width:1px; height:auto; align-self:stretch; margin:0 4px;}
-    .btn-add-subtab{flex:0 0 auto; white-space:nowrap;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab-btn{flex:0 0 auto; padding:7px 8px; font-size:0.7rem; gap:3px; white-space:nowrap;}
+    .scene-editor-content{min-height:300px;}
+    .book-iframe{height:75vh;}
+    .scenes-layout{flex-direction:column;}
+    .scene-sidebar{position:static; flex:0 0 auto; width:100%; flex-direction:column;}
+    .scene-pills{display:none;}
+    .scene-mobile-select{display:block;}
+    .btn-organize-toggle{display:none;}
+    .scene-sidebar-actions{width:100%;}
+    .scene-sidebar-actions .btn-add-subtab{flex:1; text-align:center;}
   }
 </style>
 </head>
@@ -623,6 +637,7 @@
     <div class="scenes-layout">
       <div class="scene-sidebar">
         <div class="scene-pills" id="scenePills"></div>
+        <select class="scene-mobile-select" id="sceneMobileSelect"></select>
         <div class="scene-sidebar-actions">
           <button type="button" class="btn-add-subtab" id="addSceneDividerBtn">+ Ajouter un séparateur</button>
           <button type="button" class="btn-organize-toggle" id="toggleSceneOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
@@ -668,6 +683,7 @@
     <div class="scenes-layout">
       <div class="scene-sidebar">
         <div class="scene-pills" id="blocNotesPills"></div>
+        <select class="scene-mobile-select" id="blocNotesMobileSelect"></select>
         <div class="scene-sidebar-actions">
           <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter un sous-onglet</button>
           <button type="button" class="btn-add-subtab" id="addBlocNotesDividerBtn">+ Séparateur</button>
@@ -741,6 +757,9 @@
     <div class="book-viewer">
       <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf#view=FitH&pagemode=thumbs" allow="autoplay"></iframe>
     </div>
+    <a href="jusqua-meteindre.pdf" target="_blank" rel="noopener" class="book-fallback-link" id="bookFallbackLink">
+      ⧉ Le PDF ne s'affiche pas correctement ? Ouvre-le dans un nouvel onglet
+    </a>
   </div>
 
 </div>
@@ -1430,7 +1449,7 @@
         const isEditing = String(editingTaskId) === String(t.id);
 
         const div = document.createElement('div');
-        div.className = 'task-card';
+        div.className = 'task-card' + (t.status === 'done' ? ' is-done' : '');
         div.style.setProperty('--cat-color', getCategoryColor(t.category));
         const idx = statusOrder.indexOf(t.status);
         let catOptions = categories.slice();
@@ -1824,6 +1843,7 @@
 
   // ---------- SCÈNES (onglet "Scènes", uniquement les scènes) ----------
   const scenePillsEl = document.getElementById('scenePills');
+  const sceneMobileSelectEl = document.getElementById('sceneMobileSelect');
   let sceneOrganizeMode = false;
   const toggleSceneOrganizeBtn = document.getElementById('toggleSceneOrganizeBtn');
   toggleSceneOrganizeBtn.addEventListener('click', ()=>{
@@ -1831,6 +1851,27 @@
     toggleSceneOrganizeBtn.classList.toggle('active', sceneOrganizeMode);
     scenePillsEl.classList.toggle('organize-mode', sceneOrganizeMode);
   });
+  sceneMobileSelectEl.addEventListener('change', ()=>{
+    const val = sceneMobileSelectEl.value;
+    if(val) selectScene(parseFloat(val));
+  });
+
+  // Sur mobile, la liste de pastilles est remplacée par ce menu déroulant (plus lisible qu'une
+  // rangée de pastilles qui défile horizontalement).
+  function renderSceneMobileSelect(){
+    let optionsHtml = '';
+    sceneOrder.forEach(entry=>{
+      if(entry.type === 'divider'){
+        optionsHtml += `<option disabled>──────────</option>`;
+        return;
+      }
+      const s = scenes.find(x=>x.id===entry.id);
+      if(!s) return;
+      optionsHtml += `<option value="${s.id}">${escapeHtml(s.title || 'Scène')}</option>`;
+    });
+    sceneMobileSelectEl.innerHTML = optionsHtml;
+    if(currentSceneId != null) sceneMobileSelectEl.value = String(currentSceneId);
+  }
   const sceneTitleInput = document.getElementById('sceneTitleInput');
   const sceneContentInput = document.getElementById('sceneContentInput');
   const sceneImageBox = document.getElementById('sceneImageBox');
@@ -2020,6 +2061,8 @@
         }
       });
     });
+
+    renderSceneMobileSelect();
   }
 
   function deleteScene(sceneId){
@@ -2120,6 +2163,7 @@
 
   // ---------- BLOC-NOTES (onglet "Bloc-notes" : Global, Parti pris, Mécanisme, sous-onglets perso) ----------
   const blocNotesPillsEl = document.getElementById('blocNotesPills');
+  const blocNotesMobileSelectEl = document.getElementById('blocNotesMobileSelect');
   let blocNotesOrganizeMode = false;
   const toggleBlocNotesOrganizeBtn = document.getElementById('toggleBlocNotesOrganizeBtn');
   toggleBlocNotesOrganizeBtn.addEventListener('click', ()=>{
@@ -2127,6 +2171,37 @@
     toggleBlocNotesOrganizeBtn.classList.toggle('active', blocNotesOrganizeMode);
     blocNotesPillsEl.classList.toggle('organize-mode', blocNotesOrganizeMode);
   });
+  blocNotesMobileSelectEl.addEventListener('change', ()=>{
+    const val = blocNotesMobileSelectEl.value;
+    if(!val) return;
+    if(val === 'special:global') selectGlobal();
+    else if(val === 'special:parti') selectParti();
+    else if(val === 'special:mecanisme') selectMecanismeSub();
+    else if(val.startsWith('custom:')) selectCustomSubTab(val.slice(7));
+  });
+
+  // Sur mobile, la liste de pastilles est remplacée par ce menu déroulant.
+  function renderBlocNotesMobileSelect(){
+    let optionsHtml = '';
+    blocNotesOrder.forEach(entry=>{
+      if(entry.type === 'divider'){
+        optionsHtml += `<option disabled>──────────</option>`;
+        return;
+      }
+      if(entry.type === 'special'){
+        optionsHtml += `<option value="special:${entry.id}">${SPECIAL_LABELS[entry.id]}</option>`;
+        return;
+      }
+      const ct = customSceneTabs.find(x=>x.id===entry.id);
+      if(!ct) return;
+      optionsHtml += `<option value="custom:${ct.id}">${escapeHtml(ct.label)}</option>`;
+    });
+    blocNotesMobileSelectEl.innerHTML = optionsHtml;
+    let currentVal = '';
+    if(currentBlocView === 'custom' && currentCustomTabId) currentVal = 'custom:' + currentCustomTabId;
+    else if(currentBlocView) currentVal = 'special:' + currentBlocView;
+    if(currentVal) blocNotesMobileSelectEl.value = currentVal;
+  }
   const blocNotesEmptyState = document.getElementById('blocNotesEmptyState');
   const globalModeBlock = document.getElementById('globalModeBlock');
   const partiModeBlock = document.getElementById('partiModeBlock');
@@ -2282,11 +2357,13 @@
         }
       });
     });
+
+    renderBlocNotesMobileSelect();
   }
 
   document.getElementById('addBlocNotesDividerBtn').addEventListener('click', ()=>{
     reconcileBlocNotesOrder();
-    blocNotesOrder.push({type:'divider', id: makeOrderId(), label:''});
+    blocNotesOrder.push({type:'divider', id: makeOrderId()});
     saveBlocNotesOrder();
     renderBlocNotesPills();
   });
@@ -2692,6 +2769,20 @@
     else selectBestAvailableBlocNotesView();
   }
   window.__rg_renderAll = renderAll;
+
+  // Sur mobile, la plupart des navigateurs (Safari iOS en tête) ne savent pas afficher un PDF
+  // directement dans une iframe. On bascule alors sur la visionneuse PDF.js : elle dessine le
+  // PDF elle-même (dans un <canvas>), donc elle fonctionne partout sans dépendre du moteur de
+  // rendu PDF natif du navigateur.
+  (function setupMobileBookViewer(){
+    const bookIframe = document.getElementById('bookIframe');
+    if(!bookIframe) return;
+    const isMobile = window.matchMedia('(max-width: 640px)').matches
+      || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(!isMobile) return;
+    const pdfUrl = new URL(bookIframe.getAttribute('src').split('#')[0], window.location.href).href;
+    bookIframe.src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(pdfUrl);
+  })();
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
