@@ -297,31 +297,50 @@
   .scene-pills{display:flex; flex-direction:column; gap:4px; max-height:70vh; overflow-y:auto; padding-right:2px;}
   .scene-pill{
     flex:0 0 auto; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.85rem;
-    padding:9px 14px; border:1px solid var(--line); border-radius:10px;
+    padding:9px 14px; border:1px solid var(--pill-color, var(--line)); border-radius:10px;
     background:var(--panel); color:var(--ink-soft); cursor:pointer; white-space:nowrap;
     text-align:left; width:100%; overflow:hidden; text-overflow:ellipsis;
     transition:background .15s ease, color .15s ease, border-color .15s ease;
   }
-  .scene-pill:hover{color:var(--ink); border-color:var(--ink);}
-  .scene-pill.active{color:#FFFFFF; background:var(--jaune); border-color:var(--jaune);}
-  .scene-pill.global{border-color:var(--peche); color:var(--ink-soft);}
-  .scene-pill.global.active{background:var(--peche); color:#FFFFFF; border-color:var(--ink);}
-  .scene-pill.partipris{border-color:var(--rose); color:var(--ink-soft);}
-  .scene-pill.partipris.active{background:var(--rose); color:#FFFFFF; border-color:var(--ink);}
-  .scene-pill.mecanisme{border-color:var(--lavande); color:var(--ink-soft);}
-  .scene-pill.mecanisme.active{background:var(--lavande); color:#FFFFFF; border-color:var(--ink);}
-  .scene-pill.custom{border-color:var(--ciel); color:var(--ink-soft);}
-  .scene-pill.custom.active{background:var(--ciel); color:#FFFFFF; border-color:var(--ink);}
+  .scene-pill:hover{color:var(--ink); border-color:var(--pill-color, var(--ink));}
+  .scene-pill.active{color:#FFFFFF; background:var(--pill-color, var(--jaune)); border-color:var(--pill-color, var(--jaune));}
+  .scene-pill.global{border-color:var(--pill-color, var(--peche)); color:var(--ink-soft);}
+  .scene-pill.global.active{background:var(--pill-color, var(--peche)); color:#FFFFFF; border-color:var(--ink);}
+  .scene-pill.partipris{border-color:var(--pill-color, var(--rose)); color:var(--ink-soft);}
+  .scene-pill.partipris.active{background:var(--pill-color, var(--rose)); color:#FFFFFF; border-color:var(--ink);}
+  .scene-pill.mecanisme{border-color:var(--pill-color, var(--lavande)); color:var(--ink-soft);}
+  .scene-pill.mecanisme.active{background:var(--pill-color, var(--lavande)); color:#FFFFFF; border-color:var(--ink);}
+  .scene-pill.custom{border-color:var(--pill-color, var(--ciel)); color:var(--ink-soft);}
+  .scene-pill.custom.active{background:var(--pill-color, var(--ciel)); color:#FFFFFF; border-color:var(--ink);}
   .scene-pill-sep{flex:0 0 auto; width:100%; height:1px; background:var(--line); margin:6px 0;}
   .scene-pill-row{display:flex; align-items:center; gap:4px;}
   .scene-pill-row .scene-pill{flex:1; min-width:0;}
-  .scene-pill-del{
-    flex:0 0 auto; width:22px; height:22px; border:1px solid var(--line); border-radius:6px;
-    background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.65rem; line-height:1; padding:0;
-    opacity:0; transition:opacity .15s ease, background .15s ease, color .15s ease;
+  .scene-pill-actions{display:flex; align-items:center; gap:3px; flex:0 0 auto; opacity:0; transition:opacity .15s ease;}
+  .scene-pill-row:hover .scene-pill-actions, .scene-divider-row:hover .scene-pill-actions{opacity:1;}
+  .scene-pill-move, .scene-pill-del{
+    flex:0 0 auto; width:20px; height:20px; border:1px solid var(--line); border-radius:6px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.6rem; line-height:1; padding:0;
+    transition:opacity .15s ease, background .15s ease, color .15s ease;
   }
-  .scene-pill-row:hover .scene-pill-del{opacity:1;}
+  .scene-pill-move:hover{background:var(--gris); color:var(--ink);}
+  .scene-pill-move:disabled{opacity:0.3; cursor:default;}
+  .scene-pill-move:disabled:hover{background:var(--panel); color:var(--ink-soft);}
   .scene-pill-del:hover{background:var(--rose); color:#fff; border-color:var(--rose);}
+  .scene-pill-color{
+    flex:0 0 auto; width:20px; height:20px; padding:0; border:1px solid var(--line); border-radius:50%;
+    cursor:pointer; background:none; -webkit-appearance:none; appearance:none; overflow:hidden;
+  }
+  .scene-pill-color::-webkit-color-swatch-wrapper{padding:0;}
+  .scene-pill-color::-webkit-color-swatch{border:none; border-radius:50%;}
+  .scene-pill-color::-moz-color-swatch{border:none; border-radius:50%;}
+  .scene-divider-row{display:flex; align-items:center; gap:4px; margin:8px 0 2px;}
+  .scene-divider-row .scene-pill-actions{opacity:0.55;}
+  .scene-divider-label{
+    flex:1; min-width:0; border:none; border-bottom:1px dashed var(--line); background:transparent;
+    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.68rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--ink-soft); padding:4px 2px;
+  }
+  .scene-divider-label:focus{outline:none; border-bottom-color:var(--ink);}
   
   .scene-editor-title{
     width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.15rem;
@@ -489,8 +508,10 @@
     }
     .scene-pills{flex-direction:row; max-height:none; overflow-x:auto; overflow-y:visible; padding-bottom:6px;}
     .scene-pill{width:auto;}
-    .scene-pill-del{opacity:0.7;}
+    .scene-pill-actions{opacity:0.85;}
     .scene-pill-row{flex:0 0 auto;}
+    .scene-divider-row{flex:0 0 auto;}
+    .scene-divider-label{width:110px;}
     .scene-pill-sep{width:1px; height:auto; align-self:stretch; margin:0 4px;}
     .btn-add-subtab{flex:0 0 auto; white-space:nowrap;}
   }
@@ -581,6 +602,7 @@
     <div class="scenes-layout">
       <div class="scene-sidebar">
         <div class="scene-pills" id="scenePills"></div>
+        <button type="button" class="btn-add-subtab" id="addSceneDividerBtn">+ Ajouter un séparateur</button>
       </div>
 
       <div class="scene-editor-area">
@@ -630,7 +652,10 @@
     <div class="scenes-layout">
       <div class="scene-sidebar">
         <div class="scene-pills" id="blocNotesPills"></div>
-        <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter un sous-onglet</button>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter un sous-onglet</button>
+          <button type="button" class="btn-add-subtab" id="addBlocNotesDividerBtn">+ Séparateur</button>
+        </div>
       </div>
 
       <div class="scene-editor-area">
@@ -825,14 +850,24 @@
   let categories = JSON.parse(localStorage.getItem('rg_categories') || 'null') || DEFAULT_CATS.slice();
   let partis = JSON.parse(localStorage.getItem('rg_partis') || '[]');
   let scenes = JSON.parse(localStorage.getItem('rg_scenes') || 'null') || defaultScenes();
-  let currentSceneIndex = 0;
 
   let customSceneTabs = JSON.parse(localStorage.getItem('rg_custom_scene_tabs') || '[]');
   let customSceneTabsData = JSON.parse(localStorage.getItem('rg_custom_scene_tabs_data') || '{}');
   let mecanismeData = JSON.parse(localStorage.getItem('rg_mecanisme') || '{"title":"","content":""}');
-  
+
   // États de visibilité pour les onglets spéciaux
   let hiddenTabs = JSON.parse(localStorage.getItem('rg_hidden_tabs') || '{}');
+
+  // Ordre d'affichage des scènes (mélange scènes + séparateurs), et ordre des sous-onglets Bloc-notes
+  // (Global / Parti pris / Mécanisme / sous-onglets perso + séparateurs).
+  let sceneOrder = JSON.parse(localStorage.getItem('rg_scene_order') || 'null');
+  if(!Array.isArray(sceneOrder)) sceneOrder = null;
+  let blocNotesOrder = JSON.parse(localStorage.getItem('rg_blocnotes_order') || 'null');
+  if(!Array.isArray(blocNotesOrder)) blocNotesOrder = null;
+
+  // Couleurs de contour personnalisées des sous-onglets, indexées par une clé stable
+  // ("scene:<id>", "global", "parti", "mecanisme", "custom:<id>").
+  let pillColors = JSON.parse(localStorage.getItem('rg_pill_colors') || '{}');
 
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); };
   const saveTasks = () => { localStorage.setItem('rg_tasks', JSON.stringify(tasks)); syncCloud(); };
@@ -847,6 +882,26 @@
     localStorage.setItem('rg_custom_scene_tabs_data', JSON.stringify(customSceneTabsData));
     syncCloud();
   };
+  const saveSceneOrder = () => { localStorage.setItem('rg_scene_order', JSON.stringify(sceneOrder)); syncCloud(); };
+  const saveBlocNotesOrder = () => { localStorage.setItem('rg_blocnotes_order', JSON.stringify(blocNotesOrder)); syncCloud(); };
+  const savePillColors = () => { localStorage.setItem('rg_pill_colors', JSON.stringify(pillColors)); syncCloud(); };
+
+  function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
+
+  // Déplace une entrée d'une liste ordonnée (scène/sous-onglet ou séparateur) d'un cran, en place.
+  function moveOrderEntry(orderArr, key, dir){
+    const idx = orderArr.findIndex(e => String(e.id) === String(key));
+    if(idx === -1) return false;
+    const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if(newIdx < 0 || newIdx >= orderArr.length) return false;
+    const tmp = orderArr[idx]; orderArr[idx] = orderArr[newIdx]; orderArr[newIdx] = tmp;
+    return true;
+  }
+
+  function pillColorStyleAttr(key){
+    const c = pillColors[key];
+    return c ? ` style="--pill-color:${c};"` : '';
+  }
 
   function escapeHtml(s){
     if(!s) return '';
@@ -964,7 +1019,7 @@
       
       // Déclencher la mise à jour correspondante
       if(activeContentEditableEl === notesArea) { notesData.content = notesArea.innerHTML; saveNotes(); }
-      else if(activeContentEditableEl === sceneContentInput) { scenes[currentSceneIndex].content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
+      else if(activeContentEditableEl === sceneContentInput) { const cs = currentScene(); if(cs){ cs.content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); } }
       else if(activeContentEditableEl === mecanismeContentInput) { mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
       // Les autres éditeurs (post-it, sous-onglets personnalisés) se sauvegardent via leur
       // propre écouteur "input", déclenché automatiquement par insertHTML.
@@ -1722,6 +1777,9 @@
   const sceneImageInput = document.getElementById('sceneImageInput');
   const sceneMechanismInput = document.getElementById('sceneMechanismInput');
   const sceneExampleInput = document.getElementById('sceneExampleInput');
+  let currentSceneId = scenes.length ? scenes[0].id : null;
+
+  function currentScene(){ return scenes.find(s => s.id === currentSceneId); }
 
   function stripHtml(html){
     const tmp = document.createElement('div');
@@ -1735,51 +1793,134 @@
     return escapeHtml(content).replace(/\n/g, '<br>');
   }
 
-  function renderScenePills(){
-    const scenesHtml = scenes.map((s,i)=>`
-      <div class="scene-pill-row">
-        <button type="button" class="scene-pill ${i===currentSceneIndex?'active':''}" data-idx="${i}">
-          ${escapeHtml(s.title || ('Scène '+(i+1)))}
-        </button>
-        <button type="button" class="scene-pill-del" data-del-scene="${i}" title="Supprimer cette scène">✕</button>
-      </div>
-    `).join('');
+  // S'assure que chaque scène a une entrée dans l'ordre d'affichage (ajout en fin de liste des
+  // scènes qui n'y figurent pas encore, retrait des entrées qui pointent vers une scène supprimée).
+  function reconcileSceneOrder(){
+    if(!Array.isArray(sceneOrder)) sceneOrder = scenes.map(s => ({type:'scene', id:s.id}));
+    const seen = new Set();
+    sceneOrder = sceneOrder.filter(e=>{
+      if(e.type === 'divider') return true;
+      const exists = scenes.some(s=>s.id===e.id);
+      if(exists) seen.add(e.id);
+      return exists;
+    });
+    scenes.forEach(s=>{
+      if(!seen.has(s.id)) sceneOrder.push({type:'scene', id:s.id});
+    });
+  }
 
-    scenePillsEl.innerHTML = scenesHtml;
+  function renderScenePills(){
+    reconcileSceneOrder();
+    let html = '';
+    sceneOrder.forEach((entry, idx)=>{
+      const isFirst = idx === 0, isLast = idx === sceneOrder.length - 1;
+      if(entry.type === 'divider'){
+        html += `
+          <div class="scene-divider-row" data-order-key="${entry.id}">
+            <input type="text" class="scene-divider-label" data-divider-label="${entry.id}" value="${escapeHtml(entry.label||'')}" placeholder="Séparateur">
+            <div class="scene-pill-actions">
+              <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="up" title="Monter" ${isFirst?'disabled':''}>▲</button>
+              <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="down" title="Descendre" ${isLast?'disabled':''}>▼</button>
+              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
+            </div>
+          </div>`;
+        return;
+      }
+      const s = scenes.find(x=>x.id===entry.id);
+      if(!s) return;
+      const colorKey = 'scene:' + s.id;
+      html += `
+        <div class="scene-pill-row" data-order-key="${entry.id}">
+          <button type="button" class="scene-pill ${s.id===currentSceneId?'active':''}" data-idx="${s.id}"${pillColorStyleAttr(colorKey)}>
+            ${escapeHtml(s.title || 'Scène')}
+          </button>
+          <div class="scene-pill-actions">
+            <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur du contour">
+            <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="up" title="Monter" ${isFirst?'disabled':''}>▲</button>
+            <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="scene" data-move-dir="down" title="Descendre" ${isLast?'disabled':''}>▼</button>
+            <button type="button" class="scene-pill-del" data-del-key="${s.id}" data-del-kind="scene" title="Supprimer cette scène">✕</button>
+          </div>
+        </div>`;
+    });
+
+    scenePillsEl.innerHTML = html;
 
     scenePillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        selectScene(parseInt(btn.dataset.idx, 10));
+      btn.addEventListener('click', ()=> selectScene(parseFloat(btn.dataset.idx)) );
+    });
+
+    scenePillsEl.querySelectorAll('.scene-pill-move').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(moveOrderEntry(sceneOrder, btn.dataset.moveKey, btn.dataset.moveDir)){
+          saveSceneOrder();
+          renderScenePills();
+        }
       });
     });
 
-    scenePillsEl.querySelectorAll('[data-del-scene]').forEach(btn=>{
+    scenePillsEl.querySelectorAll('.scene-divider-label').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const entry = sceneOrder.find(e=>String(e.id)===inp.dataset.dividerLabel);
+        if(entry){ entry.label = inp.value; saveSceneOrder(); }
+      });
+    });
+
+    scenePillsEl.querySelectorAll('.scene-pill-color').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        pillColors[inp.dataset.colorKey] = inp.value;
+        savePillColors();
+        const pillBtn = inp.closest('.scene-pill-row').querySelector('.scene-pill');
+        if(pillBtn) pillBtn.style.setProperty('--pill-color', inp.value);
+      });
+    });
+
+    scenePillsEl.querySelectorAll('[data-del-key]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
-        if(scenes.length <= 1){ alert('Il doit rester au moins une scène.'); return; }
-        const i = parseInt(btn.dataset.delScene, 10);
-        const label = scenes[i].title || ('Scène ' + (i+1));
-        if(!confirm(`Supprimer "${label}" ? Cette action est irréversible.`)) return;
-        scenes.splice(i, 1);
-        saveScenes();
-        if(currentSceneIndex >= scenes.length) currentSceneIndex = scenes.length - 1;
-        selectScene(currentSceneIndex);
+        if(btn.dataset.delKind === 'divider'){
+          if(!confirm('Supprimer ce séparateur ?')) return;
+          sceneOrder = sceneOrder.filter(en=>String(en.id)!==btn.dataset.delKey);
+          saveSceneOrder();
+          renderScenePills();
+        } else {
+          deleteScene(parseFloat(btn.dataset.delKey));
+        }
       });
     });
   }
 
-  document.getElementById('deleteSceneBtn').addEventListener('click', ()=>{
+  function deleteScene(sceneId){
     if(scenes.length <= 1){ alert('Il doit rester au moins une scène.'); return; }
-    if(confirm('Supprimer cette scène ?')){
-      scenes.splice(currentSceneIndex, 1);
-      saveScenes();
-      if(currentSceneIndex >= scenes.length) currentSceneIndex = scenes.length - 1;
-      selectScene(currentSceneIndex);
+    const s = scenes.find(x=>x.id===sceneId);
+    if(!s) return;
+    const label = s.title || 'cette scène';
+    if(!confirm(`Supprimer "${label}" ? Cette action est irréversible.`)) return;
+    scenes = scenes.filter(x=>x.id!==sceneId);
+    sceneOrder = sceneOrder.filter(en=>!(en.type!=='divider' && en.id===sceneId));
+    delete pillColors['scene:'+sceneId];
+    saveScenes(); saveSceneOrder(); savePillColors();
+    if(currentSceneId === sceneId){
+      const nextEntry = sceneOrder.find(en=>en.type!=='divider');
+      currentSceneId = nextEntry ? nextEntry.id : (scenes[0] ? scenes[0].id : null);
     }
+    selectScene(currentSceneId);
+  }
+
+  document.getElementById('addSceneDividerBtn').addEventListener('click', ()=>{
+    reconcileSceneOrder();
+    sceneOrder.push({type:'divider', id: makeOrderId(), label:''});
+    saveSceneOrder();
+    renderScenePills();
+  });
+
+  document.getElementById('deleteSceneBtn').addEventListener('click', ()=>{
+    if(currentSceneId != null) deleteScene(currentSceneId);
   });
 
   function renderSceneImage(){
-    const s = scenes[currentSceneIndex];
+    const s = currentScene();
+    if(!s) return;
     const existingImg = sceneImageBox.querySelector('img');
     if(s.image){
       if(existingImg){ existingImg.src = s.image; }
@@ -1793,9 +1934,10 @@
     }
   }
 
-  function selectScene(i){
-    currentSceneIndex = i;
-    const s = scenes[i];
+  function selectScene(id){
+    const s = scenes.find(x=>x.id===id);
+    if(!s) return;
+    currentSceneId = id;
     sceneTitleInput.value = s.title || '';
     sceneContentInput.innerHTML = s.content || '';
     sceneMechanismInput.value = s.mechanism || '';
@@ -1806,28 +1948,34 @@
   }
 
   function stampSceneModified(){
-    scenes[currentSceneIndex].updatedAt = Date.now();
-    document.getElementById('sceneLastModified').textContent = formatUpdatedAt(scenes[currentSceneIndex].updatedAt);
+    const s = currentScene();
+    if(!s) return;
+    s.updatedAt = Date.now();
+    document.getElementById('sceneLastModified').textContent = formatUpdatedAt(s.updatedAt);
   }
 
   sceneTitleInput.addEventListener('input', ()=>{
-    scenes[currentSceneIndex].title = sceneTitleInput.value;
+    const s = currentScene(); if(!s) return;
+    s.title = sceneTitleInput.value;
     stampSceneModified();
     saveScenes();
     renderScenePills();
   });
   sceneContentInput.addEventListener('input', ()=>{
-    scenes[currentSceneIndex].content = sceneContentInput.innerHTML;
+    const s = currentScene(); if(!s) return;
+    s.content = sceneContentInput.innerHTML;
     stampSceneModified();
     saveScenes();
   });
   sceneMechanismInput.addEventListener('input', ()=>{
-    scenes[currentSceneIndex].mechanism = sceneMechanismInput.value;
+    const s = currentScene(); if(!s) return;
+    s.mechanism = sceneMechanismInput.value;
     stampSceneModified();
     saveScenes();
   });
   sceneExampleInput.addEventListener('input', ()=>{
-    scenes[currentSceneIndex].example = sceneExampleInput.value;
+    const s = currentScene(); if(!s) return;
+    s.example = sceneExampleInput.value;
     stampSceneModified();
     saveScenes();
   });
@@ -1837,7 +1985,11 @@
     btn.addEventListener('click', ()=>{
       sceneContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(sceneContentInput); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, sceneContentInput); scenes[currentSceneIndex].content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
+      else {
+        runToolbarCmd(btn.dataset.cmd, btn.dataset.value, sceneContentInput);
+        const s = currentScene();
+        if(s){ s.content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
+      }
     });
   });
 
@@ -1873,39 +2025,95 @@
     }
   }
 
+  const SPECIAL_LABELS = {global:'Global', parti:'Parti pris', mecanisme:'Mécanisme'};
+  const SPECIAL_CLASSES = {global:'global', parti:'partipris', mecanisme:'mecanisme'};
+
+  // S'assure que chaque onglet spécial visible et chaque sous-onglet perso a une entrée dans
+  // l'ordre d'affichage (retrait des entrées obsolètes, ajout des nouvelles en fin de liste).
+  function reconcileBlocNotesOrder(){
+    if(!Array.isArray(blocNotesOrder)){
+      blocNotesOrder = [
+        {type:'special', id:'global'},
+        {type:'special', id:'parti'},
+        {type:'special', id:'mecanisme'},
+        ...customSceneTabs.map(ct=>({type:'custom', id:ct.id}))
+      ];
+    }
+    const customIds = new Set(customSceneTabs.map(ct=>ct.id));
+    blocNotesOrder = blocNotesOrder.filter(e=>{
+      if(e.type === 'divider') return true;
+      if(e.type === 'special') return !hiddenTabs[e.id];
+      if(e.type === 'custom') return customIds.has(e.id);
+      return false;
+    });
+    const present = new Set(blocNotesOrder.filter(e=>e.type!=='divider').map(e=>e.id));
+    ['global','parti','mecanisme'].forEach(key=>{
+      if(!hiddenTabs[key] && !present.has(key)){
+        blocNotesOrder.push({type:'special', id:key});
+        present.add(key);
+      }
+    });
+    customSceneTabs.forEach(ct=>{
+      if(!present.has(ct.id)) blocNotesOrder.push({type:'custom', id:ct.id});
+    });
+  }
+
   function renderBlocNotesPills(){
-    let specialHtml = '';
-    if(!hiddenTabs.global){
-      specialHtml += `<div class="scene-pill-row">
-        <button type="button" class="scene-pill global ${currentBlocView==='global'?'active':''}" data-idx="global" style="flex:1;">Global</button>
-        <button type="button" class="scene-pill-del" data-del-special="global" title="Supprimer cet onglet">✕</button>
-      </div>`;
-    }
-    if(!hiddenTabs.parti){
-      specialHtml += `<div class="scene-pill-row">
-        <button type="button" class="scene-pill partipris ${currentBlocView==='parti'?'active':''}" data-idx="parti" style="flex:1;">Parti pris</button>
-        <button type="button" class="scene-pill-del" data-del-special="parti" title="Supprimer cet onglet">✕</button>
-      </div>`;
-    }
-    if(!hiddenTabs.mecanisme){
-      specialHtml += `<div class="scene-pill-row">
-        <button type="button" class="scene-pill mecanisme ${currentBlocView==='mecanisme'?'active':''}" data-idx="mecanisme" style="flex:1;">Mécanisme</button>
-        <button type="button" class="scene-pill-del" data-del-special="mecanisme" title="Supprimer cet onglet">✕</button>
-      </div>`;
-    }
+    reconcileBlocNotesOrder();
+    let html = '';
 
-    if(specialHtml && customSceneTabs.length) specialHtml += `<div class="scene-pill-sep"></div>`;
+    blocNotesOrder.forEach((entry, idx)=>{
+      const isFirst = idx === 0, isLast = idx === blocNotesOrder.length - 1;
+      const moveButtons = `
+        <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="blocnotes" data-move-dir="up" title="Monter" ${isFirst?'disabled':''}>▲</button>
+        <button type="button" class="scene-pill-move" data-move-key="${entry.id}" data-move-list="blocnotes" data-move-dir="down" title="Descendre" ${isLast?'disabled':''}>▼</button>`;
 
-    const customHtml = customSceneTabs.map(ct => `
-      <div class="scene-pill-row">
-        <button type="button" class="scene-pill custom ${currentBlocView==='custom' && currentCustomTabId===ct.id ? 'active' : ''}" data-idx="custom:${ct.id}">
-          ${escapeHtml(ct.label)}
-        </button>
-        <button type="button" class="scene-pill-del" data-del-custom="${ct.id}" title="Supprimer ce sous-onglet">✕</button>
-      </div>
-    `).join('');
+      if(entry.type === 'divider'){
+        html += `
+          <div class="scene-divider-row" data-order-key="${entry.id}">
+            <input type="text" class="scene-divider-label" data-divider-label="${entry.id}" value="${escapeHtml(entry.label||'')}" placeholder="Séparateur">
+            <div class="scene-pill-actions">
+              ${moveButtons}
+              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
+            </div>
+          </div>`;
+        return;
+      }
 
-    blocNotesPillsEl.innerHTML = specialHtml + customHtml;
+      if(entry.type === 'special'){
+        const key = entry.id;
+        const active = currentBlocView === key;
+        html += `
+          <div class="scene-pill-row" data-order-key="${entry.id}">
+            <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
+            <div class="scene-pill-actions">
+              <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur du contour">
+              ${moveButtons}
+              <button type="button" class="scene-pill-del" data-del-key="${key}" data-del-kind="special" title="Supprimer cet onglet">✕</button>
+            </div>
+          </div>`;
+        return;
+      }
+
+      // entry.type === 'custom'
+      const ct = customSceneTabs.find(x=>x.id===entry.id);
+      if(!ct) return;
+      const colorKey = 'custom:' + ct.id;
+      const active = currentBlocView==='custom' && currentCustomTabId===ct.id;
+      html += `
+        <div class="scene-pill-row" data-order-key="${entry.id}">
+          <button type="button" class="scene-pill custom ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
+            ${escapeHtml(ct.label)}
+          </button>
+          <div class="scene-pill-actions">
+            <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur du contour">
+            ${moveButtons}
+            <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer ce sous-onglet">✕</button>
+          </div>
+        </div>`;
+    });
+
+    blocNotesPillsEl.innerHTML = html;
 
     blocNotesPillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -1917,46 +2125,83 @@
       });
     });
 
-    blocNotesPillsEl.querySelectorAll('[data-del-special]').forEach(btn=>{
+    blocNotesPillsEl.querySelectorAll('.scene-pill-move').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
-        const tabKey = btn.dataset.delSpecial;
-        if(!confirm('Supprimer cet onglet ?')) return;
-        hiddenTabs[tabKey] = true;
-        saveHiddenTabs();
-        // Basculer vers une vue valide restante
-        if(currentBlocView === tabKey){
-          selectBestAvailableBlocNotesView();
-        } else {
+        if(moveOrderEntry(blocNotesOrder, btn.dataset.moveKey, btn.dataset.moveDir)){
+          saveBlocNotesOrder();
           renderBlocNotesPills();
         }
       });
     });
 
-    blocNotesPillsEl.querySelectorAll('[data-del-custom]').forEach(btn=>{
+    blocNotesPillsEl.querySelectorAll('.scene-divider-label').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const entry = blocNotesOrder.find(e=>String(e.id)===inp.dataset.dividerLabel);
+        if(entry){ entry.label = inp.value; saveBlocNotesOrder(); }
+      });
+    });
+
+    blocNotesPillsEl.querySelectorAll('.scene-pill-color').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        pillColors[inp.dataset.colorKey] = inp.value;
+        savePillColors();
+        const pillBtn = inp.closest('.scene-pill-row').querySelector('.scene-pill');
+        if(pillBtn) pillBtn.style.setProperty('--pill-color', inp.value);
+      });
+    });
+
+    blocNotesPillsEl.querySelectorAll('[data-del-key]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
-        removeCustomSubTab(btn.dataset.delCustom);
+        const kind = btn.dataset.delKind;
+        if(kind === 'divider'){
+          if(!confirm('Supprimer ce séparateur ?')) return;
+          blocNotesOrder = blocNotesOrder.filter(en=>String(en.id)!==btn.dataset.delKey);
+          saveBlocNotesOrder();
+          renderBlocNotesPills();
+        } else if(kind === 'special'){
+          const tabKey = btn.dataset.delKey;
+          if(!confirm('Supprimer cet onglet ?')) return;
+          hiddenTabs[tabKey] = true;
+          saveHiddenTabs();
+          delete pillColors[tabKey];
+          savePillColors();
+          if(currentBlocView === tabKey) selectBestAvailableBlocNotesView();
+          else renderBlocNotesPills();
+        } else if(kind === 'custom'){
+          removeCustomSubTab(btn.dataset.delKey);
+        }
       });
     });
   }
+
+  document.getElementById('addBlocNotesDividerBtn').addEventListener('click', ()=>{
+    reconcileBlocNotesOrder();
+    blocNotesOrder.push({type:'divider', id: makeOrderId(), label:''});
+    saveBlocNotesOrder();
+    renderBlocNotesPills();
+  });
 
   // Boutons de suppression dédiés en haut des blocs spéciaux
   document.getElementById('deleteGlobalBtn').addEventListener('click', ()=>{
     if(confirm('Supprimer cet onglet ?')){
       hiddenTabs.global = true; saveHiddenTabs();
+      delete pillColors.global; savePillColors();
       selectBestAvailableBlocNotesView();
     }
   });
   document.getElementById('deletePartiBtn').addEventListener('click', ()=>{
     if(confirm('Supprimer cet onglet ?')){
       hiddenTabs.parti = true; saveHiddenTabs();
+      delete pillColors.parti; savePillColors();
       selectBestAvailableBlocNotesView();
     }
   });
   document.getElementById('deleteMecanismeBtn').addEventListener('click', ()=>{
     if(confirm('Supprimer cet onglet ?')){
       hiddenTabs.mecanisme = true; saveHiddenTabs();
+      delete pillColors.mecanisme; savePillColors();
       selectBestAvailableBlocNotesView();
     }
   });
@@ -2025,7 +2270,8 @@
   });
   sceneImageRemoveBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
-    scenes[currentSceneIndex].image = null;
+    const s = currentScene(); if(!s) return;
+    s.image = null;
     stampSceneModified();
     saveScenes();
     renderSceneImage();
@@ -2036,7 +2282,8 @@
     if(!file) return;
     try{
       const dataUrl = await compressImageSquare(file);
-      scenes[currentSceneIndex].image = dataUrl;
+      const s = currentScene(); if(!s) return;
+      s.image = dataUrl;
       stampSceneModified();
       saveScenes();
       renderSceneImage();
@@ -2060,7 +2307,9 @@
     if(!confirm('Supprimer ce sous-onglet et son contenu ?')) return;
     customSceneTabs = customSceneTabs.filter(t=>t.id!==id);
     delete customSceneTabsData[id];
+    delete pillColors['custom:'+id];
     saveCustomSceneTabs();
+    savePillColors();
     if(currentBlocView === 'custom' && currentCustomTabId === id){
       selectBestAvailableBlocNotesView();
     } else {
@@ -2320,8 +2569,10 @@
     if(activeBtn) activeBtn.classList.add('active');
     if(activeContent) activeContent.classList.add('active');
 
-    // Onglet Scènes : toujours restaurer la scène courante
-    selectScene(currentSceneIndex);
+    // Onglet Scènes : toujours restaurer la scène courante (ou la première si elle n'existe plus,
+    // par ex. après une synchro cloud qui a remplacé la liste des scènes).
+    if(!scenes.some(s=>s.id===currentSceneId)) currentSceneId = scenes.length ? scenes[0].id : null;
+    if(currentSceneId != null) selectScene(currentSceneId);
 
     // Onglet Bloc-notes : restaurer la vue courante si elle existe encore, sinon la meilleure disponible
     if(currentBlocView === 'global' && !hiddenTabs.global) selectGlobal();
@@ -2331,9 +2582,10 @@
     else selectBestAvailableBlocNotesView();
   }
   window.__rg_renderAll = renderAll;
-  window.__rg_getState = () => ({ 
-    tasks, events, categories, partis, scenes, 
-    notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs
+  window.__rg_getState = () => ({
+    tasks, events, categories, partis, scenes,
+    notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
+    sceneOrder, blocNotesOrder, pillColors
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
@@ -2348,6 +2600,9 @@
     customSceneTabsData = state.customSceneTabsData || {};
     if(state.mecanismeData) mecanismeData = state.mecanismeData;
     if(state.hiddenTabs) hiddenTabs = state.hiddenTabs;
+    sceneOrder = Array.isArray(state.sceneOrder) ? state.sceneOrder : null;
+    blocNotesOrder = Array.isArray(state.blocNotesOrder) ? state.blocNotesOrder : null;
+    pillColors = (state.pillColors && typeof state.pillColors === 'object') ? state.pillColors : {};
   };
 </script>
 
