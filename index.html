@@ -392,13 +392,11 @@
   .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0 0 8px;}
 
   /* Bloc photo + mécanisme(s), collés ensemble en haut de la fiche scène */
-  .scene-photo-block{width:160px; margin-bottom:18px;}
+  .scene-photo-block{display:flex; align-items:flex-start; gap:12px; margin-bottom:18px;}
   .scene-tags-input{
-    display:flex; flex-wrap:wrap; align-items:center; gap:5px;
-    border:1px solid var(--line); border-radius:10px; padding:6px 7px; min-height:36px;
-    background:var(--panel);
+    flex:1; display:flex; flex-wrap:wrap; align-items:center; gap:5px; align-content:flex-start;
+    min-height:120px; padding:2px 0;
   }
-  .scene-tags-input:focus-within{border-color:var(--lavande);}
   .scene-tag{
     display:inline-flex; align-items:center; gap:4px; background:var(--gris); color:var(--ink);
     font-size:0.74rem; font-weight:600; padding:3px 5px 3px 9px; border-radius:999px; white-space:nowrap;
@@ -408,10 +406,17 @@
     width:15px; height:15px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0;
   }
   .scene-tag-del:hover{background:rgba(0,0,0,0.08); color:var(--ink);}
-  .scene-tag-add-input{
-    flex:1; min-width:50px; border:none; outline:none; font-family:'Plus Jakarta Sans', sans-serif;
-    font-size:0.8rem; padding:3px 2px; background:transparent; color:var(--ink);
+  .scene-tag-add-link{
+    border:none; background:transparent; color:var(--ink-soft); cursor:pointer; font-size:0.76rem;
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; padding:3px 2px; text-decoration:underline;
+    text-decoration-color:transparent; transition:color .15s, text-decoration-color .15s;
   }
+  .scene-tag-add-link:hover{color:var(--lavande); text-decoration-color:var(--lavande);}
+  .scene-tag-add-input{
+    flex:0 1 140px; min-width:90px; border:none; border-bottom:1px solid var(--line); outline:none;
+    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; padding:3px 2px; background:transparent; color:var(--ink);
+  }
+  .scene-tag-add-input:focus{border-bottom-color:var(--lavande);}
 
   /* --- STYLES POST-IT (Parti pris / Bloc-notes) --- */
   .parti-form{
@@ -516,7 +521,6 @@
     .scene-divider-line{width:1px; height:28px; flex:0 0 auto;}
     .scene-pill-sep{width:1px; height:auto; align-self:stretch; margin:0 4px;}
     .btn-add-subtab{flex:0 0 auto; white-space:nowrap;}
-    .scene-photo-block{width:100%; max-width:220px;}
   }
 </style>
 </head>
@@ -621,7 +625,6 @@
               <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
             </div>
             <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
-            <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~5 Ko).</div>
             <div class="scene-tags-input" id="sceneMechanismTags"></div>
           </div>
           <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
@@ -1826,13 +1829,19 @@
     return [];
   }
 
+  let sceneTagInputOpen = false;
+
   function renderMechanismTags(){
     const s = currentScene();
     if(!s || !sceneMechanismTagsEl) return;
     const tags = getSceneMechanismTags(s);
-    sceneMechanismTagsEl.innerHTML = tags.map((t,i)=>`
+    const tagsHtml = tags.map((t,i)=>`
       <span class="scene-tag">${escapeHtml(t)}<button type="button" class="scene-tag-del" data-tag-idx="${i}" title="Retirer">✕</button></span>
-    `).join('') + `<input type="text" class="scene-tag-add-input" id="sceneMechanismTagInput" placeholder="${tags.length ? 'Ajouter…' : 'Mécanisme (ex : gaslighting)'}">`;
+    `).join('');
+    const addHtml = sceneTagInputOpen
+      ? `<input type="text" class="scene-tag-add-input" id="sceneMechanismTagInput" placeholder="${tags.length ? 'Ajouter…' : 'Mécanisme (ex : gaslighting)'}">`
+      : `<button type="button" class="scene-tag-add-link" id="sceneMechanismTagAddBtn">+ Ajouter un tag</button>`;
+    sceneMechanismTagsEl.innerHTML = tagsHtml + addHtml;
 
     sceneMechanismTagsEl.querySelectorAll('.scene-tag-del').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -1846,24 +1855,46 @@
       });
     });
 
+    const addBtn = document.getElementById('sceneMechanismTagAddBtn');
+    if(addBtn){
+      addBtn.addEventListener('click', ()=>{
+        sceneTagInputOpen = true;
+        renderMechanismTags();
+        const freshInput = document.getElementById('sceneMechanismTagInput');
+        if(freshInput) freshInput.focus();
+      });
+      return;
+    }
+
     const input = document.getElementById('sceneMechanismTagInput');
+    if(!input) return;
+    // Réécrire le DOM depuis un gestionnaire déclenché sur ce même input (Entrée, Échap) retire
+    // l'input du DOM pendant qu'il a le focus, ce qui déclenche un "blur" automatique du navigateur :
+    // ce drapeau évite que ce blur ne recommite la valeur une seconde fois.
+    let handledByKeydown = false;
     function commitTag(){
-      const cs = currentScene(); if(!cs) return;
+      const cs = currentScene(); if(!cs) return false;
       const val = input.value.trim().replace(/,+$/, '');
-      if(!val) return;
+      if(!val) return false;
       const cur = getSceneMechanismTags(cs).slice();
       cur.push(val);
       cs.mechanismTags = cur;
       stampSceneModified();
       saveScenes();
-      renderMechanismTags();
-      const freshInput = document.getElementById('sceneMechanismTagInput');
-      if(freshInput) freshInput.focus();
+      return true;
     }
     input.addEventListener('keydown', (e)=>{
       if(e.key === 'Enter' || e.key === ','){
         e.preventDefault();
+        handledByKeydown = true;
         commitTag();
+        renderMechanismTags();
+        const freshInput = document.getElementById('sceneMechanismTagInput');
+        if(freshInput) freshInput.focus();
+      } else if(e.key === 'Escape'){
+        handledByKeydown = true;
+        sceneTagInputOpen = false;
+        renderMechanismTags();
       } else if(e.key === 'Backspace' && input.value === ''){
         const cs = currentScene(); if(!cs) return;
         const cur = getSceneMechanismTags(cs);
@@ -1875,7 +1906,12 @@
         }
       }
     });
-    input.addEventListener('blur', commitTag);
+    input.addEventListener('blur', ()=>{
+      if(handledByKeydown) return;
+      commitTag();
+      sceneTagInputOpen = false;
+      renderMechanismTags();
+    });
   }
 
   function stripHtml(html){
@@ -2023,6 +2059,7 @@
     sceneContentInput.innerHTML = s.content || '';
     document.getElementById('sceneLastModified').textContent = formatUpdatedAt(s.updatedAt);
     renderSceneImage();
+    sceneTagInputOpen = false;
     renderMechanismTags();
     renderScenePills();
   }
