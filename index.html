@@ -84,13 +84,14 @@
 
   /* ADD TASK FORM */
   .add-task-form{
-    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; align-items:stretch;
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; align-items:stretch;
   }
   .add-task-form input[type=text], .add-task-form select{
-    font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.92rem;
-    border:1px solid var(--line); border-radius:10px; padding:10px 14px; background:var(--panel); color:var(--ink);
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.84rem;
+    border:1px solid var(--line); border-radius:9px; padding:7px 11px; background:var(--panel); color:var(--ink);
   }
-  .add-task-form input[type=text]{flex:1; min-width:200px;}
+  .add-task-form input[type=text]{flex:1; min-width:180px;}
+  .add-task-form .btn{font-size:0.8rem; padding:7px 14px;}
   .btn{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.88rem;
     border:none; border-radius:12px; padding:10px 20px; cursor:pointer;
@@ -287,7 +288,6 @@
   .last-modified{font-size:0.7rem; color:var(--ink-soft); margin-bottom:10px; font-weight:500;}
   .subtab-header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px;}
   .subtab-title{font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.1rem; margin:0; color:var(--ink);}
-  .btn-remove-subtab{color:#B54D4D; font-size:0.78rem; padding:6px 12px; flex:0 0 auto;}
   .scene-pills{display:flex; flex-direction:column; gap:4px; max-height:70vh; overflow-y:auto; padding-right:2px;}
   .scene-pill{
     flex:0 0 auto; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.85rem;
@@ -530,7 +530,7 @@
       overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
     }
     .tabs::-webkit-scrollbar{display:none;}
-    .tab-btn{flex:0 0 auto; padding:7px 8px; font-size:0.7rem; gap:3px; white-space:nowrap;}
+    .tab-btn{flex:0 0 auto; padding:7px 7px; font-size:0.8rem; gap:2px; white-space:nowrap;}
     .scene-editor-content{min-height:300px;}
     .book-iframe{height:75vh;}
     .scenes-layout{flex-direction:column;}
@@ -639,7 +639,6 @@
         <div class="panel" id="sceneModeBlock">
           <div class="subtab-header">
             <div class="last-modified" id="sceneLastModified"></div>
-            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteSceneBtn">Supprimer cette scène</button>
           </div>
           <div class="scene-photo-block">
             <div class="scene-image-box" id="sceneImageBox">
@@ -688,9 +687,6 @@
         </div>
 
         <div class="panel" id="globalModeBlock" style="display:none;">
-          <div class="subtab-header" style="justify-content:flex-end;">
-            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteGlobalBtn">Supprimer cet onglet</button>
-          </div>
           <div class="scene-toolbar" id="globalToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
@@ -708,7 +704,6 @@
         <div id="partiModeBlock" style="display:none;">
           <div class="subtab-header" style="margin-bottom:14px;">
             <div class="subtab-title">Parti pris</div>
-            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deletePartiBtn">Supprimer cet onglet</button>
           </div>
           <div style="margin-bottom:18px;">
             <button type="button" class="btn" id="addPartiBtn">+ Ajouter un post-it</button>
@@ -718,9 +713,6 @@
 
         <!-- Section Mécanisme (sous-onglet intégré) -->
         <div class="panel" id="mecanismeModeBlock" style="display:none;">
-          <div class="subtab-header" style="justify-content:flex-end;">
-            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteMecanismeBtn">Supprimer cet onglet</button>
-          </div>
           <input type="text" class="scene-editor-title" id="mecanismeTitleInput" placeholder="Titre de la section mécanisme">
           <div class="scene-toolbar" id="mecanismeToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
@@ -2066,10 +2058,6 @@
     renderScenePills();
   });
 
-  document.getElementById('deleteSceneBtn').addEventListener('click', ()=>{
-    if(currentSceneId != null) deleteScene(currentSceneId);
-  });
-
   function renderSceneImage(){
     const s = currentScene();
     if(!s) return;
@@ -2345,29 +2333,6 @@
     renderBlocNotesPills();
   });
 
-  // Boutons de suppression dédiés en haut des blocs spéciaux
-  document.getElementById('deleteGlobalBtn').addEventListener('click', ()=>{
-    if(confirm('Supprimer cet onglet ?')){
-      hiddenTabs.global = true; saveHiddenTabs();
-      delete pillColors.global; savePillColors();
-      selectBestAvailableBlocNotesView();
-    }
-  });
-  document.getElementById('deletePartiBtn').addEventListener('click', ()=>{
-    if(confirm('Supprimer cet onglet ?')){
-      hiddenTabs.parti = true; saveHiddenTabs();
-      delete pillColors.parti; savePillColors();
-      selectBestAvailableBlocNotesView();
-    }
-  });
-  document.getElementById('deleteMecanismeBtn').addEventListener('click', ()=>{
-    if(confirm('Supprimer cet onglet ?')){
-      hiddenTabs.mecanisme = true; saveHiddenTabs();
-      delete pillColors.mecanisme; savePillColors();
-      selectBestAvailableBlocNotesView();
-    }
-  });
-
   function selectGlobal(){
     currentBlocView = 'global';
     currentCustomTabId = null;
@@ -2509,7 +2474,6 @@
       block.innerHTML = `
         <div class="subtab-header">
           <h3 class="subtab-title">${escapeHtml(ct.label)}</h3>
-          <button type="button" class="btn btn-ghost btn-remove-subtab" id="removeCustomTabBtn">Supprimer ce sous-onglet</button>
         </div>
         <div style="margin-bottom:18px;">
           <button type="button" class="btn" id="customAddNoteBtn">+ Ajouter un post-it</button>
@@ -2522,7 +2486,6 @@
         <div class="panel">
           <div class="subtab-header">
             <div class="last-modified" id="customSceneLastModified">${formatUpdatedAt(data.updatedAt)}</div>
-            <button type="button" class="btn btn-ghost btn-remove-subtab" id="removeCustomTabBtn">Supprimer ce sous-onglet</button>
           </div>
           <div class="scene-image-box" id="customSceneImageBox">
             ${data.image ? `<img src="${data.image}" alt="">` : ''}
@@ -2540,17 +2503,12 @@
     } else {
       block.innerHTML = `
         <div class="panel">
-          <div class="subtab-header" style="justify-content:flex-end;">
-            <button type="button" class="btn btn-ghost btn-remove-subtab" id="removeCustomTabBtn">Supprimer ce sous-onglet</button>
-          </div>
           <div class="scene-toolbar" id="customSimpleToolbar">${toolbarButtonsHtml}</div>
           <div class="scene-editor-content" id="customSimpleContent" contenteditable="true" data-placeholder="Écris ton contenu ici...">${data.content||''}</div>
         </div>
       `;
       wireCustomSimpleFormat(ct, data);
     }
-
-    document.getElementById('removeCustomTabBtn').addEventListener('click', ()=> removeCustomSubTab(ct.id));
   }
 
   function wireCustomSimpleFormat(ct, data){
