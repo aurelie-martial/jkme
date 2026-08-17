@@ -217,6 +217,8 @@
   .parti-content-editable h2, .parti-card .parti-content h2{font-size:1.2em; font-weight:700; margin:0.5em 0 0.25em;}
   .parti-content-editable h3, .parti-card .parti-content h3{font-size:1.05em; font-weight:700; margin:0.4em 0 0.2em;}
   .parti-content-editable p, .parti-card .parti-content p{margin:0 0 0.5em;}
+  .parti-content-editable table, .parti-card .parti-content table{border-collapse:collapse; margin:0.5em 0; width:100%;}
+  .parti-content-editable td, .parti-card .parti-content td{border:1px solid var(--line); padding:5px 8px; font-size:0.85rem;}
   .parti-form-actions{display:flex; gap:10px; align-items:center;}
   .parti-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px;}
   .parti-card{
@@ -347,6 +349,15 @@
   .scene-pill.custom{border-color:var(--ciel); color:var(--ink-soft);}
   .scene-pill.custom.active{background:var(--ciel); color:#FFFFFF; border-color:var(--ink);}
   .scene-pill-sep{flex:0 0 auto; width:100%; height:1px; background:var(--line); margin:6px 0;}
+  .scene-pill-row{display:flex; align-items:center; gap:4px;}
+  .scene-pill-row .scene-pill{flex:1; min-width:0;}
+  .scene-pill-del{
+    flex:0 0 auto; width:22px; height:22px; border:1px solid var(--line); border-radius:6px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.65rem; line-height:1; padding:0;
+    opacity:0; transition:opacity .15s ease, background .15s ease, color .15s ease;
+  }
+  .scene-pill-row:hover .scene-pill-del{opacity:1;}
+  .scene-pill-del:hover{background:var(--rose); color:#fff; border-color:var(--rose);}
   
   .scene-editor-title{
     width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.15rem;
@@ -371,6 +382,9 @@
   .scene-editor-content h2{font-size:1.35em; font-weight:700; margin:0.7em 0 0.3em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content h3{font-size:1.12em; font-weight:700; margin:0.6em 0 0.25em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content p{margin:0 0 0.6em;}
+  .rich-table{border-collapse:collapse; margin:0.6em 0; width:100%; max-width:100%;}
+  .rich-table td{border:1px solid var(--line); padding:7px 10px; min-width:60px; vertical-align:top;}
+  .rich-table td:focus{outline:2px solid var(--lavande); outline-offset:-2px;}
   
   .scene-image-box{
     width:120px; height:120px; border-radius:12px; border:1.5px dashed var(--line);
@@ -414,6 +428,8 @@
     }
     .scene-pills{flex-direction:row; max-height:none; overflow-x:auto; overflow-y:visible; padding-bottom:6px;}
     .scene-pill{width:auto;}
+    .scene-pill-del{opacity:0.7;}
+    .scene-pill-row{flex:0 0 auto;}
     .scene-pill-sep{width:1px; height:auto; align-self:stretch; margin:0 4px;}
     .btn-add-subtab{flex:0 0 auto; white-space:nowrap;}
   }
@@ -510,7 +526,10 @@
       <div class="scene-editor-area">
 
         <div class="panel" id="sceneModeBlock">
-          <div class="last-modified" id="sceneLastModified"></div>
+          <div class="subtab-header">
+            <div class="last-modified" id="sceneLastModified"></div>
+            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteSceneBtn">Supprimer cette scène</button>
+          </div>
           <div class="scene-image-box" id="sceneImageBox">
             <span class="placeholder-txt" id="sceneImagePlaceholder">+ Image</span>
             <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
@@ -526,6 +545,8 @@
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <div class="scene-toolbar-sep"></div>
+            <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
           </div>
           <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
         </div>
@@ -539,6 +560,8 @@
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <div class="scene-toolbar-sep"></div>
+            <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
           </div>
           <div class="scene-editor-content" id="notesArea" contenteditable="true" data-placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></div>
         </div>
@@ -554,6 +577,8 @@
               <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
               <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
               <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+              <div class="scene-toolbar-sep"></div>
+              <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
             </div>
             <div class="parti-content-editable" id="partiContent" contenteditable="true" data-placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..."></div>
             <div class="parti-form-actions">
@@ -575,6 +600,8 @@
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <div class="scene-toolbar-sep"></div>
+            <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
           </div>
           <div class="scene-editor-content" id="mecanismeContentInput" contenteditable="true" data-placeholder="Décris ici les mécanismes de la violence psychologique, les schémas comportementaux..."></div>
         </div>
@@ -707,6 +734,18 @@
     return `Dernière modification : ${datePart} à ${timePart}`;
   }
 
+  // Insère un petit tableau 3x3 éditable à l'endroit du curseur dans une zone contenteditable.
+  function insertTableAtCursor(){
+    let html = '<table class="rich-table"><tbody>';
+    for(let r=0; r<3; r++){
+      html += '<tr>';
+      for(let c=0; c<3; c++){ html += '<td><br></td>'; }
+      html += '</tr>';
+    }
+    html += '</tbody></table><p><br></p>';
+    document.execCommand('insertHTML', false, html);
+  }
+
   function getCategoryColor(name){
     const c = categories.find(x=>x.name===name);
     return c ? c.color : '#C7CBD1';
@@ -773,7 +812,8 @@
     btn.addEventListener('mousedown', e => e.preventDefault());
     btn.addEventListener('click', () => {
       mecanismeContentInput.focus();
-      document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
       mecanismeData.content = mecanismeContentInput.innerHTML;
       saveMecanismeStamped();
     });
@@ -1228,7 +1268,8 @@
     btn.addEventListener('mousedown', e=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       notesArea.focus();
-      document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
       notesData.content = notesArea.innerHTML;
       saveNotes();
     });
@@ -1308,7 +1349,8 @@
     btn.addEventListener('mousedown', e=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       partiContentEl.focus();
-      document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
     });
   });
 
@@ -1362,16 +1404,22 @@
       </button>
       ${customSceneTabs.length ? `<div class="scene-pill-sep"></div>` : ''}
       ${customSceneTabs.map(ct => `
-        <button type="button" class="scene-pill custom ${currentView==='custom' && currentCustomTabId===ct.id ? 'active' : ''}" data-idx="custom:${ct.id}">
-          ${escapeHtml(ct.label)}
-        </button>
+        <div class="scene-pill-row">
+          <button type="button" class="scene-pill custom ${currentView==='custom' && currentCustomTabId===ct.id ? 'active' : ''}" data-idx="custom:${ct.id}">
+            ${escapeHtml(ct.label)}
+          </button>
+          <button type="button" class="scene-pill-del" data-del-custom="${ct.id}" title="Supprimer ce sous-onglet">✕</button>
+        </div>
       `).join('')}
       <div class="scene-pill-sep"></div>
     `;
     const scenesHtml = scenes.map((s,i)=>`
-      <button type="button" class="scene-pill ${currentView==='scene' && i===currentSceneIndex?'active':''}" data-idx="${i}">
-        ${escapeHtml(s.title || ('Scène '+(i+1)))}
-      </button>
+      <div class="scene-pill-row">
+        <button type="button" class="scene-pill ${currentView==='scene' && i===currentSceneIndex?'active':''}" data-idx="${i}">
+          ${escapeHtml(s.title || ('Scène '+(i+1)))}
+        </button>
+        <button type="button" class="scene-pill-del" data-del-scene="${i}" title="Supprimer cette scène">✕</button>
+      </div>
     `).join('');
     scenePillsEl.innerHTML = specialHtml + scenesHtml;
     scenePillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
@@ -1382,6 +1430,26 @@
         else if(idx === 'mecanisme') selectMecanismeSub();
         else if(idx.startsWith('custom:')) selectCustomSubTab(idx.slice(7));
         else selectScene(parseInt(idx, 10));
+      });
+    });
+    scenePillsEl.querySelectorAll('[data-del-scene]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(scenes.length <= 1){ alert('Il doit rester au moins une scène.'); return; }
+        const i = parseInt(btn.dataset.delScene, 10);
+        const label = scenes[i].title || ('Scène ' + (i+1));
+        if(!confirm(`Supprimer "${label}" ? Cette action est irréversible.`)) return;
+        scenes.splice(i, 1);
+        saveScenes();
+        if(currentSceneIndex >= scenes.length) currentSceneIndex = scenes.length - 1;
+        if(currentView === 'scene') selectScene(currentSceneIndex);
+        else renderScenePills();
+      });
+    });
+    scenePillsEl.querySelectorAll('[data-del-custom]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        removeCustomSubTab(btn.dataset.delCustom);
       });
     });
   }
@@ -1458,7 +1526,8 @@
     btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       sceneContentInput.focus();
-      document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
       scenes[currentSceneIndex].content = sceneContentInput.innerHTML;
       stampSceneModified();
       saveScenes();
@@ -1559,6 +1628,8 @@
     <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
     <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
     <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+    <div class="scene-toolbar-sep"></div>
+    <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
   `;
 
   function renderCustomSubTabContent(){
@@ -1634,7 +1705,8 @@
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
         contentEl.focus();
-        document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+        if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+        else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
         data.content = contentEl.innerHTML;
         stamp();
       });
@@ -1661,7 +1733,8 @@
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
         contentEl.focus();
-        document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+        if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+        else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
         data.content = contentEl.innerHTML;
         stamp();
       });
@@ -1773,7 +1846,8 @@
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
         contentEl.focus();
-        document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+        if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+        else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
       });
     });
 
