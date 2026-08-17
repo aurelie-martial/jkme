@@ -63,8 +63,6 @@
   }
   .tab-btn:hover{color:var(--ink);}
   .tab-btn.active{color:var(--lavande); background:var(--panel); box-shadow:var(--shadow-sm);}
-  .tab-btn .tab-del{font-size:0.7rem; opacity:0.6; padding:0 2px; border-radius:4px;}
-  .tab-btn .tab-del:hover{opacity:1; background:var(--rose); color:#fff;}
   .tab-content{display:none;}
   .tab-content.active{display:block; animation:fadeIn .35s ease;}
   @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
@@ -194,44 +192,6 @@
     border-radius:3px; padding:1px 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:0 0 auto;
   }
   .ev-more{font-size:0.58rem; font-weight:600; color:var(--ink-soft); padding:0 4px; flex:0 0 auto;}
-
-  /* NOTES */
-  .notes-textarea{
-    width:100%; min-height:56vh; border:none; outline:none; resize:vertical;
-    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.98rem; line-height:1.65; color:var(--ink); background:transparent;
-  }
-  .notes-textarea::placeholder{color:var(--ink-soft);}
-
-  /* PROJET / PARTIS PRIS */
-  .parti-form{display:flex; flex-direction:column; gap:10px; margin-bottom:24px; max-width:560px;}
-  .parti-form input{
-    font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.92rem;
-    border:1px solid var(--line); border-radius:10px; padding:10px 14px; background:var(--panel); color:var(--ink);
-  }
-  .parti-content-editable{
-    min-height:90px; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.92rem;
-    border:1px solid var(--line); border-radius:10px; padding:10px 14px; background:var(--panel); color:var(--ink);
-  }
-  .parti-content-editable:focus{outline:none; border-color:var(--ink);}
-  .parti-content-editable:empty:before{content:attr(data-placeholder); color:var(--ink-soft);}
-  .parti-content-editable h2, .parti-card .parti-content h2{font-size:1.2em; font-weight:700; margin:0.5em 0 0.25em;}
-  .parti-content-editable h3, .parti-card .parti-content h3{font-size:1.05em; font-weight:700; margin:0.4em 0 0.2em;}
-  .parti-content-editable p, .parti-card .parti-content p{margin:0 0 0.5em;}
-  .parti-content-editable table, .parti-card .parti-content table{border-collapse:collapse; margin:0.5em 0; width:100%;}
-  .parti-content-editable td, .parti-card .parti-content td{border:1px solid var(--line); padding:5px 8px; font-size:0.85rem;}
-  .parti-form-actions{display:flex; gap:10px; align-items:center;}
-  .parti-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px;}
-  .parti-card{
-    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 16px 16px 20px;
-    box-shadow:var(--shadow-sm); position:relative; animation:fadeIn .3s ease;
-  }
-  .parti-card::before{content:""; position:absolute; top:0; left:0; width:5px; height:100%; background:var(--accent); border-radius:var(--radius) 0 0 var(--radius);}
-  .parti-card h4{font-family:'Plus Jakarta Sans', sans-serif; margin:0 0 8px; font-size:1rem; font-weight:700; padding-right:54px; color:var(--ink);}
-  .parti-card .parti-content{margin:0; font-size:0.87rem; line-height:1.55; color:var(--ink-soft);}
-  .parti-card .parti-actions{position:absolute; top:14px; right:14px; display:flex; gap:6px;}
-  .parti-card .parti-actions button{border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer; font-size:0.75rem; padding:3px 7px; color:var(--ink-soft);}
-  .parti-card .parti-actions button:hover{background:var(--gris); color:var(--ink);}
-  .parti-card .last-modified{margin:10px 0 0;}
 
   /* MODAL */
   .overlay{
@@ -399,7 +359,7 @@
   }
   .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0 0 16px;}
 
-  /* LIVRE (Visionneuse PDF double page / Magazine local) */
+  /* LIVRE */
   .book-viewer{
     background:var(--gris); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
   }
@@ -546,13 +506,16 @@
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
             <div class="scene-toolbar-sep"></div>
-            <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
+            <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
           </div>
           <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
         </div>
 
         <div class="panel" id="globalModeBlock" style="display:none;">
-          <div class="last-modified" id="globalLastModified"></div>
+          <div class="subtab-header">
+            <div class="last-modified" id="globalLastModified"></div>
+            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteGlobalBtn">Supprimer cet onglet</button>
+          </div>
           <div class="scene-toolbar" id="globalToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
@@ -561,13 +524,17 @@
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
             <div class="scene-toolbar-sep"></div>
-            <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
+            <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
           </div>
           <div class="scene-editor-content" id="notesArea" contenteditable="true" data-placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></div>
         </div>
 
         <!-- Section Parti pris -->
         <div id="partiModeBlock" style="display:none;">
+          <div class="subtab-header" style="margin-bottom:12px;">
+            <div class="subtab-title">Parti pris</div>
+            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deletePartiBtn">Supprimer cet onglet</button>
+          </div>
           <form class="parti-form" id="addPartiForm">
             <input type="text" id="partiTitle" placeholder="Ex : Personnage principal" required>
             <div class="scene-toolbar" id="partiToolbar">
@@ -578,7 +545,7 @@
               <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
               <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
               <div class="scene-toolbar-sep"></div>
-              <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
+              <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             </div>
             <div class="parti-content-editable" id="partiContent" contenteditable="true" data-placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..."></div>
             <div class="parti-form-actions">
@@ -591,7 +558,10 @@
 
         <!-- Section Mécanisme (sous-onglet intégré) -->
         <div class="panel" id="mecanismeModeBlock" style="display:none;">
-          <div class="last-modified" id="mecanismeLastModified"></div>
+          <div class="subtab-header">
+            <div class="last-modified" id="mecanismeLastModified"></div>
+            <button type="button" class="btn btn-ghost btn-remove-subtab" id="deleteMecanismeBtn">Supprimer cet onglet</button>
+          </div>
           <input type="text" class="scene-editor-title" id="mecanismeTitleInput" placeholder="Titre de la section mécanisme">
           <div class="scene-toolbar" id="mecanismeToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
@@ -601,7 +571,7 @@
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
             <div class="scene-toolbar-sep"></div>
-            <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
+            <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
           </div>
           <div class="scene-editor-content" id="mecanismeContentInput" contenteditable="true" data-placeholder="Décris ici les mécanismes de la violence psychologique, les schémas comportementaux..."></div>
         </div>
@@ -682,6 +652,21 @@
   </div>
 </div>
 
+<!-- MODAL TABLEAU SUR MESURE -->
+<div class="overlay" id="tableModalOverlay">
+  <div class="modal" style="max-width:320px;">
+    <button class="close-x" id="closeTableModal">✕</button>
+    <h3>Insérer un tableau</h3>
+    <form id="tableModalForm">
+      <label>Nombre de lignes</label>
+      <input type="number" id="tableRowsInput" value="3" min="1" max="20" required>
+      <label style="margin-top:8px;">Nombre de colonnes</label>
+      <input type="number" id="tableColsInput" value="3" min="1" max="20" required>
+      <button type="submit" class="btn" style="margin-top:14px;">Insérer le tableau</button>
+    </form>
+  </div>
+</div>
+
 <script>
   const DEFAULT_CATS = [
     {id:1, name:'Scénario', color:'#6366F1'},
@@ -707,6 +692,9 @@
   let customSceneTabs = JSON.parse(localStorage.getItem('rg_custom_scene_tabs') || '[]');
   let customSceneTabsData = JSON.parse(localStorage.getItem('rg_custom_scene_tabs_data') || '{}');
   let mecanismeData = JSON.parse(localStorage.getItem('rg_mecanisme') || '{"title":"","content":""}');
+  
+  // États de visibilité pour les onglets spéciaux
+  let hiddenTabs = JSON.parse(localStorage.getItem('rg_hidden_tabs') || '{}');
 
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); };
   const saveTasks = () => { localStorage.setItem('rg_tasks', JSON.stringify(tasks)); syncCloud(); };
@@ -715,6 +703,7 @@
   const savePartis = () => { localStorage.setItem('rg_partis', JSON.stringify(partis)); syncCloud(); };
   const saveScenes = () => { localStorage.setItem('rg_scenes', JSON.stringify(scenes)); syncCloud(); };
   const saveMecanisme = () => { localStorage.setItem('rg_mecanisme', JSON.stringify(mecanismeData)); syncCloud(); };
+  const saveHiddenTabs = () => { localStorage.setItem('rg_hidden_tabs', JSON.stringify(hiddenTabs)); syncCloud(); };
   const saveCustomSceneTabs = () => {
     localStorage.setItem('rg_custom_scene_tabs', JSON.stringify(customSceneTabs));
     localStorage.setItem('rg_custom_scene_tabs_data', JSON.stringify(customSceneTabsData));
@@ -734,24 +723,51 @@
     return `Dernière modification : ${datePart} à ${timePart}`;
   }
 
-  // Insère un petit tableau 3x3 éditable à l'endroit du curseur dans une zone contenteditable.
-  function insertTableAtCursor(){
-    let html = '<table class="rich-table"><tbody>';
-    for(let r=0; r<3; r++){
-      html += '<tr>';
-      for(let c=0; c<3; c++){ html += '<td><br></td>'; }
-      html += '</tr>';
-    }
-    html += '</tbody></table><p><br></p>';
-    document.execCommand('insertHTML', false, html);
+  // --- Gestion du tableau sur mesure via Modal ---
+  let activeContentEditableEl = null;
+  const tableModalOverlay = document.getElementById('tableModalOverlay');
+
+  function openTableModal(editableEl){
+    activeContentEditableEl = editableEl;
+    document.getElementById('tableRowsInput').value = 3;
+    document.getElementById('tableColsInput').value = 3;
+    tableModalOverlay.classList.add('active');
   }
+
+  document.getElementById('closeTableModal').addEventListener('click', ()=> tableModalOverlay.classList.remove('active'));
+  tableModalOverlay.addEventListener('click', e=>{ if(e.target === tableModalOverlay) tableModalOverlay.classList.remove('active'); });
+
+  document.getElementById('tableModalForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const rows = parseInt(document.getElementById('tableRowsInput').value, 10) || 3;
+    const cols = parseInt(document.getElementById('tableColsInput').value, 10) || 3;
+    tableModalOverlay.classList.remove('active');
+
+    if(activeContentEditableEl){
+      activeContentEditableEl.focus();
+      let html = '<table class="rich-table"><tbody>';
+      for(let r=0; r<rows; r++){
+        html += '<tr>';
+        for(let c=0; c<cols; c++){ html += '<td><br></td>'; }
+        html += '</tr>';
+      }
+      html += '</tbody></table><p><br></p>';
+      document.execCommand('insertHTML', false, html);
+      
+      // Déclencher la mise à jour correspondante
+      if(activeContentEditableEl === notesArea) { notesData.content = notesArea.innerHTML; saveNotes(); }
+      else if(activeContentEditableEl === sceneContentInput) { scenes[currentSceneIndex].content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
+      else if(activeContentEditableEl === partiContentEl) { /* géré par formulaire */ }
+      else if(activeContentEditableEl === mecanismeContentInput) { mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
+    }
+  });
 
   function getCategoryColor(name){
     const c = categories.find(x=>x.name===name);
     return c ? c.color : '#C7CBD1';
   }
 
-  // ---------- RENDER TABS SYSTEM (Mécanisme retiré de la navigation principale) ----------
+  // ---------- RENDER TABS SYSTEM ----------
   const BASE_TABS = [
     {id: 'plan', label: "Plan d'action"},
     {id: 'scenes', label: 'Scènes'},
@@ -812,10 +828,8 @@
     btn.addEventListener('mousedown', e => e.preventDefault());
     btn.addEventListener('click', () => {
       mecanismeContentInput.focus();
-      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
-      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
-      mecanismeData.content = mecanismeContentInput.innerHTML;
-      saveMecanismeStamped();
+      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
+      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
     });
   });
 
@@ -1242,7 +1256,6 @@
       if(parsed && typeof parsed === 'object' && 'content' in parsed){ notesData = parsed; }
       else { notesData = {content:'', updatedAt:null}; }
     }catch(e){
-      // Ancien format : une chaîne de texte brute stockée directement.
       notesData = {content: escapeHtml(raw).replace(/\n/g,'<br>'), updatedAt:null};
     }
   })();
@@ -1268,10 +1281,8 @@
     btn.addEventListener('mousedown', e=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       notesArea.focus();
-      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
-      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
-      notesData.content = notesArea.innerHTML;
-      saveNotes();
+      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
+      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); notesData.content = notesArea.innerHTML; saveNotes(); }
     });
   });
 
@@ -1349,14 +1360,14 @@
     btn.addEventListener('mousedown', e=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       partiContentEl.focus();
-      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(partiContentEl); }
       else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
     });
   });
 
   document.getElementById('partiCancelBtn').addEventListener('click', cancelPartiEdit);
 
-  // ---------- SCÈNES & SOUS-ONGLETS (Global, Parti pris, Mécanisme) ----------
+  // ---------- SCÈNES & SOUS-ONGLETS ----------
   const scenePillsEl = document.getElementById('scenePills');
   const sceneTitleInput = document.getElementById('sceneTitleInput');
   const sceneContentInput = document.getElementById('sceneContentInput');
@@ -1387,32 +1398,44 @@
 
   function toEditableHtml(content){
     if(!content) return '';
-    if(/<[a-z][\s\S]*>/i.test(content)) return content; // déjà du HTML
-    return escapeHtml(content).replace(/\n/g, '<br>'); // ancien texte brut
+    if(/<[a-z][\s\S]*>/i.test(content)) return content;
+    return escapeHtml(content).replace(/\n/g, '<br>');
   }
 
   function renderScenePills(){
-    const specialHtml = `
-      <button type="button" class="scene-pill global ${currentView==='global'?'active':''}" data-idx="global">
-        Global
-      </button>
-      <button type="button" class="scene-pill partipris ${currentView==='parti'?'active':''}" data-idx="parti">
-        Parti pris
-      </button>
-      <button type="button" class="scene-pill mecanisme ${currentView==='mecanisme'?'active':''}" data-idx="mecanisme">
-        Mécanisme
-      </button>
-      ${customSceneTabs.length ? `<div class="scene-pill-sep"></div>` : ''}
-      ${customSceneTabs.map(ct => `
-        <div class="scene-pill-row">
-          <button type="button" class="scene-pill custom ${currentView==='custom' && currentCustomTabId===ct.id ? 'active' : ''}" data-idx="custom:${ct.id}">
-            ${escapeHtml(ct.label)}
-          </button>
-          <button type="button" class="scene-pill-del" data-del-custom="${ct.id}" title="Supprimer ce sous-onglet">✕</button>
-        </div>
-      `).join('')}
-      <div class="scene-pill-sep"></div>
-    `;
+    let specialHtml = '';
+    if(!hiddenTabs.global){
+      specialHtml += `<div class="scene-pill-row">
+        <button type="button" class="scene-pill global ${currentView==='global'?'active':''}" data-idx="global" style="flex:1;">Global</button>
+        <button type="button" class="scene-pill-del" data-del-special="global" title="Supprimer cet onglet">✕</button>
+      </div>`;
+    }
+    if(!hiddenTabs.parti){
+      specialHtml += `<div class="scene-pill-row">
+        <button type="button" class="scene-pill partipris ${currentView==='parti'?'active':''}" data-idx="parti" style="flex:1;">Parti pris</button>
+        <button type="button" class="scene-pill-del" data-del-special="parti" title="Supprimer cet onglet">✕</button>
+      </div>`;
+    }
+    if(!hiddenTabs.mecanisme){
+      specialHtml += `<div class="scene-pill-row">
+        <button type="button" class="scene-pill mecanisme ${currentView==='mecanisme'?'active':''}" data-idx="mecanisme" style="flex:1;">Mécanisme</button>
+        <button type="button" class="scene-pill-del" data-del-special="mecanisme" title="Supprimer cet onglet">✕</button>
+      </div>`;
+    }
+
+    if(specialHtml) specialHtml += `<div class="scene-pill-sep"></div>`;
+
+    const customHtml = customSceneTabs.map(ct => `
+      <div class="scene-pill-row">
+        <button type="button" class="scene-pill custom ${currentView==='custom' && currentCustomTabId===ct.id ? 'active' : ''}" data-idx="custom:${ct.id}">
+          ${escapeHtml(ct.label)}
+        </button>
+        <button type="button" class="scene-pill-del" data-del-custom="${ct.id}" title="Supprimer ce sous-onglet">✕</button>
+      </div>
+    `).join('');
+    
+    if(customSceneTabs.length) specialHtml += customHtml + `<div class="scene-pill-sep"></div>`;
+
     const scenesHtml = scenes.map((s,i)=>`
       <div class="scene-pill-row">
         <button type="button" class="scene-pill ${currentView==='scene' && i===currentSceneIndex?'active':''}" data-idx="${i}">
@@ -1421,7 +1444,9 @@
         <button type="button" class="scene-pill-del" data-del-scene="${i}" title="Supprimer cette scène">✕</button>
       </div>
     `).join('');
+
     scenePillsEl.innerHTML = specialHtml + scenesHtml;
+
     scenePillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const idx = btn.dataset.idx;
@@ -1432,6 +1457,26 @@
         else selectScene(parseInt(idx, 10));
       });
     });
+
+    scenePillsEl.querySelectorAll('[data-del-special]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const tabKey = btn.dataset.delSpecial;
+        if(!confirm('Supprimer cet onglet ?')) return;
+        hiddenTabs[tabKey] = true;
+        saveHiddenTabs();
+        // Basculer vers une vue valide restante
+        if(currentView === tabKey){
+          if(!hiddenTabs.global) selectGlobal();
+          else if(!hiddenTabs.parti) selectParti();
+          else if(!hiddenTabs.mecanisme) selectMecanismeSub();
+          else selectScene(0);
+        } else {
+          renderScenePills();
+        }
+      });
+    });
+
     scenePillsEl.querySelectorAll('[data-del-scene]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
@@ -1446,6 +1491,7 @@
         else renderScenePills();
       });
     });
+
     scenePillsEl.querySelectorAll('[data-del-custom]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
@@ -1453,6 +1499,35 @@
       });
     });
   }
+
+  // Boutons de suppression dédiés en haut des blocs spéciaux
+  document.getElementById('deleteGlobalBtn').addEventListener('click', ()=>{
+    if(confirm('Supprimer cet onglet ?')){
+      hiddenTabs.global = true; saveHiddenTabs();
+      if(!hiddenTabs.parti) selectParti(); else selectScene(0);
+    }
+  });
+  document.getElementById('deletePartiBtn').addEventListener('click', ()=>{
+    if(confirm('Supprimer cet onglet ?')){
+      hiddenTabs.parti = true; saveHiddenTabs();
+      if(!hiddenTabs.global) selectGlobal(); else selectScene(0);
+    }
+  });
+  document.getElementById('deleteMecanismeBtn').addEventListener('click', ()=>{
+    if(confirm('Supprimer cet onglet ?')){
+      hiddenTabs.mecanisme = true; saveHiddenTabs();
+      if(!hiddenTabs.global) selectGlobal(); else selectScene(0);
+    }
+  });
+  document.getElementById('deleteSceneBtn').addEventListener('click', ()=>{
+    if(scenes.length <= 1){ alert('Il doit rester au moins une scène.'); return; }
+    if(confirm('Supprimer cette scène ?')){
+      scenes.splice(currentSceneIndex, 1);
+      saveScenes();
+      if(currentSceneIndex >= scenes.length) currentSceneIndex = scenes.length - 1;
+      selectScene(currentSceneIndex);
+    }
+  });
 
   function renderSceneImage(){
     const s = scenes[currentSceneIndex];
@@ -1526,11 +1601,8 @@
     btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       sceneContentInput.focus();
-      if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
-      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
-      scenes[currentSceneIndex].content = sceneContentInput.innerHTML;
-      stampSceneModified();
-      saveScenes();
+      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(sceneContentInput); }
+      else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); scenes[currentSceneIndex].content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
     });
   });
 
@@ -1593,7 +1665,7 @@
   });
 
 
-  // ---------- SOUS-ONGLETS PERSONNALISÉS (Simple / Scène / Bloc-notes) ----------
+  // ---------- SOUS-ONGLETS PERSONNALISÉS ----------
   function ensureCustomTabData(ct){
     if(!customSceneTabsData[ct.id]){
       if(ct.format === 'notes') customSceneTabsData[ct.id] = {items: []};
@@ -1608,7 +1680,7 @@
     customSceneTabs = customSceneTabs.filter(t=>t.id!==id);
     delete customSceneTabsData[id];
     saveCustomSceneTabs();
-    selectGlobal();
+    if(!hiddenTabs.global) selectGlobal(); else selectScene(0);
   }
 
   function selectCustomSubTab(id){
@@ -1629,7 +1701,7 @@
     <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
     <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
     <div class="scene-toolbar-sep"></div>
-    <button type="button" data-cmd="insertTable" title="Insérer un tableau">▦ Tableau</button>
+    <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
   `;
 
   function renderCustomSubTabContent(){
@@ -1705,10 +1777,8 @@
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
         contentEl.focus();
-        if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
-        else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
-        data.content = contentEl.innerHTML;
-        stamp();
+        if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
+        else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); data.content = contentEl.innerHTML; stamp(); }
       });
     });
   }
@@ -1733,10 +1803,8 @@
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
         contentEl.focus();
-        if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
-        else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
-        data.content = contentEl.innerHTML;
-        stamp();
+        if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
+        else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); data.content = contentEl.innerHTML; stamp(); }
       });
     });
 
@@ -1846,7 +1914,7 @@
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
         contentEl.focus();
-        if(btn.dataset.cmd === 'insertTable'){ insertTableAtCursor(); }
+        if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else { document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null); }
       });
     });
@@ -1885,16 +1953,30 @@
     renderCalendar();
     renderPartis();
     renderScenePills();
-    if(currentView === 'global') selectGlobal();
-    else if(currentView === 'parti') selectParti();
-    else if(currentView === 'mecanisme') selectMecanismeSub();
+    
+    // Correction du bug : S'assurer que le premier onglet principal affiché à l'ouverture correspond bien à activeTabId
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const activeBtn = document.querySelector(`.tab-btn[data-tab="${activeTabId}"]`);
+    const activeContent = document.getElementById('content-' + activeTabId);
+    if(activeBtn) activeBtn.classList.add('active');
+    if(activeContent) activeContent.classList.add('active');
+
+    if(currentView === 'global' && !hiddenTabs.global) selectGlobal();
+    else if(currentView === 'parti' && !hiddenTabs.parti) selectParti();
+    else if(currentView === 'mecanisme' && !hiddenTabs.mecanisme) selectMecanismeSub();
     else if(currentView === 'custom' && currentCustomTabId && customSceneTabs.some(t=>t.id===currentCustomTabId)) selectCustomSubTab(currentCustomTabId);
-    else selectScene(currentSceneIndex);
+    else {
+      if(!hiddenTabs.global) selectGlobal();
+      else if(!hiddenTabs.parti) selectParti();
+      else if(!hiddenTabs.mecanisme) selectMecanismeSub();
+      else selectScene(currentSceneIndex);
+    }
   }
   window.__rg_renderAll = renderAll;
   window.__rg_getState = () => ({ 
     tasks, events, categories, partis, scenes, 
-    notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData 
+    notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
@@ -1908,6 +1990,7 @@
     customSceneTabs = state.customSceneTabs || [];
     customSceneTabsData = state.customSceneTabsData || {};
     if(state.mecanismeData) mecanismeData = state.mecanismeData;
+    if(state.hiddenTabs) hiddenTabs = state.hiddenTabs;
   };
 </script>
 
