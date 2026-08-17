@@ -286,7 +286,7 @@
     background:var(--panel); color:var(--ink-soft); cursor:pointer; transition:all .15s ease;
   }
   .btn-add-subtab:hover{border-color:var(--lavande); color:var(--lavande); background:var(--gris);}
-  .last-modified{font-size:0.7rem; color:#B8BEC9; margin-bottom:10px; font-weight:500;}
+  .last-modified{font-size:0.7rem; color:var(--ink-soft); margin-bottom:10px; font-weight:500;}
   .subtab-header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px;}
   .subtab-title{font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:1.1rem; margin:0; color:var(--ink);}
   .btn-remove-subtab{color:#B54D4D; font-size:0.78rem; padding:6px 12px; flex:0 0 auto;}
@@ -358,6 +358,74 @@
     border-radius:50%; width:20px; height:20px; font-size:11px; cursor:pointer; line-height:20px; padding:0;
   }
   .scene-image-hint{font-size:0.7rem; color:var(--ink-soft); margin:0 0 16px;}
+
+  /* --- STYLES POST-IT (Parti pris / Bloc-notes) --- */
+  .parti-form{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px; margin-bottom:20px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:10px;
+  }
+  .parti-form input[type=text]{
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.95rem;
+    border:1px solid var(--line); border-radius:10px; padding:10px 14px; background:var(--panel); color:var(--ink);
+  }
+  .parti-content-editable{
+    min-height:100px; border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+    background:var(--panel); font-family:'Plus Jakarta Sans', sans-serif; font-size:0.92rem; line-height:1.5; color:var(--ink);
+  }
+  .parti-content-editable:focus{outline:none; border-color:var(--lavande);}
+  .parti-content-editable:empty:before{content:attr(data-placeholder); color:var(--ink-soft);}
+  .parti-form-actions{display:flex; gap:10px; align-items:center; margin-top:4px;}
+
+  .parti-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; align-items:start;
+  }
+  .parti-card{
+    background: var(--postit-bg, #FEF08A);
+    color: #1E293B;
+    border-radius: 4px;
+    padding: 24px 20px 20px 20px;
+    box-shadow: 2px 5px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeIn .3s ease;
+    border-top: 6px solid rgba(0,0,0,0.08);
+  }
+  .parti-card:hover{
+    transform: translateY(-3px) rotate(0.5deg);
+    box-shadow: 4px 8px 18px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
+  }
+  /* Épingle décorative en haut du post-it */
+  .parti-card::before{
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .parti-actions{
+    position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; opacity: 0.6; transition: opacity 0.2s ease;
+  }
+  .parti-card:hover .parti-actions{opacity: 1;}
+  .parti-actions button{
+    border: none; background: rgba(0,0,0,0.06); border-radius: 6px; cursor: pointer;
+    font-size: 0.75rem; padding: 3px 7px; color: #1E293B; font-weight: 600;
+  }
+  .parti-actions button:hover{background: rgba(0,0,0,0.15);}
+  .parti-card h4{
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1.05rem;
+    margin: 0 0 10px 0; padding-right: 40px; color: #1E293B;
+  }
+  .parti-card .parti-content{
+    font-size: 0.9rem; line-height: 1.5; color: #334155; word-break: break-word;
+  }
+  .parti-card .last-modified{
+    font-size: 0.68rem; color: rgba(30,41,59,0.5); margin-top: 12px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 6px;
+  }
 
   /* LIVRE */
   .book-viewer{
@@ -549,7 +617,7 @@
             </div>
             <div class="parti-content-editable" id="partiContent" contenteditable="true" data-placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..."></div>
             <div class="parti-form-actions">
-              <button type="submit" class="btn" id="partiSubmitBtn">+ Ajouter le parti pris</button>
+              <button type="submit" class="btn" id="partiSubmitBtn">+ Ajouter le post-it</button>
               <button type="button" class="btn btn-ghost" id="partiCancelBtn" style="display:none;">Annuler</button>
             </div>
           </form>
@@ -1287,7 +1355,13 @@
   });
 
   // ---------- PROJET / PARTIS PRIS ----------
-  const PARTI_COLORS = ['var(--lavande)','var(--rose)','var(--ciel)','var(--menthe)','var(--peche)','var(--jaune)'];
+  const POSTIT_COLORS = [
+    { bg: '#FEF08A', rotate: '-1deg' }, // Jaune pastel
+    { bg: '#BFDBFE', rotate: '1deg' },  // Bleu pastel
+    { bg: '#FED7AA', rotate: '-0.5deg'}, // Orange pastel
+    { bg: '#BBF7D0', rotate: '1.2deg'}, // Vert pastel
+    { bg: '#FBCFE8', rotate: '-1.5deg'}  // Rose pastel
+  ];
   let editingPartiId = null;
   const partiContentEl = document.getElementById('partiContent');
 
@@ -1297,8 +1371,10 @@
       grid.innerHTML = `<div class="empty-msg">Aucun parti pris pour l'instant. Note ici tes choix créatifs : personnages, univers, ton, règles du récit...</div>`;
       return;
     }
-    grid.innerHTML = partis.map((p,i) => `
-      <div class="parti-card" style="--accent:${PARTI_COLORS[i % PARTI_COLORS.length]}">
+    grid.innerHTML = partis.map((p,i) => {
+      const theme = POSTIT_COLORS[i % POSTIT_COLORS.length];
+      return `
+      <div class="parti-card" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
         <div class="parti-actions">
           <button type="button" data-act="edit" data-id="${p.id}">✎</button>
           <button type="button" data-act="del" data-id="${p.id}">✕</button>
@@ -1307,7 +1383,8 @@
         <div class="parti-content">${toEditableHtml(p.content)}</div>
         ${p.updatedAt ? `<div class="last-modified">${formatUpdatedAt(p.updatedAt)}</div>` : ''}
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     grid.querySelectorAll('button[data-act]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -1332,7 +1409,7 @@
 
   function cancelPartiEdit(){
     editingPartiId = null;
-    document.getElementById('partiSubmitBtn').textContent = "+ Ajouter le parti pris";
+    document.getElementById('partiSubmitBtn').textContent = "+ Ajouter le post-it";
     document.getElementById('partiCancelBtn').style.display = 'none';
     document.getElementById('partiTitle').value = '';
     partiContentEl.innerHTML = '';
@@ -1851,8 +1928,10 @@
         grid.innerHTML = `<div class="empty-msg">Aucun post-it pour l'instant.</div>`;
         return;
       }
-      grid.innerHTML = data.items.map((n,i) => `
-        <div class="parti-card" style="--accent:${PARTI_COLORS[i % PARTI_COLORS.length]}">
+      grid.innerHTML = data.items.map((n,i) => {
+        const theme = POSTIT_COLORS[i % POSTIT_COLORS.length];
+        return `
+        <div class="parti-card" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
           <div class="parti-actions">
             <button type="button" data-act="edit" data-id="${n.id}">✎</button>
             <button type="button" data-act="del" data-id="${n.id}">✕</button>
@@ -1861,7 +1940,8 @@
           <div class="parti-content">${toEditableHtml(n.content)}</div>
           ${n.updatedAt ? `<div class="last-modified">${formatUpdatedAt(n.updatedAt)}</div>` : ''}
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       grid.querySelectorAll('button[data-act]').forEach(btn=>{
         btn.addEventListener('click', ()=>{
