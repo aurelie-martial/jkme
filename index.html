@@ -188,6 +188,21 @@
   }
   .ev-more{font-size:0.58rem; font-weight:600; color:var(--ink-soft); padding:0 4px; flex:0 0 auto;}
 
+  /* WEEK PLANNER (SEMAINIER) */
+  .week-planner-panel{margin-bottom:20px;}
+  .week-planner-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;}
+  .week-planner-header h2{font-family:'Plus Jakarta Sans', sans-serif; margin:0; font-weight:700; font-size:1.25rem;}
+  .week-planner-grid{display:grid; grid-template-columns:76px repeat(7,1fr); gap:6px;}
+  .wp-cell-header{text-align:center; font-weight:600; font-size:0.68rem; text-transform:uppercase; color:var(--ink-soft); letter-spacing:0.08em; padding:4px 2px;}
+  .wp-slot-label{display:flex; align-items:center; font-weight:600; font-size:0.78rem; color:var(--ink); padding:8px 4px;}
+  .wp-cell{
+    width:100%; min-height:62px; resize:vertical; border:1px solid var(--line); border-radius:8px;
+    padding:7px 9px; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.78rem;
+    color:var(--ink); background:var(--panel); line-height:1.35; overflow:hidden;
+  }
+  .wp-cell:focus{outline:none; border-color:var(--lavande);}
+  .wp-cell::placeholder{color:var(--ink-soft);}
+
   /* MODAL */
   .overlay{
     display:none; position:fixed; inset:0; background:rgba(42,39,51,0.4); z-index:50;
@@ -306,6 +321,12 @@
   .scene-pill.mecanisme.active{background:var(--pill-color, var(--lavande)); color:#FFFFFF; border-color:var(--ink);}
   .scene-pill.custom{border-color:var(--pill-color, var(--ciel)); color:var(--ink-soft);}
   .scene-pill.custom.active{background:var(--pill-color, var(--ciel)); color:#FFFFFF; border-color:var(--ink);}
+  /* Couleur personnalisée choisie via "Organiser" : colore le FOND de la pastille (et non plus
+     seulement son contour), que la pastille soit active ou non, avec un texte blanc ou noir selon
+     la clarté de la couleur choisie (calculé en JS et injecté via --pill-text-color). */
+  .scene-pill.has-custom-color{background:var(--pill-color); border-color:var(--pill-color); color:var(--pill-text-color, var(--ink));}
+  .scene-pill.has-custom-color:hover{border-color:var(--pill-color); color:var(--pill-text-color, var(--ink));}
+  .scene-pill.has-custom-color.active{background:var(--pill-color); border-color:var(--pill-color); color:var(--pill-text-color, var(--ink));}
   .scene-pill-sep{flex:0 0 auto; width:100%; height:1px; background:var(--line); margin:6px 0;}
   .scene-pill-row{display:flex; align-items:center; gap:4px;}
   .scene-pill-row .scene-pill{flex:1; min-width:0;}
@@ -332,6 +353,9 @@
   .scene-pill-color::-moz-color-swatch{border:none; border-radius:50%;}
   .scene-divider-row{display:flex; align-items:center; gap:6px; margin:10px 0;}
   .scene-divider-line{flex:1; height:1px; background:var(--line);}
+  /* Espace invisible de la même largeur que le sélecteur de couleur, pour que la croix de
+     suppression d'un séparateur s'aligne exactement avec celle des pastilles au-dessus/en dessous. */
+  .scene-pill-color-spacer{flex:0 0 auto; width:20px; height:20px;}
 
   /* Mode "organiser" : révèle la poignée de glisser-déposer, le sélecteur de couleur et les
      boutons de suppression sur les onglets, autrement masqués pour ne pas prendre de largeur. */
@@ -369,6 +393,23 @@
   }
   .scene-toolbar button:hover{background:var(--gris); color:var(--ink);}
   .scene-toolbar-sep{width:1px; align-self:stretch; background:var(--line); margin:0 4px;}
+  .rg-highlight{border-radius:2px;}
+
+  /* Popover de choix de couleur de surlignage, partagé par tous les éditeurs enrichis */
+  .highlight-popover{
+    display:none; position:fixed; z-index:300; background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; box-shadow:var(--shadow); padding:8px; flex-wrap:wrap; gap:6px; max-width:172px;
+  }
+  .highlight-popover.active{display:flex;}
+  .highlight-swatch{
+    flex:0 0 auto; width:26px; height:26px; border-radius:50%; border:1px solid rgba(0,0,0,0.12);
+    cursor:pointer; padding:0; transition:transform .1s ease, border-color .1s ease;
+  }
+  .highlight-swatch:hover{transform:scale(1.12); border-color:var(--ink);}
+  .highlight-swatch-none{
+    background:var(--panel); display:flex; align-items:center; justify-content:center;
+    font-size:0.68rem; color:var(--ink-soft); border:1px dashed var(--line);
+  }
   .scene-editor-content{
     width:100%; min-height:420px; border:none; background:transparent;
     font-family:'Plus Jakarta Sans', sans-serif; font-size:0.98rem; line-height:1.65; color:var(--ink);
@@ -540,6 +581,8 @@
     .btn-organize-toggle{display:none;}
     .scene-sidebar-actions{width:100%;}
     .scene-sidebar-actions .btn-add-subtab{flex:1; text-align:center;}
+    .week-planner-panel{overflow-x:auto;}
+    .week-planner-grid{grid-template-columns:56px repeat(7,minmax(90px,1fr)); width:max-content; min-width:100%; padding-bottom:4px;}
   }
 </style>
 </head>
@@ -606,6 +649,13 @@
 
   <!-- CALENDRIER -->
   <div class="tab-content" id="content-cal">
+    <div class="panel week-planner-panel">
+      <div class="week-planner-header">
+        <h2>Semainier</h2>
+      </div>
+      <div class="week-planner-grid" id="weekPlannerGrid"></div>
+    </div>
+
     <div class="panel">
       <div class="cal-header">
         <h2 id="calMonthLabel">Mois</h2>
@@ -653,6 +703,7 @@
           <div class="scene-toolbar" id="sceneToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+            <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -674,7 +725,7 @@
         <div class="scene-pills" id="blocNotesPills"></div>
         <select class="scene-mobile-select" id="blocNotesMobileSelect"></select>
         <div class="scene-sidebar-actions">
-          <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter un sous-onglet</button>
+          <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter une note</button>
           <button type="button" class="btn-add-subtab" id="addBlocNotesDividerBtn">+ Séparateur</button>
           <button type="button" class="btn-organize-toggle" id="toggleBlocNotesOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
         </div>
@@ -683,13 +734,15 @@
       <div class="scene-editor-area">
 
         <div class="blocnotes-empty" id="blocNotesEmptyState" style="display:none;">
-          Aucun sous-onglet pour l'instant. Clique sur « + Ajouter un sous-onglet » pour en créer un.
+          Aucune note pour l'instant. Clique sur « + Ajouter une note » pour en créer une.
         </div>
 
         <div class="panel" id="globalModeBlock" style="display:none;">
+          <input type="text" class="scene-editor-title" id="globalTitleInput" placeholder="Titre (optionnel)">
           <div class="scene-toolbar" id="globalToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+            <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -717,6 +770,7 @@
           <div class="scene-toolbar" id="mecanismeToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+            <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -782,9 +836,9 @@
 <div class="overlay" id="subTabOverlay">
   <div class="modal">
     <button class="close-x" id="closeSubTabModal">✕</button>
-    <h3>Ajouter un sous-onglet</h3>
+    <h3>Ajouter une note</h3>
     <form id="addSubTabForm">
-      <label>Nom du sous-onglet</label>
+      <label>Nom de la note</label>
       <input type="text" id="newSubTabNameInput" placeholder="Ex : Univers, Recherches..." required>
       <label style="margin-top:8px;">Format</label>
       <div class="format-choice">
@@ -801,7 +855,7 @@
           <span><strong>Bloc-notes</strong> — plusieurs post-it, comme "Parti pris"</span>
         </label>
       </div>
-      <button type="submit" class="btn" style="margin-top:14px;">Créer le sous-onglet</button>
+      <button type="submit" class="btn" style="margin-top:14px;">Créer la note</button>
     </form>
   </div>
 </div>
@@ -833,6 +887,7 @@
       <div class="scene-toolbar" id="postitToolbar">
         <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
         <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+        <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
         <div class="scene-toolbar-sep"></div>
         <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
         <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -845,6 +900,9 @@
     </form>
   </div>
 </div>
+
+<!-- Popover de couleurs de surlignage, partagé par tous les éditeurs enrichis -->
+<div class="highlight-popover" id="highlightPopover"></div>
 
 <script>
   const DEFAULT_CATS = [
@@ -859,6 +917,38 @@
 
   function defaultScenes(){
     return Array.from({length:20}, (_,i)=>({id:i+1, title:'Scène '+(i+1), content:'', image:null, mechanismTags:[], updatedAt:null}));
+  }
+
+  // Semainier (au-dessus du calendrier mensuel) : une grille libre Lun→Dim x Matin/Midi/Après-midi/Soir,
+  // remplie à la main par l'utilisatrice pour s'organiser sur le projet.
+  const WEEK_DAYS = [
+    {key:'lun', label:'Lun'}, {key:'mar', label:'Mar'}, {key:'mer', label:'Mer'},
+    {key:'jeu', label:'Jeu'}, {key:'ven', label:'Ven'}, {key:'sam', label:'Sam'}, {key:'dim', label:'Dim'}
+  ];
+  const WEEK_SLOTS = [
+    {key:'matin', label:'Matin'}, {key:'midi', label:'Midi'},
+    {key:'apresmidi', label:'Après-midi'}, {key:'soir', label:'Soir'}
+  ];
+  function defaultWeekPlanner(){
+    const obj = {};
+    WEEK_DAYS.forEach(d=>{
+      obj[d.key] = {};
+      WEEK_SLOTS.forEach(s=> obj[d.key][s.key] = '');
+    });
+    return obj;
+  }
+  function normalizeWeekPlanner(data){
+    const obj = defaultWeekPlanner();
+    if(data && typeof data === 'object'){
+      WEEK_DAYS.forEach(d=>{
+        if(data[d.key] && typeof data[d.key] === 'object'){
+          WEEK_SLOTS.forEach(s=>{
+            if(typeof data[d.key][s.key] === 'string') obj[d.key][s.key] = data[d.key][s.key];
+          });
+        }
+      });
+    }
+    return obj;
   }
 
   let tasks = JSON.parse(localStorage.getItem('rg_tasks') || '[]');
@@ -885,6 +975,8 @@
   // ("scene:<id>", "global", "parti", "mecanisme", "custom:<id>").
   let pillColors = JSON.parse(localStorage.getItem('rg_pill_colors') || '{}');
 
+  let weekPlanner = normalizeWeekPlanner(JSON.parse(localStorage.getItem('rg_week_planner') || 'null'));
+
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); };
   const saveTasks = () => { localStorage.setItem('rg_tasks', JSON.stringify(tasks)); syncCloud(); };
   const saveEvents = () => { localStorage.setItem('rg_events', JSON.stringify(events)); syncCloud(); };
@@ -901,6 +993,7 @@
   const saveSceneOrder = () => { localStorage.setItem('rg_scene_order', JSON.stringify(sceneOrder)); syncCloud(); };
   const saveBlocNotesOrder = () => { localStorage.setItem('rg_blocnotes_order', JSON.stringify(blocNotesOrder)); syncCloud(); };
   const savePillColors = () => { localStorage.setItem('rg_pill_colors', JSON.stringify(pillColors)); syncCloud(); };
+  const saveWeekPlanner = () => { localStorage.setItem('rg_week_planner', JSON.stringify(weekPlanner)); syncCloud(); };
 
   function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
 
@@ -956,9 +1049,25 @@
     });
   }
 
+  // Choisit un texte blanc ou noir selon la clarté de la couleur de fond, pour rester lisible
+  // quelle que soit la couleur personnalisée choisie sur une pastille.
+  function getContrastTextColor(hex){
+    const clean = (hex || '').replace('#', '');
+    if(clean.length !== 6) return '#1A1A1A';
+    const r = parseInt(clean.substring(0,2), 16);
+    const g = parseInt(clean.substring(2,4), 16);
+    const b = parseInt(clean.substring(4,6), 16);
+    const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
+    return luminance > 0.55 ? '#1A1A1A' : '#FFFFFF';
+  }
+
   function pillColorStyleAttr(key){
     const c = pillColors[key];
-    return c ? ` style="--pill-color:${c};"` : '';
+    return c ? ` style="--pill-color:${c}; --pill-text-color:${getContrastTextColor(c)};"` : '';
+  }
+
+  function pillCustomColorClass(key){
+    return pillColors[key] ? 'has-custom-color' : '';
   }
 
   function escapeHtml(s){
@@ -1035,6 +1144,103 @@
       document.execCommand(cmd, false, value || null);
     }
   }
+
+  // ---------- SURLIGNAGE (éditeur enrichi) ----------
+  // Comme pour formatBlock, on évite document.execCommand('hiliteColor', ...) et on manipule le
+  // DOM directement : ça marche de façon fiable sur tous les navigateurs/webviews, y compris pour
+  // retirer un surlignage sur une portion de texte déjà surlignée.
+  const HIGHLIGHT_COLORS = ['#FFF3A3', '#C8F2C8', '#C8E4FA', '#FADCE9', '#FFE0B8', '#E3D4F5'];
+
+  function applyHighlight(editableRoot, color){
+    editableRoot.focus();
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    if(!editableRoot.contains(range.commonAncestorContainer)) return;
+
+    // Dépouille d'abord tout <span class="rg-highlight"> entièrement compris dans la sélection
+    // (remplacé par son propre contenu) : sans ça, ré-appliquer ou retirer une couleur sur du
+    // texte déjà surligné empilerait les span les uns dans les autres au lieu de remplacer la
+    // couleur, et "Aucun" ne retirerait jamais visuellement le surlignage.
+    editableRoot.querySelectorAll('span.rg-highlight').forEach(span=>{
+      if(!range.intersectsNode(span)) return;
+      const spanRange = document.createRange();
+      spanRange.selectNodeContents(span);
+      const startsAtOrBefore = range.compareBoundaryPoints(Range.START_TO_START, spanRange) <= 0;
+      const endsAtOrAfter = range.compareBoundaryPoints(Range.END_TO_END, spanRange) >= 0;
+      if(startsAtOrBefore && endsAtOrAfter){
+        const parent = span.parentNode;
+        while(span.firstChild) parent.insertBefore(span.firstChild, span);
+        parent.removeChild(span);
+      }
+    });
+
+    if(!color){
+      editableRoot.normalize();
+      editableRoot.dispatchEvent(new Event('input', {bubbles:true}));
+      return;
+    }
+
+    const span = document.createElement('span');
+    span.className = 'rg-highlight';
+    span.style.backgroundColor = color;
+
+    try{
+      range.surroundContents(span);
+    }catch(e){
+      // La sélection chevauche plusieurs éléments (ex : deux paragraphes) : surroundContents()
+      // ne fonctionne pas dans ce cas, on extrait le contenu puis on l'enveloppe à la main.
+      const frag = range.extractContents();
+      span.appendChild(frag);
+      range.insertNode(span);
+    }
+
+    sel.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
+    newRange.collapse(false);
+    sel.addRange(newRange);
+
+    editableRoot.dispatchEvent(new Event('input', {bubbles:true}));
+  }
+
+  const highlightPopoverEl = document.getElementById('highlightPopover');
+  let highlightPopoverTarget = null;
+
+  (function buildHighlightPopover(){
+    highlightPopoverEl.innerHTML = HIGHLIGHT_COLORS.map(c=>
+      `<button type="button" class="highlight-swatch" data-color="${c}" style="background:${c};" title="Surligner"></button>`
+    ).join('') + `<button type="button" class="highlight-swatch highlight-swatch-none" data-color="" title="Retirer le surlignage">✕</button>`;
+
+    highlightPopoverEl.querySelectorAll('.highlight-swatch').forEach(sw=>{
+      sw.addEventListener('mousedown', e=> e.preventDefault());
+      sw.addEventListener('click', ()=>{
+        if(highlightPopoverTarget) applyHighlight(highlightPopoverTarget, sw.dataset.color || null);
+        closeHighlightPopover();
+      });
+    });
+  })();
+
+  function openHighlightPopover(triggerBtn, containerEl){
+    highlightPopoverTarget = containerEl;
+    const rect = triggerBtn.getBoundingClientRect();
+    highlightPopoverEl.style.top = (rect.bottom + 6) + 'px';
+    highlightPopoverEl.style.left = rect.left + 'px';
+    highlightPopoverEl.classList.add('active');
+  }
+
+  function closeHighlightPopover(){
+    highlightPopoverEl.classList.remove('active');
+    highlightPopoverTarget = null;
+  }
+
+  document.addEventListener('mousedown', (e)=>{
+    if(highlightPopoverEl.classList.contains('active')
+      && !highlightPopoverEl.contains(e.target)
+      && !e.target.closest('.toolbar-highlight-btn')){
+      closeHighlightPopover();
+    }
+  });
 
   function formatUpdatedAt(ts){
     if(!ts) return '';
@@ -1230,6 +1436,7 @@
     btn.addEventListener('click', ()=>{
       postitContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(postitContentInput); }
+      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, postitContentInput); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, postitContentInput); }
     });
   });
@@ -1267,6 +1474,7 @@
         btn.classList.add('active');
         const targetContent = document.getElementById('content-' + activeTabId);
         if(targetContent) targetContent.classList.add('active');
+        if(activeTabId === 'cal' && window.__rg_growWeekPlannerCells) window.__rg_growWeekPlannerCells();
       });
     });
   }
@@ -1300,6 +1508,7 @@
     btn.addEventListener('click', () => {
       mecanismeContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
+      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, mecanismeContentInput); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, mecanismeContentInput); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
     });
   });
@@ -1621,6 +1830,36 @@
     }
   }
 
+  // ---------- SEMAINIER ----------
+  function autoGrowWpCell(ta){
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(ta.scrollHeight, 62) + 'px';
+  }
+
+  function renderWeekPlanner(){
+    const grid = document.getElementById('weekPlannerGrid');
+    if(!grid) return;
+    let html = `<div class="wp-cell-header"></div>` +
+      WEEK_DAYS.map(d => `<div class="wp-cell-header">${escapeHtml(d.label)}</div>`).join('');
+    WEEK_SLOTS.forEach(s=>{
+      html += `<div class="wp-slot-label">${escapeHtml(s.label)}</div>`;
+      html += WEEK_DAYS.map(d =>
+        `<textarea class="wp-cell" data-day="${d.key}" data-slot="${s.key}" placeholder="…">${escapeHtml(weekPlanner[d.key][s.key])}</textarea>`
+      ).join('');
+    });
+    grid.innerHTML = html;
+    grid.querySelectorAll('.wp-cell').forEach(ta=>{
+      ta.addEventListener('input', ()=>{
+        weekPlanner[ta.dataset.day][ta.dataset.slot] = ta.value;
+        saveWeekPlanner();
+        autoGrowWpCell(ta);
+      });
+    });
+  }
+  window.__rg_growWeekPlannerCells = () => {
+    document.querySelectorAll('.wp-cell').forEach(autoGrowWpCell);
+  };
+
   document.getElementById('prevMonth').addEventListener('click', ()=>{
     viewDate.setMonth(viewDate.getMonth()-1); renderCalendar();
   });
@@ -1699,19 +1938,21 @@
 
   // ---------- GLOBAL (NOTES) ----------
   const notesArea = document.getElementById('notesArea');
+  const globalTitleInput = document.getElementById('globalTitleInput');
   let notesData;
   (function initNotesData(){
     const raw = localStorage.getItem('rg_notes');
-    if(raw === null){ notesData = {content:'', updatedAt:null}; return; }
+    if(raw === null){ notesData = {content:'', title:'', updatedAt:null}; return; }
     try{
       const parsed = JSON.parse(raw);
       if(parsed && typeof parsed === 'object' && 'content' in parsed){ notesData = parsed; }
-      else { notesData = {content:'', updatedAt:null}; }
+      else { notesData = {content:'', title:'', updatedAt:null}; }
     }catch(e){
-      notesData = {content: escapeHtml(raw).replace(/\n/g,'<br>'), updatedAt:null};
+      notesData = {content: escapeHtml(raw).replace(/\n/g,'<br>'), title:'', updatedAt:null};
     }
   })();
   notesArea.innerHTML = notesData.content || '';
+  globalTitleInput.value = notesData.title || '';
 
   const saveNotes = () => {
     notesData.updatedAt = Date.now();
@@ -1730,11 +1971,17 @@
     saveNotes();
   });
 
+  globalTitleInput.addEventListener('input', ()=>{
+    notesData.title = globalTitleInput.value;
+    saveNotes();
+  });
+
   document.querySelectorAll('#globalToolbar button').forEach(btn=>{
     btn.addEventListener('mousedown', e=> e.preventDefault());
     btn.addEventListener('click', ()=>{
       notesArea.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
+      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, notesArea); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, notesArea); notesData.content = notesArea.innerHTML; saveNotes(); }
     });
   });
@@ -1976,7 +2223,10 @@
           <div class="scene-divider-row" data-order-key="${entry.id}">
             <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
             <div class="scene-divider-line"></div>
-            <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
+            <div class="scene-pill-actions">
+              <span class="scene-pill-color-spacer"></span>
+              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
+            </div>
           </div>`;
         return;
       }
@@ -1986,11 +2236,11 @@
       html += `
         <div class="scene-pill-row" data-order-key="${entry.id}">
           <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-          <button type="button" class="scene-pill ${s.id===currentSceneId?'active':''}" data-idx="${s.id}"${pillColorStyleAttr(colorKey)}>
+          <button type="button" class="scene-pill ${pillCustomColorClass(colorKey)} ${s.id===currentSceneId?'active':''}" data-idx="${s.id}"${pillColorStyleAttr(colorKey)}>
             ${escapeHtml(s.title || 'Scène')}
           </button>
           <div class="scene-pill-actions">
-            <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur du contour">
+            <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur de fond">
             <button type="button" class="scene-pill-del" data-del-key="${s.id}" data-del-kind="scene" title="Supprimer cette scène">✕</button>
           </div>
         </div>`;
@@ -2007,7 +2257,11 @@
         pillColors[inp.dataset.colorKey] = inp.value;
         savePillColors();
         const pillBtn = inp.closest('.scene-pill-row').querySelector('.scene-pill');
-        if(pillBtn) pillBtn.style.setProperty('--pill-color', inp.value);
+        if(pillBtn){
+          pillBtn.style.setProperty('--pill-color', inp.value);
+          pillBtn.style.setProperty('--pill-text-color', getContrastTextColor(inp.value));
+          pillBtn.classList.add('has-custom-color');
+        }
       });
     });
 
@@ -2112,6 +2366,7 @@
     btn.addEventListener('click', ()=>{
       sceneContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(sceneContentInput); }
+      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, sceneContentInput); }
       else {
         runToolbarCmd(btn.dataset.cmd, btn.dataset.value, sceneContentInput);
         const s = currentScene();
@@ -2234,7 +2489,10 @@
           <div class="scene-divider-row" data-order-key="${entry.id}">
             <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
             <div class="scene-divider-line"></div>
-            <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
+            <div class="scene-pill-actions">
+              <span class="scene-pill-color-spacer"></span>
+              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
+            </div>
           </div>`;
         return;
       }
@@ -2245,9 +2503,9 @@
         html += `
           <div class="scene-pill-row" data-order-key="${entry.id}">
             <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-            <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
+            <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${pillCustomColorClass(key)} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
             <div class="scene-pill-actions">
-              <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur du contour">
+              <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur de fond">
               <button type="button" class="scene-pill-del" data-del-key="${key}" data-del-kind="special" title="Supprimer cet onglet">✕</button>
             </div>
           </div>`;
@@ -2262,12 +2520,12 @@
       html += `
         <div class="scene-pill-row" data-order-key="${entry.id}">
           <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-          <button type="button" class="scene-pill custom ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
+          <button type="button" class="scene-pill custom ${pillCustomColorClass(colorKey)} ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
             ${escapeHtml(ct.label)}
           </button>
           <div class="scene-pill-actions">
-            <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur du contour">
-            <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer ce sous-onglet">✕</button>
+            <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur de fond">
+            <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer cette note">✕</button>
           </div>
         </div>`;
     });
@@ -2289,7 +2547,11 @@
         pillColors[inp.dataset.colorKey] = inp.value;
         savePillColors();
         const pillBtn = inp.closest('.scene-pill-row').querySelector('.scene-pill');
-        if(pillBtn) pillBtn.style.setProperty('--pill-color', inp.value);
+        if(pillBtn){
+          pillBtn.style.setProperty('--pill-color', inp.value);
+          pillBtn.style.setProperty('--pill-text-color', getContrastTextColor(inp.value));
+          pillBtn.classList.add('has-custom-color');
+        }
       });
     });
 
@@ -2424,13 +2686,13 @@
     if(!customSceneTabsData[ct.id]){
       if(ct.format === 'notes') customSceneTabsData[ct.id] = {items: []};
       else if(ct.format === 'scene') customSceneTabsData[ct.id] = {title:'', content:'', image:null, updatedAt:null};
-      else customSceneTabsData[ct.id] = {content:'', updatedAt:null};
+      else customSceneTabsData[ct.id] = {title:'', content:'', updatedAt:null};
     }
     return customSceneTabsData[ct.id];
   }
 
   function removeCustomSubTab(id){
-    if(!confirm('Supprimer ce sous-onglet et son contenu ?')) return;
+    if(!confirm('Supprimer cette note et son contenu ?')) return;
     customSceneTabs = customSceneTabs.filter(t=>t.id!==id);
     delete customSceneTabsData[id];
     delete pillColors['custom:'+id];
@@ -2456,6 +2718,7 @@
   const toolbarButtonsHtml = `
     <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
     <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+    <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
     <div class="scene-toolbar-sep"></div>
     <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
     <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -2503,6 +2766,7 @@
     } else {
       block.innerHTML = `
         <div class="panel">
+          <input type="text" class="scene-editor-title" id="customSimpleTitleInput" value="${escapeHtml(data.title||'')}" placeholder="Titre (optionnel)">
           <div class="scene-toolbar" id="customSimpleToolbar">${toolbarButtonsHtml}</div>
           <div class="scene-editor-content" id="customSimpleContent" contenteditable="true" data-placeholder="Écris ton contenu ici...">${data.content||''}</div>
         </div>
@@ -2512,17 +2776,20 @@
   }
 
   function wireCustomSimpleFormat(ct, data){
+    const titleEl = document.getElementById('customSimpleTitleInput');
     const contentEl = document.getElementById('customSimpleContent');
     const stamp = () => {
       data.updatedAt = Date.now();
       saveCustomSceneTabs();
     };
+    titleEl.addEventListener('input', ()=>{ data.title = titleEl.value; stamp(); });
     contentEl.addEventListener('input', ()=>{ data.content = contentEl.innerHTML; stamp(); });
     document.querySelectorAll('#customSimpleToolbar button').forEach(btn=>{
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
+        else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
@@ -2549,6 +2816,7 @@
       btn.addEventListener('click', ()=>{
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
+        else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
@@ -2675,6 +2943,7 @@
     renderCategorySelect();
     renderTasks();
     renderCalendar();
+    renderWeekPlanner();
     renderPartis();
 
     // Correction du bug : S'assurer que le premier onglet principal affiché à l'ouverture correspond bien à activeTabId
@@ -2715,7 +2984,7 @@
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
-    sceneOrder, blocNotesOrder, pillColors
+    sceneOrder, blocNotesOrder, pillColors, weekPlanner
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
@@ -2724,8 +2993,9 @@
     partis = state.partis || [];
     scenes = (Array.isArray(state.scenes) && state.scenes.length) ? state.scenes : defaultScenes();
     if(state.notes && typeof state.notes === 'object'){ notesData = state.notes; }
-    else if(typeof state.notes === 'string'){ notesData = {content: escapeHtml(state.notes).replace(/\n/g,'<br>'), updatedAt:null}; }
+    else if(typeof state.notes === 'string'){ notesData = {content: escapeHtml(state.notes).replace(/\n/g,'<br>'), title:'', updatedAt:null}; }
     notesArea.innerHTML = notesData.content || '';
+    globalTitleInput.value = notesData.title || '';
     customSceneTabs = state.customSceneTabs || [];
     customSceneTabsData = state.customSceneTabsData || {};
     if(state.mecanismeData) mecanismeData = state.mecanismeData;
@@ -2733,6 +3003,7 @@
     sceneOrder = Array.isArray(state.sceneOrder) ? state.sceneOrder : null;
     blocNotesOrder = Array.isArray(state.blocNotesOrder) ? state.blocNotesOrder : null;
     pillColors = (state.pillColors && typeof state.pillColors === 'object') ? state.pillColors : {};
+    weekPlanner = normalizeWeekPlanner(state.weekPlanner);
   };
 </script>
 
