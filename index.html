@@ -951,49 +951,46 @@
     return obj;
   }
 
-  let tasks = JSON.parse(localStorage.getItem('rg_tasks') || '[]');
-  let events = JSON.parse(localStorage.getItem('rg_events') || '{}');
-  let categories = JSON.parse(localStorage.getItem('rg_categories') || 'null') || DEFAULT_CATS.slice();
-  let partis = JSON.parse(localStorage.getItem('rg_partis') || '[]');
-  let scenes = JSON.parse(localStorage.getItem('rg_scenes') || 'null') || defaultScenes();
+  // Tout l'état de l'appli vit en mémoire (JS) et n'est persisté que dans Firestore (voir plus bas,
+  // syncCloud()/__rg_scheduleSync) — aucune donnée n'est écrite en localStorage. Ces valeurs par défaut
+  // ne servent que le temps très bref avant que la synchro cloud n'ait chargé l'état réel de l'utilisatrice.
+  let tasks = [];
+  let events = {};
+  let categories = DEFAULT_CATS.slice();
+  let partis = [];
+  let scenes = defaultScenes();
 
-  let customSceneTabs = JSON.parse(localStorage.getItem('rg_custom_scene_tabs') || '[]');
-  let customSceneTabsData = JSON.parse(localStorage.getItem('rg_custom_scene_tabs_data') || '{}');
-  let mecanismeData = JSON.parse(localStorage.getItem('rg_mecanisme') || '{"title":"","content":""}');
+  let customSceneTabs = [];
+  let customSceneTabsData = {};
+  let mecanismeData = {title:'', content:''};
 
   // États de visibilité pour les onglets spéciaux
-  let hiddenTabs = JSON.parse(localStorage.getItem('rg_hidden_tabs') || '{}');
+  let hiddenTabs = {};
 
   // Ordre d'affichage des scènes (mélange scènes + séparateurs), et ordre des sous-onglets Bloc-notes
   // (Global / Parti pris / Mécanisme / sous-onglets perso + séparateurs).
-  let sceneOrder = JSON.parse(localStorage.getItem('rg_scene_order') || 'null');
-  if(!Array.isArray(sceneOrder)) sceneOrder = null;
-  let blocNotesOrder = JSON.parse(localStorage.getItem('rg_blocnotes_order') || 'null');
-  if(!Array.isArray(blocNotesOrder)) blocNotesOrder = null;
+  let sceneOrder = null;
+  let blocNotesOrder = null;
 
   // Couleurs de contour personnalisées des sous-onglets, indexées par une clé stable
   // ("scene:<id>", "global", "parti", "mecanisme", "custom:<id>").
-  let pillColors = JSON.parse(localStorage.getItem('rg_pill_colors') || '{}');
+  let pillColors = {};
 
-  let weekPlanner = normalizeWeekPlanner(JSON.parse(localStorage.getItem('rg_week_planner') || 'null'));
+  let weekPlanner = defaultWeekPlanner();
 
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); };
-  const saveTasks = () => { localStorage.setItem('rg_tasks', JSON.stringify(tasks)); syncCloud(); };
-  const saveEvents = () => { localStorage.setItem('rg_events', JSON.stringify(events)); syncCloud(); };
-  const saveCategories = () => { localStorage.setItem('rg_categories', JSON.stringify(categories)); syncCloud(); };
-  const savePartis = () => { localStorage.setItem('rg_partis', JSON.stringify(partis)); syncCloud(); };
-  const saveScenes = () => { localStorage.setItem('rg_scenes', JSON.stringify(scenes)); syncCloud(); };
-  const saveMecanisme = () => { localStorage.setItem('rg_mecanisme', JSON.stringify(mecanismeData)); syncCloud(); };
-  const saveHiddenTabs = () => { localStorage.setItem('rg_hidden_tabs', JSON.stringify(hiddenTabs)); syncCloud(); };
-  const saveCustomSceneTabs = () => {
-    localStorage.setItem('rg_custom_scene_tabs', JSON.stringify(customSceneTabs));
-    localStorage.setItem('rg_custom_scene_tabs_data', JSON.stringify(customSceneTabsData));
-    syncCloud();
-  };
-  const saveSceneOrder = () => { localStorage.setItem('rg_scene_order', JSON.stringify(sceneOrder)); syncCloud(); };
-  const saveBlocNotesOrder = () => { localStorage.setItem('rg_blocnotes_order', JSON.stringify(blocNotesOrder)); syncCloud(); };
-  const savePillColors = () => { localStorage.setItem('rg_pill_colors', JSON.stringify(pillColors)); syncCloud(); };
-  const saveWeekPlanner = () => { localStorage.setItem('rg_week_planner', JSON.stringify(weekPlanner)); syncCloud(); };
+  const saveTasks = () => { syncCloud(); };
+  const saveEvents = () => { syncCloud(); };
+  const saveCategories = () => { syncCloud(); };
+  const savePartis = () => { syncCloud(); };
+  const saveScenes = () => { syncCloud(); };
+  const saveMecanisme = () => { syncCloud(); };
+  const saveHiddenTabs = () => { syncCloud(); };
+  const saveCustomSceneTabs = () => { syncCloud(); };
+  const saveSceneOrder = () => { syncCloud(); };
+  const saveBlocNotesOrder = () => { syncCloud(); };
+  const savePillColors = () => { syncCloud(); };
+  const saveWeekPlanner = () => { syncCloud(); };
 
   function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
 
@@ -1293,7 +1290,7 @@
   // --- Modification d'un tableau existant : ajouter/supprimer une ligne ou une colonne ---
   // Une petite barre flottante apparaît au clic dans une cellule de tableau ; elle agit
   // directement sur le DOM, puis redéclenche l'événement "input" du bloc éditable concerné
-  // pour que la sauvegarde habituelle (localStorage + synchro cloud) se déclenche normalement.
+  // pour que la sauvegarde habituelle (synchro cloud) se déclenche normalement.
   let tableCellToolbarEl = null;
   let tableCellToolbarTd = null;
 
@@ -1939,24 +1936,14 @@
   // ---------- GLOBAL (NOTES) ----------
   const notesArea = document.getElementById('notesArea');
   const globalTitleInput = document.getElementById('globalTitleInput');
-  let notesData;
-  (function initNotesData(){
-    const raw = localStorage.getItem('rg_notes');
-    if(raw === null){ notesData = {content:'', title:'', updatedAt:null}; return; }
-    try{
-      const parsed = JSON.parse(raw);
-      if(parsed && typeof parsed === 'object' && 'content' in parsed){ notesData = parsed; }
-      else { notesData = {content:'', title:'', updatedAt:null}; }
-    }catch(e){
-      notesData = {content: escapeHtml(raw).replace(/\n/g,'<br>'), title:'', updatedAt:null};
-    }
-  })();
+  // Valeur par défaut le temps que la synchro cloud charge l'état réel (voir remarque plus haut :
+  // rien n'est persisté en localStorage, tout passe par Firestore).
+  let notesData = {content:'', title:'', updatedAt:null};
   notesArea.innerHTML = notesData.content || '';
   globalTitleInput.value = notesData.title || '';
 
   const saveNotes = () => {
     notesData.updatedAt = Date.now();
-    localStorage.setItem('rg_notes', JSON.stringify(notesData));
     syncCloud();
     renderGlobalLastModified();
   };
@@ -3005,6 +2992,51 @@
     pillColors = (state.pillColors && typeof state.pillColors === 'object') ? state.pillColors : {};
     weekPlanner = normalizeWeekPlanner(state.weekPlanner);
   };
+
+  // Filet de sécurité pour la migration : les versions précédentes de l'appli écrivaient encore
+  // les données en localStorage (en plus de Firestore). On ne lit plus jamais ces clés au quotidien,
+  // mais si un compte n'a encore AUCUN document Firestore (donc rien à charger depuis le cloud) et
+  // qu'il reste d'anciennes données locales dans ce navigateur, on les récupère une seule fois pour
+  // ne rien perdre, avant de les effacer définitivement du localStorage.
+  const LEGACY_LS_KEYS = [
+    'rg_tasks','rg_events','rg_categories','rg_partis','rg_scenes','rg_custom_scene_tabs',
+    'rg_custom_scene_tabs_data','rg_mecanisme','rg_hidden_tabs','rg_scene_order','rg_blocnotes_order',
+    'rg_pill_colors','rg_week_planner','rg_notes'
+  ];
+  window.__rg_readLegacyLocalStorage = function(){
+    try{
+      const hasAny = LEGACY_LS_KEYS.some(k => localStorage.getItem(k) !== null);
+      if(!hasAny) return null;
+      const readJSON = (key, fallback) => {
+        try{ const raw = localStorage.getItem(key); return raw === null ? fallback : JSON.parse(raw); }
+        catch(e){ return fallback; }
+      };
+      let notes = readJSON('rg_notes', null);
+      if(notes && typeof notes === 'string'){ notes = {content: escapeHtml(notes).replace(/\n/g,'<br>'), title:'', updatedAt:null}; }
+      if(!notes || typeof notes !== 'object' || !('content' in notes)){ notes = {content:'', title:'', updatedAt:null}; }
+      return {
+        tasks: readJSON('rg_tasks', []),
+        events: readJSON('rg_events', {}),
+        categories: readJSON('rg_categories', null) || DEFAULT_CATS.slice(),
+        partis: readJSON('rg_partis', []),
+        scenes: readJSON('rg_scenes', null) || defaultScenes(),
+        notes,
+        customSceneTabs: readJSON('rg_custom_scene_tabs', []),
+        customSceneTabsData: readJSON('rg_custom_scene_tabs_data', {}),
+        mecanismeData: readJSON('rg_mecanisme', {title:'', content:''}),
+        hiddenTabs: readJSON('rg_hidden_tabs', {}),
+        sceneOrder: readJSON('rg_scene_order', null),
+        blocNotesOrder: readJSON('rg_blocnotes_order', null),
+        pillColors: readJSON('rg_pill_colors', {}),
+        weekPlanner: readJSON('rg_week_planner', null)
+      };
+    }catch(e){
+      return null;
+    }
+  };
+  window.__rg_clearLegacyLocalStorage = function(){
+    LEGACY_LS_KEYS.forEach(k => { try{ localStorage.removeItem(k); }catch(e){} });
+  };
 </script>
 
 <!-- ==================== FIREBASE : AUTH + SYNCHRO ==================== -->
@@ -3093,8 +3125,14 @@
       if(snap.exists()){
         window.__rg_setState(snap.data());
       } else {
+        // Aucun document cloud pour ce compte : on regarde s'il reste d'anciennes données
+        // locales (versions précédentes de l'appli) pour ne rien perdre, avant de les migrer
+        // définitivement vers Firestore et de nettoyer le localStorage.
+        const legacyState = window.__rg_readLegacyLocalStorage ? window.__rg_readLegacyLocalStorage() : null;
+        if(legacyState) window.__rg_setState(legacyState);
         const initialState = window.__rg_getState();
         await setDoc(userDocRef, { ...initialState, updatedAt: serverTimestamp() });
+        if(legacyState && window.__rg_clearLegacyLocalStorage) window.__rg_clearLegacyLocalStorage();
       }
       applyingRemoteState = false;
       window.__rg_renderAll();
