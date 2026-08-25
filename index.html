@@ -199,6 +199,19 @@
     color:var(--ink); background:var(--panel); line-height:1.35; overflow:hidden;
   }
   .wp-cell.is-today{border-color:var(--lavande);}
+
+  /* STORAGE FOOTER (poids total des images) */
+  .storage-footer{
+    margin-top:36px; padding-top:16px; border-top:1px solid var(--line);
+    text-align:center; font-size:0.76rem; font-weight:500; color:var(--ink-soft);
+  }
+  .storage-footer .storage-bar{
+    display:inline-block; width:120px; height:5px; border-radius:999px; background:var(--gris);
+    overflow:hidden; margin:0 8px; vertical-align:middle; position:relative; top:-1px;
+  }
+  .storage-footer .storage-bar-fill{display:block; height:100%; border-radius:999px; background:var(--menthe); transition:width .3s ease;}
+  .storage-footer .storage-bar-fill.is-warning{background:var(--peche);}
+  .storage-footer .storage-bar-fill.is-danger{background:var(--rose);}
   .wp-cell:focus{outline:none; border-color:var(--lavande);}
   .wp-cell::placeholder{color:var(--ink-soft);}
 
@@ -801,6 +814,8 @@
     </a>
   </div>
 
+  <div class="storage-footer" id="storageFooter"></div>
+
 </div>
 
 <!-- MODAL JOUR -->
@@ -987,7 +1002,7 @@
 
   let weekPlanner = defaultWeekPlanner();
 
-  const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); };
+  const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); renderStorageFooter(); };
   const saveTasks = () => { syncCloud(); };
   const saveEvents = () => { syncCloud(); };
   const saveCategories = () => { syncCloud(); };
@@ -3005,6 +3020,66 @@
   });
 
   // ---------- INIT ALL ----------
+  // ---------- POIDS DES IMAGES (pied de page) ----------
+  // Toutes les données de l'appli (textes + images en base64) sont enregistrées dans un seul
+  // document Firestore, plafonné à 1 Mo. On s'en sert comme référence pour la barre ci-dessous.
+  const STORAGE_LIMIT_BYTES = 1024 * 1024;
+
+  function base64ImageBytes(dataUrl){
+    if(typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return 0;
+    const idx = dataUrl.indexOf(',');
+    if(idx === -1) return 0;
+    const b64 = dataUrl.slice(idx + 1);
+    const len = b64.length;
+    if(!len) return 0;
+    const padding = b64.endsWith('==') ? 2 : (b64.endsWith('=') ? 1 : 0);
+    return Math.max(0, Math.floor(len * 3 / 4) - padding);
+  }
+
+  function inlineImagesBytes(html){
+    if(typeof html !== 'string' || !html) return 0;
+    let total = 0;
+    const re = /<img[^>]+src=["'](data:image\/[^"']+)["']/gi;
+    let m;
+    while((m = re.exec(html))){ total += base64ImageBytes(m[1]); }
+    return total;
+  }
+
+  function computeTotalImageBytes(){
+    let total = 0;
+    scenes.forEach(s=>{
+      total += base64ImageBytes(s.image);
+      total += inlineImagesBytes(s.content);
+    });
+    total += inlineImagesBytes(notesData && notesData.content);
+    total += inlineImagesBytes(mecanismeData && mecanismeData.content);
+    partis.forEach(p=> total += inlineImagesBytes(p.content));
+    Object.keys(customSceneTabsData || {}).forEach(id=>{
+      const data = customSceneTabsData[id];
+      if(!data) return;
+      total += base64ImageBytes(data.image);
+      total += inlineImagesBytes(data.content);
+      if(Array.isArray(data.items)) data.items.forEach(it=> total += inlineImagesBytes(it.content));
+    });
+    return total;
+  }
+
+  function formatKB(bytes){
+    return (bytes / 1024).toLocaleString('fr-FR', {minimumFractionDigits:1, maximumFractionDigits:1});
+  }
+
+  function renderStorageFooter(){
+    const el = document.getElementById('storageFooter');
+    if(!el) return;
+    const total = computeTotalImageBytes();
+    const pct = (total / STORAGE_LIMIT_BYTES) * 100;
+    const pctLabel = pct < 10 ? pct.toFixed(1) : Math.round(pct);
+    const fillClass = pct >= 90 ? 'is-danger' : (pct >= 60 ? 'is-warning' : '');
+    el.innerHTML = `Poids total des images : <strong>${formatKB(total)} Ko</strong>` +
+      `<span class="storage-bar"><span class="storage-bar-fill ${fillClass}" style="width:${Math.min(100,pct)}%;"></span></span>` +
+      `<strong>${pctLabel} %</strong> de la limite (1 Mo)`;
+  }
+
   function renderAll(){
     renderTabs();
     initMecanismeEditor();
@@ -3013,6 +3088,7 @@
     renderCalendar();
     renderWeekPlanner();
     renderPartis();
+    renderStorageFooter();
 
     // Correction du bug : S'assurer que le premier onglet principal affiché à l'ouverture correspond bien à activeTabId
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
