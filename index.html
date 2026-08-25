@@ -434,6 +434,22 @@
   .scene-editor-content p{margin:0 0 0.6em; overflow-wrap:anywhere; word-break:break-word;}
   .scene-editor-content a{overflow-wrap:anywhere; word-break:break-word;}
   .scene-editor-content img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
+  .scene-editor-content img, .parti-content-editable img{
+    -webkit-user-drag:none; user-select:none; touch-action:none; cursor:pointer;
+  }
+  .scene-editor-content img.rg-img-selected, .parti-content-editable img.rg-img-selected{
+    outline:2px solid var(--lavande); outline-offset:2px; cursor:move;
+  }
+  .scene-editor-content img.rg-img-ghost, .parti-content-editable img.rg-img-ghost{opacity:0.3;}
+  .rg-img-drag-clone{
+    position:fixed; z-index:80; pointer-events:none; border-radius:8px; opacity:0.85;
+    box-shadow:0 6px 18px rgba(30,41,59,0.25); object-fit:cover;
+  }
+  .img-resize-handle{
+    position:fixed; z-index:81; width:16px; height:16px; margin:-8px 0 0 -8px;
+    background:var(--lavande); border:2px solid #fff; border-radius:50%;
+    box-shadow:0 1px 4px rgba(30,41,59,0.35); cursor:nwse-resize; touch-action:none; display:none;
+  }
   .rich-table{border-collapse:collapse; margin:0.6em 0; width:100%; max-width:100%;}
   .rich-table td{border:1px solid var(--line); padding:7px 10px; min-width:60px; vertical-align:top;}
   .rich-table td:focus{outline:2px solid var(--lavande); outline-offset:-2px;}
@@ -921,6 +937,9 @@
 
 <!-- Popover de couleurs de surlignage, partagé par tous les éditeurs enrichis -->
 <div class="highlight-popover" id="highlightPopover"></div>
+
+<!-- Poignée de redimensionnement d'image, partagée par tous les éditeurs du Bloc-notes -->
+<div class="img-resize-handle" id="imgResizeHandle" title="Glisser pour redimensionner"></div>
 
 <script>
   const DEFAULT_CATS = [
@@ -1461,6 +1480,7 @@
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, postitContentInput); }
     });
   });
+  enableImageEditing(postitContentInput, ()=>{});
 
   function getCategoryColor(name){
     const c = categories.find(x=>x.name===name);
@@ -1534,6 +1554,7 @@
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, mecanismeContentInput); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
     });
   });
+  enableImageEditing(mecanismeContentInput, ()=>{ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); });
 
 
   // ---------- CATEGORIES ----------
@@ -1996,6 +2017,7 @@
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, notesArea); notesData.content = notesArea.innerHTML; saveNotes(); }
     });
   });
+  enableImageEditing(notesArea, ()=>{ notesData.content = notesArea.innerHTML; saveNotes(); });
 
   // ---------- PROJET / PARTIS PRIS ----------
   const POSTIT_COLORS = [
@@ -2435,6 +2457,7 @@
   let currentCustomTabId = null;
 
   function hideAllBlocNotesBlocks(){
+    deselectImage();
     globalModeBlock.style.display = 'none';
     partiModeBlock.style.display = 'none';
     mecanismeModeBlock.style.display = 'none';
@@ -2875,6 +2898,7 @@
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
+    enableImageEditing(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); });
   }
 
   function wireCustomSceneFormat(ct, data){
@@ -2903,6 +2927,7 @@
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
+    enableImageEditing(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); });
 
     imageBox.addEventListener('click', (e)=>{
       if(e.target === imageRemoveBtn) return;
@@ -3020,6 +3045,164 @@
   });
 
   // ---------- INIT ALL ----------
+  // ---------- IMAGES DANS L'ÉDITEUR : sélection, redimensionnement et déplacement ----------
+  const imgResizeHandle = document.getElementById('imgResizeHandle');
+  let selectedImg = null;
+  let selectedImgOnChange = null;
+  // Évite qu'un clic « fantôme » juste après un glisser (redimensionnement ou déplacement) ne
+  // désélectionne l'image immédiatement.
+  let suppressDeselectClick = false;
+  function markInteractionJustHappened(){
+    suppressDeselectClick = true;
+    setTimeout(()=>{ suppressDeselectClick = false; }, 300);
+  }
+
+  // document.caretRangeFromPoint (Chrome/Safari/WebKit) et document.caretPositionFromPoint (Firefox)
+  // servent tous deux à retrouver le point d'insertion du texte sous les coordonnées de la souris/du
+  // doigt, pour pouvoir déposer l'image exactement là où l'utilisatrice l'a lâchée.
+  function caretRangeFromPointCompat(x, y){
+    if(document.caretRangeFromPoint) return document.caretRangeFromPoint(x, y);
+    if(document.caretPositionFromPoint){
+      const pos = document.caretPositionFromPoint(x, y);
+      if(!pos || !pos.offsetNode) return null;
+      const range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.collapse(true);
+      return range;
+    }
+    return null;
+  }
+
+  function positionResizeHandle(){
+    if(!selectedImg || !document.body.contains(selectedImg)){ deselectImage(); return; }
+    const r = selectedImg.getBoundingClientRect();
+    imgResizeHandle.style.display = 'block';
+    imgResizeHandle.style.left = r.right + 'px';
+    imgResizeHandle.style.top = r.bottom + 'px';
+  }
+
+  function deselectImage(){
+    if(selectedImg) selectedImg.classList.remove('rg-img-selected');
+    selectedImg = null;
+    selectedImgOnChange = null;
+    imgResizeHandle.style.display = 'none';
+  }
+
+  function selectImage(img, onChange){
+    if(selectedImg && selectedImg !== img) selectedImg.classList.remove('rg-img-selected');
+    selectedImg = img;
+    selectedImgOnChange = onChange;
+    img.classList.add('rg-img-selected');
+    positionResizeHandle();
+  }
+
+  window.addEventListener('scroll', ()=>{ if(selectedImg) positionResizeHandle(); }, true);
+  window.addEventListener('resize', ()=>{ if(selectedImg) positionResizeHandle(); });
+
+  // Clic en dehors de toute image (et de la poignée) : on désélectionne.
+  document.addEventListener('click', (e)=>{
+    if(suppressDeselectClick){ suppressDeselectClick = false; return; }
+    if(e.target === imgResizeHandle) return;
+    if(e.target.tagName === 'IMG') return;
+    deselectImage();
+  });
+
+  // Glisser la poignée : redimensionne l'image sélectionnée en conservant ses proportions.
+  imgResizeHandle.addEventListener('pointerdown', (e)=>{
+    if(!selectedImg) return;
+    e.preventDefault();
+    const img = selectedImg;
+    const startX = e.clientX;
+    const startRect = img.getBoundingClientRect();
+    const startWidth = startRect.width;
+    const maxWidth = img.parentElement ? img.parentElement.getBoundingClientRect().width : startWidth;
+    try{ imgResizeHandle.setPointerCapture(e.pointerId); }catch(err){}
+
+    const onMove = (ev)=>{
+      const delta = ev.clientX - startX;
+      const newWidth = Math.max(40, Math.min(maxWidth, startWidth + delta));
+      img.style.width = Math.round(newWidth) + 'px';
+      img.style.height = 'auto';
+      positionResizeHandle();
+    };
+    const onUp = (ev)=>{
+      imgResizeHandle.removeEventListener('pointermove', onMove);
+      imgResizeHandle.removeEventListener('pointerup', onUp);
+      try{ imgResizeHandle.releasePointerCapture(ev.pointerId); }catch(err){}
+      markInteractionJustHappened();
+      if(selectedImgOnChange) selectedImgOnChange();
+    };
+    imgResizeHandle.addEventListener('pointermove', onMove);
+    imgResizeHandle.addEventListener('pointerup', onUp);
+  });
+
+  // Sélection au clic + déplacement par glisser-déposer d'une image insérée dans un éditeur du
+  // Bloc-notes. On s'appuie sur les Pointer Events (et non l'API HTML5 drag-and-drop, mal supportée
+  // au toucher mobile) — même logique que pour le réordonnancement des onglets par glisser-déposer.
+  function enableImageEditing(containerEl, onChange){
+    let dragImg = null, dragClone = null, dragMoved = false, dragStartX = 0, dragStartY = 0;
+
+    containerEl.addEventListener('pointerdown', (e)=>{
+      const img = e.target.closest('img');
+      if(!img || !containerEl.contains(img)) return;
+      e.preventDefault();
+      selectImage(img, onChange);
+      dragImg = img; dragMoved = false;
+      dragStartX = e.clientX; dragStartY = e.clientY;
+      try{ containerEl.setPointerCapture(e.pointerId); }catch(err){}
+    });
+
+    containerEl.addEventListener('pointermove', (e)=>{
+      if(!dragImg) return;
+      const dx = e.clientX - dragStartX, dy = e.clientY - dragStartY;
+      if(!dragMoved && Math.hypot(dx, dy) < 8) return;
+      if(!dragMoved){
+        dragMoved = true;
+        const r = dragImg.getBoundingClientRect();
+        dragClone = dragImg.cloneNode(true);
+        dragClone.className = 'rg-img-drag-clone';
+        dragClone.style.width = r.width + 'px';
+        dragClone.style.height = r.height + 'px';
+        document.body.appendChild(dragClone);
+        dragImg.classList.add('rg-img-ghost');
+        imgResizeHandle.style.display = 'none';
+      }
+      const r2 = dragClone.getBoundingClientRect();
+      dragClone.style.left = (e.clientX - r2.width/2) + 'px';
+      dragClone.style.top = (e.clientY - r2.height/2) + 'px';
+    });
+
+    const finishDrag = (e)=>{
+      if(!dragImg) return;
+      try{ containerEl.releasePointerCapture(e.pointerId); }catch(err){}
+      if(dragMoved){
+        dragImg.classList.remove('rg-img-ghost');
+        if(dragClone){ dragClone.remove(); dragClone = null; }
+        markInteractionJustHappened();
+        let moved = false;
+        const range = caretRangeFromPointCompat(e.clientX, e.clientY);
+        if(range && containerEl.contains(range.startContainer) && range.startContainer !== dragImg){
+          try{
+            dragImg.remove();
+            range.insertNode(dragImg);
+            moved = true;
+          }catch(err){ /* dépôt impossible à cet endroit précis : on annule le déplacement */ }
+        }
+        if(moved && onChange) onChange();
+        selectImage(dragImg, onChange);
+      }
+      dragImg = null; dragMoved = false;
+    };
+    containerEl.addEventListener('pointerup', finishDrag);
+    containerEl.addEventListener('pointercancel', ()=>{
+      if(dragImg){
+        dragImg.classList.remove('rg-img-ghost');
+        if(dragClone){ dragClone.remove(); dragClone = null; }
+      }
+      dragImg = null; dragMoved = false;
+    });
+  }
+
   // ---------- POIDS DES IMAGES (pied de page) ----------
   // Toutes les données de l'appli (textes + images en base64) sont enregistrées dans un seul
   // document Firestore, plafonné à 1 Mo. On s'en sert comme référence pour la barre ci-dessous.
