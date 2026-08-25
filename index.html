@@ -52,14 +52,14 @@
   header p{margin:4px 0 0; color:var(--ink-soft); font-weight:500; font-size:0.9rem; letter-spacing:0.02em;}
 
   /* TABS */
-  .tabs-container{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:26px;}
-  .tabs{display:flex; gap:4px; flex-wrap:wrap; background:var(--gris); padding:5px; border-radius:14px; width:fit-content;}
+  .tabs-container{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;}
+  .tabs{display:flex; gap:4px; flex-wrap:wrap; background:var(--gris); padding:5px; border-radius:14px; width:100%;}
   .tab-btn{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.85rem;
-    padding:8px 16px; border:none; border-radius:10px;
+    padding:8px 16px; border:none; border-radius:10px; flex:1;
     background:transparent; color:var(--ink-soft); cursor:pointer; letter-spacing:0.01em;
     transition:background .15s ease, color .15s ease, box-shadow .15s ease;
-    display:inline-flex; align-items:center; gap:6px;
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
   }
   .tab-btn:hover{color:var(--ink);}
   .tab-btn.active{color:var(--lavande); background:var(--panel); box-shadow:var(--shadow-sm);}
@@ -190,16 +190,15 @@
 
   /* WEEK PLANNER (SEMAINIER) */
   .week-planner-panel{margin-bottom:20px;}
-  .week-planner-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;}
-  .week-planner-header h2{font-family:'Plus Jakarta Sans', sans-serif; margin:0; font-weight:700; font-size:1.25rem;}
-  .week-planner-grid{display:grid; grid-template-columns:76px repeat(7,1fr); gap:6px;}
+  .week-planner-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
   .wp-cell-header{text-align:center; font-weight:600; font-size:0.68rem; text-transform:uppercase; color:var(--ink-soft); letter-spacing:0.08em; padding:4px 2px;}
-  .wp-slot-label{display:flex; align-items:center; font-weight:600; font-size:0.78rem; color:var(--ink); padding:8px 4px;}
+  .wp-cell-header.is-today{color:var(--lavande);}
   .wp-cell{
     width:100%; min-height:62px; resize:vertical; border:1px solid var(--line); border-radius:8px;
     padding:7px 9px; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.78rem;
     color:var(--ink); background:var(--panel); line-height:1.35; overflow:hidden;
   }
+  .wp-cell.is-today{border-color:var(--lavande);}
   .wp-cell:focus{outline:none; border-color:var(--lavande);}
   .wp-cell::placeholder{color:var(--ink-soft);}
 
@@ -413,12 +412,15 @@
   .scene-editor-content{
     width:100%; min-height:420px; border:none; background:transparent;
     font-family:'Plus Jakarta Sans', sans-serif; font-size:0.98rem; line-height:1.65; color:var(--ink);
+    overflow-wrap:anywhere; word-break:break-word; max-width:100%; overflow-x:hidden;
   }
   .scene-editor-content:focus{outline:none;}
   .scene-editor-content:empty:before{content:attr(data-placeholder); color:var(--ink-soft);}
   .scene-editor-content h2{font-size:1.35em; font-weight:700; margin:0.7em 0 0.3em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content h3{font-size:1.12em; font-weight:700; margin:0.6em 0 0.25em; font-family:'Plus Jakarta Sans', sans-serif;}
-  .scene-editor-content p{margin:0 0 0.6em;}
+  .scene-editor-content p{margin:0 0 0.6em; overflow-wrap:anywhere; word-break:break-word;}
+  .scene-editor-content a{overflow-wrap:anywhere; word-break:break-word;}
+  .scene-editor-content img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
   .rich-table{border-collapse:collapse; margin:0.6em 0; width:100%; max-width:100%;}
   .rich-table td{border:1px solid var(--line); padding:7px 10px; min-width:60px; vertical-align:top;}
   .rich-table td:focus{outline:2px solid var(--lavande); outline-offset:-2px;}
@@ -487,9 +489,11 @@
   .parti-content-editable{
     min-height:100px; border:1px solid var(--line); border-radius:10px; padding:12px 14px;
     background:var(--panel); font-family:'Plus Jakarta Sans', sans-serif; font-size:0.92rem; line-height:1.5; color:var(--ink);
+    overflow-wrap:anywhere; word-break:break-word; max-width:100%; overflow-x:hidden;
   }
   .parti-content-editable:focus{outline:none; border-color:var(--lavande);}
   .parti-content-editable:empty:before{content:attr(data-placeholder); color:var(--ink-soft);}
+  .parti-content-editable img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
   .parti-form-actions{display:flex; gap:10px; align-items:center; margin-top:4px;}
 
   .parti-grid{
@@ -582,7 +586,7 @@
     .scene-sidebar-actions{width:100%;}
     .scene-sidebar-actions .btn-add-subtab{flex:1; text-align:center;}
     .week-planner-panel{overflow-x:auto;}
-    .week-planner-grid{grid-template-columns:56px repeat(7,minmax(90px,1fr)); width:max-content; min-width:100%; padding-bottom:4px;}
+    .week-planner-grid{grid-template-columns:repeat(7,minmax(64px,1fr)); width:max-content; min-width:100%; padding-bottom:4px;}
   }
 </style>
 </head>
@@ -650,9 +654,6 @@
   <!-- CALENDRIER -->
   <div class="tab-content" id="content-cal">
     <div class="panel week-planner-panel">
-      <div class="week-planner-header">
-        <h2>Semainier</h2>
-      </div>
       <div class="week-planner-grid" id="weekPlannerGrid"></div>
     </div>
 
@@ -749,6 +750,7 @@
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
+            <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~5 Ko)">🖼 Image</button>
           </div>
           <div class="scene-editor-content" id="notesArea" contenteditable="true" data-placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></div>
         </div>
@@ -777,6 +779,7 @@
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
+            <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~5 Ko)">🖼 Image</button>
           </div>
           <div class="scene-editor-content" id="mecanismeContentInput" contenteditable="true" data-placeholder="Décris ici les mécanismes de la violence psychologique, les schémas comportementaux..."></div>
         </div>
@@ -919,36 +922,42 @@
     return Array.from({length:20}, (_,i)=>({id:i+1, title:'Scène '+(i+1), content:'', image:null, mechanismTags:[], updatedAt:null}));
   }
 
-  // Semainier (au-dessus du calendrier mensuel) : une grille libre Lun→Dim x Matin/Midi/Après-midi/Soir,
+  // Semainier (au-dessus du calendrier mensuel) : une grille libre Lun→Dim, une seule case par jour,
   // remplie à la main par l'utilisatrice pour s'organiser sur le projet.
   const WEEK_DAYS = [
     {key:'lun', label:'Lun'}, {key:'mar', label:'Mar'}, {key:'mer', label:'Mer'},
     {key:'jeu', label:'Jeu'}, {key:'ven', label:'Ven'}, {key:'sam', label:'Sam'}, {key:'dim', label:'Dim'}
   ];
-  const WEEK_SLOTS = [
-    {key:'matin', label:'Matin'}, {key:'midi', label:'Midi'},
-    {key:'apresmidi', label:'Après-midi'}, {key:'soir', label:'Soir'}
-  ];
+  // Anciennes clés de créneaux (Matin/Midi/Après-midi/Soir), conservées uniquement pour migrer
+  // les données existantes vers une case unique par jour.
+  const LEGACY_WEEK_SLOT_KEYS = ['matin', 'midi', 'apresmidi', 'soir'];
   function defaultWeekPlanner(){
     const obj = {};
-    WEEK_DAYS.forEach(d=>{
-      obj[d.key] = {};
-      WEEK_SLOTS.forEach(s=> obj[d.key][s.key] = '');
-    });
+    WEEK_DAYS.forEach(d=> obj[d.key] = '');
     return obj;
   }
   function normalizeWeekPlanner(data){
     const obj = defaultWeekPlanner();
     if(data && typeof data === 'object'){
       WEEK_DAYS.forEach(d=>{
-        if(data[d.key] && typeof data[d.key] === 'object'){
-          WEEK_SLOTS.forEach(s=>{
-            if(typeof data[d.key][s.key] === 'string') obj[d.key][s.key] = data[d.key][s.key];
-          });
+        const val = data[d.key];
+        if(typeof val === 'string'){
+          obj[d.key] = val;
+        } else if(val && typeof val === 'object'){
+          // Ancien format à 4 créneaux : on fusionne les textes non vides en une seule case.
+          obj[d.key] = LEGACY_WEEK_SLOT_KEYS.map(k => (typeof val[k] === 'string' ? val[k].trim() : '')).filter(Boolean).join('\n');
         }
       });
     }
     return obj;
+  }
+  // Index (0=Lun...6=Dim) du jour courant dans WEEK_DAYS, pour afficher aujourd'hui tout à gauche.
+  function todayWeekDayIndex(){
+    return (new Date().getDay() + 6) % 7;
+  }
+  function orderedWeekDays(){
+    const i = todayWeekDayIndex();
+    return WEEK_DAYS.slice(i).concat(WEEK_DAYS.slice(0, i));
   }
 
   // Tout l'état de l'appli vit en mémoire (JS) et n'est persisté que dans Firestore (voir plus bas,
@@ -1506,6 +1515,7 @@
       mecanismeContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, mecanismeContentInput); }
+      else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(mecanismeContentInput, ()=>{ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, mecanismeContentInput); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
     });
   });
@@ -1836,18 +1846,16 @@
   function renderWeekPlanner(){
     const grid = document.getElementById('weekPlannerGrid');
     if(!grid) return;
-    let html = `<div class="wp-cell-header"></div>` +
-      WEEK_DAYS.map(d => `<div class="wp-cell-header">${escapeHtml(d.label)}</div>`).join('');
-    WEEK_SLOTS.forEach(s=>{
-      html += `<div class="wp-slot-label">${escapeHtml(s.label)}</div>`;
-      html += WEEK_DAYS.map(d =>
-        `<textarea class="wp-cell" data-day="${d.key}" data-slot="${s.key}" placeholder="…">${escapeHtml(weekPlanner[d.key][s.key])}</textarea>`
-      ).join('');
-    });
+    const days = orderedWeekDays();
+    const todayKey = WEEK_DAYS[todayWeekDayIndex()].key;
+    let html = days.map(d => `<div class="wp-cell-header${d.key===todayKey?' is-today':''}">${escapeHtml(d.label)}</div>`).join('');
+    html += days.map(d =>
+      `<textarea class="wp-cell${d.key===todayKey?' is-today':''}" data-day="${d.key}" placeholder="…">${escapeHtml(weekPlanner[d.key])}</textarea>`
+    ).join('');
     grid.innerHTML = html;
     grid.querySelectorAll('.wp-cell').forEach(ta=>{
       ta.addEventListener('input', ()=>{
-        weekPlanner[ta.dataset.day][ta.dataset.slot] = ta.value;
+        weekPlanner[ta.dataset.day] = ta.value;
         saveWeekPlanner();
         autoGrowWpCell(ta);
       });
@@ -1969,6 +1977,7 @@
       notesArea.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, notesArea); }
+      else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(notesArea, ()=>{ notesData.content = notesArea.innerHTML; saveNotes(); }); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, notesArea); notesData.content = notesArea.innerHTML; saveNotes(); }
     });
   });
@@ -2639,6 +2648,75 @@
     });
   }
 
+  // Compression pour les images insérées dans le corps des bloc-notes (pas de recadrage carré,
+  // on garde les proportions d'origine, mais on vise ~5 Ko comme pour les autres images de l'appli).
+  function compressImageForEditor(file, {targetKB=5, startWidth=480, minWidth=80} = {}){
+    return new Promise((resolve, reject)=>{
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let width = Math.min(img.width, startWidth);
+        let height = Math.max(1, Math.round(img.height * (width / img.width)));
+        let quality = 0.75;
+        let dataUrl = '';
+
+        for(let attempt = 0; attempt < 30; attempt++){
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+          const approxKB = (dataUrl.length * 0.75) / 1024;
+          if(approxKB <= targetKB) break;
+          if(quality > 0.15){ quality -= 0.1; }
+          else if(width > minWidth){ width = Math.round(width * 0.85); height = Math.max(1, Math.round(img.height * (width / img.width))); quality = 0.6; }
+          else { break; }
+        }
+        resolve(dataUrl);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image illisible')); };
+      img.src = url;
+    });
+  }
+
+  // Bouton "Image" partagé par les éditeurs du Bloc-notes : ouvre un sélecteur de fichier,
+  // compresse l'image choisie puis l'insère au point du curseur dans l'éditeur ciblé.
+  let __rgEditorImageInput = null;
+  function insertImageIntoEditor(containerEl, onDone){
+    if(!__rgEditorImageInput){
+      __rgEditorImageInput = document.createElement('input');
+      __rgEditorImageInput.type = 'file';
+      __rgEditorImageInput.accept = 'image/*';
+      __rgEditorImageInput.style.display = 'none';
+      document.body.appendChild(__rgEditorImageInput);
+    }
+    const input = __rgEditorImageInput;
+    let savedRange = null;
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount){
+      const r = sel.getRangeAt(0);
+      if(containerEl.contains(r.startContainer)) savedRange = r.cloneRange();
+    }
+    input.onchange = async () => {
+      const file = input.files[0];
+      input.value = '';
+      if(!file) return;
+      try{
+        const dataUrl = await compressImageForEditor(file);
+        containerEl.focus();
+        const sel2 = window.getSelection();
+        sel2.removeAllRanges();
+        if(savedRange) sel2.addRange(savedRange);
+        document.execCommand('insertImage', false, dataUrl);
+        if(onDone) onDone();
+      }catch(err){
+        console.error('Erreur image bloc-notes :', err);
+      }
+    };
+    input.click();
+  }
+
   sceneImageBox.addEventListener('click', (e)=>{
     if(e.target === sceneImageRemoveBtn) return;
     sceneImageInput.click();
@@ -2712,6 +2790,7 @@
     <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
     <div class="scene-toolbar-sep"></div>
     <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
+    <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~5 Ko)">🖼 Image</button>
   `;
 
   function renderCustomSubTabContent(){
@@ -2777,6 +2856,7 @@
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
+        else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); }); }
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
@@ -2804,6 +2884,7 @@
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
+        else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); }); }
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
