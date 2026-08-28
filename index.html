@@ -369,6 +369,21 @@
      suppression d'un séparateur s'aligne exactement avec celle des pastilles au-dessus/en dessous. */
   .scene-pill-color-spacer{flex:0 0 auto; width:20px; height:20px;}
 
+  /* Épingle : toujours visible (contrairement aux actions du mode "Organiser"), pour marquer
+     rapidement les notes sur lesquelles on travaille actuellement. */
+  .scene-pill-pin{
+    flex:0 0 auto; width:20px; height:20px; border:none; border-radius:6px;
+    background:none; color:var(--ink-soft); cursor:pointer; font-size:0.78rem; line-height:1; padding:0;
+    opacity:0.32; transition:opacity .15s ease, transform .15s ease;
+  }
+  .scene-pill-pin:hover{opacity:0.75;}
+  .scene-pill-pin.active{opacity:1; transform:rotate(-15deg);}
+  .scene-pills-section-label{
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:0.66rem; letter-spacing:0.05em;
+    text-transform:uppercase; color:var(--ink-soft); margin:12px 2px 4px;
+  }
+  .scene-pills-section-label:first-child{margin-top:2px;}
+
   /* Mode "organiser" : révèle la poignée de glisser-déposer, le sélecteur de couleur et les
      boutons de suppression sur les onglets, autrement masqués pour ne pas prendre de largeur. */
   .scene-pills.organize-mode .scene-drag-handle{display:flex;}
@@ -432,7 +447,7 @@
   .scene-editor-content h2{font-size:1.35em; font-weight:700; margin:0.7em 0 0.3em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content h3{font-size:1.12em; font-weight:700; margin:0.6em 0 0.25em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content p{margin:0 0 0.6em; overflow-wrap:anywhere; word-break:break-word;}
-  .scene-editor-content a{overflow-wrap:anywhere; word-break:break-word;}
+  .scene-editor-content a, .parti-content-editable a{overflow-wrap:anywhere; word-break:break-word; color:var(--lavande); text-decoration:underline; text-decoration-color:var(--lavande);}
   .scene-editor-content img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
   .scene-editor-content img, .parti-content-editable img{
     -webkit-user-drag:none; user-select:none; touch-action:none; cursor:pointer;
@@ -740,6 +755,7 @@
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
+            <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
           </div>
           <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
         </div>
@@ -780,6 +796,7 @@
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~5 Ko)">🖼 Image</button>
+            <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
           </div>
           <div class="scene-editor-content" id="notesArea" contenteditable="true" data-placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></div>
         </div>
@@ -809,6 +826,7 @@
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~5 Ko)">🖼 Image</button>
+            <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
           </div>
           <div class="scene-editor-content" id="mecanismeContentInput" contenteditable="true" data-placeholder="Décris ici les mécanismes de la violence psychologique, les schémas comportementaux..."></div>
         </div>
@@ -909,6 +927,22 @@
   </div>
 </div>
 
+<!-- MODAL LIEN HYPERTEXTE -->
+<div class="overlay" id="linkModalOverlay">
+  <div class="modal" style="max-width:380px;">
+    <button class="close-x" id="closeLinkModal">✕</button>
+    <h3>Insérer un lien</h3>
+    <form id="linkModalForm">
+      <label>Adresse du lien (URL)</label>
+      <input type="url" id="linkUrlInput" placeholder="https://exemple.com" required>
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button type="submit" class="btn" style="flex:1;">Insérer le lien</button>
+        <button type="button" class="btn btn-secondary" id="removeLinkBtn" style="display:none;">Retirer le lien</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- MODAL AJOUT / EDITION D'UN POST-IT (Parti pris + sous-onglets Bloc-notes de type "Bloc-notes") -->
 <div class="overlay" id="postitOverlay">
   <div class="modal" style="max-width:520px;">
@@ -928,6 +962,7 @@
         <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
         <div class="scene-toolbar-sep"></div>
         <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
+        <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
       </div>
       <div class="parti-content-editable" id="postitContentInput" contenteditable="true" data-placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..."></div>
       <button type="submit" class="btn" id="postitSubmitBtn" style="margin-top:14px;">+ Ajouter le post-it</button>
@@ -1019,6 +1054,10 @@
   // ("scene:<id>", "global", "parti", "mecanisme", "custom:<id>").
   let pillColors = {};
 
+  // Notes du Bloc-notes actuellement épinglées ("en cours de travail"), indexées par la même
+  // clé stable que pillColors ("global", "parti", "mecanisme", "custom:<id>").
+  let pinnedNotes = {};
+
   let weekPlanner = defaultWeekPlanner();
 
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); renderStorageFooter(); };
@@ -1033,6 +1072,7 @@
   const saveSceneOrder = () => { syncCloud(); };
   const saveBlocNotesOrder = () => { syncCloud(); };
   const savePillColors = () => { syncCloud(); };
+  const savePinnedNotes = () => { syncCloud(); };
   const saveWeekPlanner = () => { syncCloud(); };
 
   function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
@@ -1330,6 +1370,99 @@
     }
   });
 
+  // --- Gestion du lien hypertexte via Modal ---
+  // Insère un lien sur le texte sélectionné (ou, si le curseur est déjà dans un lien existant,
+  // permet de le modifier ou de le retirer). Fonctionne dans tous les éditeurs de texte enrichi
+  // du Bloc-notes (Global, Mécanisme, Scène, post-it, sous-onglets personnalisés).
+  const linkModalOverlay = document.getElementById('linkModalOverlay');
+  const linkUrlInput = document.getElementById('linkUrlInput');
+  const removeLinkBtn = document.getElementById('removeLinkBtn');
+  let linkSavedRange = null;
+  let linkTargetAnchor = null;
+
+  function stampEditorSave(el){
+    if(el === notesArea){ notesData.content = notesArea.innerHTML; saveNotes(); }
+    else if(el === sceneContentInput){ const cs = currentScene(); if(cs){ cs.content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); } }
+    else if(el === mecanismeContentInput){ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
+    // Les autres éditeurs (post-it, sous-onglets personnalisés) se sauvegardent via leur
+    // propre écouteur "input", déclenché automatiquement par insertHTML/execCommand.
+  }
+
+  function openLinkModal(editableEl){
+    activeContentEditableEl = editableEl;
+    linkSavedRange = null;
+    linkTargetAnchor = null;
+
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount){
+      const r = sel.getRangeAt(0);
+      if(editableEl.contains(r.startContainer)) linkSavedRange = r.cloneRange();
+    }
+
+    let existingHref = '';
+    if(linkSavedRange && linkSavedRange.collapsed){
+      const node = linkSavedRange.startContainer;
+      const el = node.nodeType === 3 ? node.parentElement : node;
+      const anchorEl = el && el.closest ? el.closest('a') : null;
+      if(anchorEl && editableEl.contains(anchorEl)){
+        linkTargetAnchor = anchorEl;
+        existingHref = anchorEl.getAttribute('href') || '';
+      }
+    }
+
+    linkUrlInput.value = existingHref;
+    removeLinkBtn.style.display = linkTargetAnchor ? 'inline-flex' : 'none';
+    linkModalOverlay.classList.add('active');
+    setTimeout(()=> linkUrlInput.focus(), 30);
+  }
+
+  function closeLinkModal(){ linkModalOverlay.classList.remove('active'); }
+
+  document.getElementById('closeLinkModal').addEventListener('click', closeLinkModal);
+  linkModalOverlay.addEventListener('click', e=>{ if(e.target === linkModalOverlay) closeLinkModal(); });
+
+  document.getElementById('linkModalForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const url = linkUrlInput.value.trim();
+    closeLinkModal();
+    if(!activeContentEditableEl || !url) return;
+    activeContentEditableEl.focus();
+
+    if(linkTargetAnchor){
+      linkTargetAnchor.setAttribute('href', url);
+      linkTargetAnchor.setAttribute('target', '_blank');
+      linkTargetAnchor.setAttribute('rel', 'noopener');
+      // Manipulation directe du DOM (pas d'execCommand) : on redéclenche "input" à la main pour que
+      // les éditeurs qui se sauvegardent via cet évènement (sous-onglets personnalisés) soient à jour.
+      activeContentEditableEl.dispatchEvent(new Event('input', {bubbles:true}));
+    } else {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      if(linkSavedRange) sel.addRange(linkSavedRange);
+      if(sel.rangeCount && !sel.getRangeAt(0).collapsed){
+        document.execCommand('createLink', false, url);
+        activeContentEditableEl.querySelectorAll('a[href]').forEach(a=>{
+          if(!a.target){ a.target = '_blank'; a.rel = 'noopener'; }
+        });
+      } else {
+        document.execCommand('insertHTML', false, `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`);
+      }
+    }
+
+    stampEditorSave(activeContentEditableEl);
+  });
+
+  removeLinkBtn.addEventListener('click', ()=>{
+    if(linkTargetAnchor && activeContentEditableEl){
+      const parent = linkTargetAnchor.parentNode;
+      while(linkTargetAnchor.firstChild) parent.insertBefore(linkTargetAnchor.firstChild, linkTargetAnchor);
+      parent.removeChild(linkTargetAnchor);
+      activeContentEditableEl.dispatchEvent(new Event('input', {bubbles:true}));
+      stampEditorSave(activeContentEditableEl);
+    }
+    closeLinkModal();
+  });
+
   // --- Modification d'un tableau existant : ajouter/supprimer une ligne ou une colonne ---
   // Une petite barre flottante apparaît au clic dans une cellule de tableau ; elle agit
   // directement sur le DOM, puis redéclenche l'événement "input" du bloc éditable concerné
@@ -1477,6 +1610,7 @@
       postitContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(postitContentInput); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, postitContentInput); }
+      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(postitContentInput); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, postitContentInput); }
     });
   });
@@ -1550,6 +1684,7 @@
       mecanismeContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, mecanismeContentInput); }
+      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(mecanismeContentInput); }
       else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(mecanismeContentInput, ()=>{ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, mecanismeContentInput); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
     });
@@ -2013,6 +2148,7 @@
       notesArea.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, notesArea); }
+      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(notesArea); }
       else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(notesArea, ()=>{ notesData.content = notesArea.innerHTML; saveNotes(); }); }
       else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, notesArea); notesData.content = notesArea.innerHTML; saveNotes(); }
     });
@@ -2400,6 +2536,7 @@
       sceneContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(sceneContentInput); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, sceneContentInput); }
+      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(sceneContentInput); }
       else {
         runToolbarCmd(btn.dataset.cmd, btn.dataset.value, sceneContentInput);
         const s = currentScene();
@@ -2436,12 +2573,14 @@
         return;
       }
       if(entry.type === 'special'){
-        optionsHtml += `<option value="special:${entry.id}">${SPECIAL_LABELS[entry.id]}</option>`;
+        const pin = pinnedNotes[entry.id] ? '📌 ' : '';
+        optionsHtml += `<option value="special:${entry.id}">${pin}${SPECIAL_LABELS[entry.id]}</option>`;
         return;
       }
       const ct = customSceneTabs.find(x=>x.id===entry.id);
       if(!ct) return;
-      optionsHtml += `<option value="custom:${ct.id}">${escapeHtml(ct.label)}</option>`;
+      const pin = pinnedNotes['custom:' + ct.id] ? '📌 ' : '';
+      optionsHtml += `<option value="custom:${ct.id}">${pin}${escapeHtml(ct.label)}</option>`;
     });
     blocNotesMobileSelectEl.innerHTML = optionsHtml;
     let currentVal = '';
@@ -2513,56 +2652,75 @@
     });
   }
 
+  // Clé stable d'épinglage pour une entrée de blocNotesOrder (même schéma que pillColors :
+  // "global"/"parti"/"mecanisme" pour les onglets spéciaux, "custom:<id>" pour les sous-onglets perso).
+  function pinKeyFor(entry){ return entry.type === 'custom' ? 'custom:' + entry.id : entry.id; }
+
+  function renderBlocNotesPillEntry(entry){
+    if(entry.type === 'divider'){
+      return `
+        <div class="scene-divider-row" data-order-key="${entry.id}">
+          <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
+          <div class="scene-divider-line"></div>
+          <div class="scene-pill-actions">
+            <span class="scene-pill-color-spacer"></span>
+            <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
+          </div>
+        </div>`;
+    }
+
+    if(entry.type === 'special'){
+      const key = entry.id;
+      const active = currentBlocView === key;
+      const pinned = !!pinnedNotes[key];
+      return `
+        <div class="scene-pill-row" data-order-key="${entry.id}">
+          <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
+          <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${key}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">📌</button>
+          <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${pillCustomColorClass(key)} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
+          <div class="scene-pill-actions">
+            <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur de fond">
+            <button type="button" class="scene-pill-del" data-del-key="${key}" data-del-kind="special" title="Supprimer cet onglet">✕</button>
+          </div>
+        </div>`;
+    }
+
+    // entry.type === 'custom'
+    const ct = customSceneTabs.find(x=>x.id===entry.id);
+    if(!ct) return '';
+    const colorKey = 'custom:' + ct.id;
+    const active = currentBlocView==='custom' && currentCustomTabId===ct.id;
+    const pinned = !!pinnedNotes[colorKey];
+    return `
+      <div class="scene-pill-row" data-order-key="${entry.id}">
+        <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
+        <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${colorKey}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">📌</button>
+        <button type="button" class="scene-pill custom ${pillCustomColorClass(colorKey)} ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
+          ${escapeHtml(ct.label)}
+        </button>
+        <div class="scene-pill-actions">
+          <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur de fond">
+          <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer cette note">✕</button>
+        </div>
+      </div>`;
+  }
+
   function renderBlocNotesPills(){
     reconcileBlocNotesOrder();
     let html = '';
 
-    blocNotesOrder.forEach((entry)=>{
-      if(entry.type === 'divider'){
-        html += `
-          <div class="scene-divider-row" data-order-key="${entry.id}">
-            <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-            <div class="scene-divider-line"></div>
-            <div class="scene-pill-actions">
-              <span class="scene-pill-color-spacer"></span>
-              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce séparateur">✕</button>
-            </div>
-          </div>`;
-        return;
-      }
+    // Les notes épinglées ("en cours de travail") remontent en tête de liste, dans leur ordre
+    // habituel, suivies du reste des notes (l'ordre de rangement sous-jacent, lui, n'est pas
+    // modifié : seul l'affichage regroupe les épinglées en haut).
+    const pinnedEntries = blocNotesOrder.filter(e => e.type !== 'divider' && pinnedNotes[pinKeyFor(e)]);
 
-      if(entry.type === 'special'){
-        const key = entry.id;
-        const active = currentBlocView === key;
-        html += `
-          <div class="scene-pill-row" data-order-key="${entry.id}">
-            <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-            <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${pillCustomColorClass(key)} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
-            <div class="scene-pill-actions">
-              <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur de fond">
-              <button type="button" class="scene-pill-del" data-del-key="${key}" data-del-kind="special" title="Supprimer cet onglet">✕</button>
-            </div>
-          </div>`;
-        return;
-      }
+    if(pinnedEntries.length){
+      html += `<div class="scene-pills-section-label">📌 Épinglées</div>`;
+      pinnedEntries.forEach(entry => { html += renderBlocNotesPillEntry(entry); });
+      html += `<div class="scene-pills-section-label">Toutes les notes</div>`;
+    }
 
-      // entry.type === 'custom'
-      const ct = customSceneTabs.find(x=>x.id===entry.id);
-      if(!ct) return;
-      const colorKey = 'custom:' + ct.id;
-      const active = currentBlocView==='custom' && currentCustomTabId===ct.id;
-      html += `
-        <div class="scene-pill-row" data-order-key="${entry.id}">
-          <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-          <button type="button" class="scene-pill custom ${pillCustomColorClass(colorKey)} ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
-            ${escapeHtml(ct.label)}
-          </button>
-          <div class="scene-pill-actions">
-            <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur de fond">
-            <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer cette note">✕</button>
-          </div>
-        </div>`;
-    });
+    blocNotesOrder.forEach((entry)=>{ html += renderBlocNotesPillEntry(entry); });
 
     blocNotesPillsEl.innerHTML = html;
 
@@ -2573,6 +2731,17 @@
         else if(idx === 'parti') selectParti();
         else if(idx === 'mecanisme') selectMecanismeSub();
         else if(idx.startsWith('custom:')) selectCustomSubTab(idx.slice(7));
+      });
+    });
+
+    blocNotesPillsEl.querySelectorAll('.scene-pill-pin').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const key = btn.dataset.pinKey;
+        if(pinnedNotes[key]) delete pinnedNotes[key];
+        else pinnedNotes[key] = true;
+        savePinnedNotes();
+        renderBlocNotesPills();
       });
     });
 
@@ -2605,6 +2774,8 @@
           saveHiddenTabs();
           delete pillColors[tabKey];
           savePillColors();
+          delete pinnedNotes[tabKey];
+          savePinnedNotes();
           if(currentBlocView === tabKey) selectBestAvailableBlocNotesView();
           else renderBlocNotesPills();
         } else if(kind === 'custom'){
@@ -2801,6 +2972,8 @@
     delete pillColors['custom:'+id];
     saveCustomSceneTabs();
     savePillColors();
+    delete pinnedNotes['custom:'+id];
+    savePinnedNotes();
     if(currentBlocView === 'custom' && currentCustomTabId === id){
       selectBestAvailableBlocNotesView();
     } else {
@@ -2829,6 +3002,7 @@
     <div class="scene-toolbar-sep"></div>
     <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
     <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~5 Ko)">🖼 Image</button>
+    <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
   `;
 
   function renderCustomSubTabContent(){
@@ -2895,6 +3069,7 @@
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
         else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); }); }
+        else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(contentEl); }
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
@@ -2924,6 +3099,7 @@
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
         else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); }); }
+        else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(contentEl); }
         else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
       });
     });
@@ -3311,7 +3487,7 @@
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
-    sceneOrder, blocNotesOrder, pillColors, weekPlanner
+    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, weekPlanner
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
@@ -3330,6 +3506,7 @@
     sceneOrder = Array.isArray(state.sceneOrder) ? state.sceneOrder : null;
     blocNotesOrder = Array.isArray(state.blocNotesOrder) ? state.blocNotesOrder : null;
     pillColors = (state.pillColors && typeof state.pillColors === 'object') ? state.pillColors : {};
+    pinnedNotes = (state.pinnedNotes && typeof state.pinnedNotes === 'object') ? state.pinnedNotes : {};
     weekPlanner = normalizeWeekPlanner(state.weekPlanner);
   };
 
@@ -3368,6 +3545,7 @@
         sceneOrder: readJSON('rg_scene_order', null),
         blocNotesOrder: readJSON('rg_blocnotes_order', null),
         pillColors: readJSON('rg_pill_colors', {}),
+        pinnedNotes: {},
         weekPlanner: readJSON('rg_week_planner', null)
       };
     }catch(e){
