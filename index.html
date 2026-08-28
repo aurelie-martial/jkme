@@ -595,6 +595,13 @@
     font-size: 0.75rem; padding: 3px 7px; color: #1E293B; font-weight: 600;
   }
   .parti-actions button:hover{background: rgba(0,0,0,0.15);}
+  .parti-drag-handle{
+    border: none; background: rgba(0,0,0,0.06); border-radius: 6px; cursor: grab;
+    font-size: 0.75rem; padding: 3px 7px; color: #1E293B; font-weight: 600; touch-action: none;
+  }
+  .parti-drag-handle:hover{background: rgba(0,0,0,0.15);}
+  .parti-drag-handle:active{cursor: grabbing;}
+  .parti-card.dragging{opacity: 0.45;}
   .parti-card h4{
     font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1.05rem;
     margin: 0 0 10px 0; padding-right: 40px; color: #1E293B;
@@ -1159,6 +1166,58 @@
       document.addEventListener('pointercancel', endDrag);
     });
   }
+
+  // Réorganisation par glisser-déposer pour une grille 2D (post-its, qui s'enroulent sur
+  // plusieurs lignes) : contrairement à enableDragReorder ci-dessus (listes à un seul axe), on
+  // cherche la carte la plus proche du curseur dans les deux dimensions pour décider où insérer.
+  function enableGridDragReorder(containerEl, handleSelector, getOrderArray, onOrderChanged){
+    let dragState = null;
+
+    function onPointerMove(e){
+      if(!dragState || e.pointerId !== dragState.pointerId) return;
+      const siblings = Array.from(containerEl.children).filter(c=>c!==dragState.card);
+      if(!siblings.length) return;
+      let closest = null, closestDist = Infinity;
+      siblings.forEach(sib=>{
+        const rect = sib.getBoundingClientRect();
+        const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+        if(dist < closestDist){ closestDist = dist; closest = sib; }
+      });
+      if(!closest) return;
+      const rect = closest.getBoundingClientRect();
+      const insertAfter = e.clientX > rect.left + rect.width/2;
+      containerEl.insertBefore(dragState.card, insertAfter ? closest.nextSibling : closest);
+    }
+
+    function endDrag(e){
+      if(!dragState || (e && e.pointerId !== dragState.pointerId)) return;
+      dragState.card.classList.remove('dragging');
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', endDrag);
+      document.removeEventListener('pointercancel', endDrag);
+      const newOrderKeys = Array.from(containerEl.children).map(c=>c.dataset.orderKey).filter(Boolean);
+      const arr = getOrderArray();
+      const byKey = new Map(arr.map(item=>[String(item.id), item]));
+      const newOrder = newOrderKeys.map(k=>byKey.get(k)).filter(Boolean);
+      dragState = null;
+      if(newOrder.length === arr.length) onOrderChanged(newOrder);
+    }
+
+    containerEl.addEventListener('pointerdown', (e)=>{
+      const handle = e.target.closest(handleSelector);
+      if(!handle) return;
+      const card = handle.closest('[data-order-key]');
+      if(!card) return;
+      e.preventDefault();
+      dragState = { pointerId: e.pointerId, card };
+      card.classList.add('dragging');
+      document.addEventListener('pointermove', onPointerMove);
+      document.addEventListener('pointerup', endDrag);
+      document.addEventListener('pointercancel', endDrag);
+    });
+  }
+
 
   // Choisit un texte blanc ou noir selon la clarté de la couleur de fond, pour rester lisible
   // quelle que soit la couleur personnalisée choisie sur une pastille.
@@ -2212,8 +2271,9 @@
     grid.innerHTML = partis.map((p,i) => {
       const theme = POSTIT_COLORS[i % POSTIT_COLORS.length];
       return `
-      <div class="parti-card" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
+      <div class="parti-card" data-order-key="${p.id}" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
         <div class="parti-actions">
+          <button type="button" class="parti-drag-handle" title="Glisser pour déplacer">⠿</button>
           <button type="button" data-act="edit" data-id="${p.id}">✎</button>
           <button type="button" data-act="del" data-id="${p.id}">✕</button>
         </div>
@@ -2251,6 +2311,11 @@
       });
     });
   }
+
+  enableGridDragReorder(document.getElementById('partiGrid'), '.parti-drag-handle', ()=>partis, (newOrder)=>{
+    partis = newOrder;
+    savePartis();
+  });
 
   document.getElementById('addPartiBtn').addEventListener('click', ()=>{
     openPostitModal({
@@ -3239,8 +3304,9 @@
       grid.innerHTML = data.items.map((n,i) => {
         const theme = POSTIT_COLORS[i % POSTIT_COLORS.length];
         return `
-        <div class="parti-card" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
+        <div class="parti-card" data-order-key="${n.id}" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
           <div class="parti-actions">
+            <button type="button" class="parti-drag-handle" title="Glisser pour déplacer">⠿</button>
             <button type="button" data-act="edit" data-id="${n.id}">✎</button>
             <button type="button" data-act="del" data-id="${n.id}">✕</button>
           </div>
@@ -3290,6 +3356,11 @@
           renderGrid();
         }
       });
+    });
+
+    enableGridDragReorder(grid, '.parti-drag-handle', ()=>data.items || [], (newOrder)=>{
+      data.items = newOrder;
+      saveCustomSceneTabs();
     });
 
     renderGrid();
