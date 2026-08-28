@@ -299,7 +299,7 @@
   .scenes-layout{display:flex; gap:22px; align-items:flex-start;}
   .scene-sidebar{
     flex:0 0 220px; display:flex; flex-direction:column; gap:12px;
-    position:sticky; top:16px;
+    position:sticky; top:16px; transition:flex-basis .18s ease;
   }
   .scene-editor-area{flex:1; min-width:0;}
   .btn-add-subtab{
@@ -398,6 +398,21 @@
   .btn-organize-toggle:hover{color:var(--ink); border-color:var(--ink);}
   .btn-organize-toggle.active{background:var(--ink); color:#fff; border-color:var(--ink);}
   .scene-sidebar-actions{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+
+  /* Repli de la colonne de notes du Bloc-notes (desktop uniquement) : la colonne se réduit à une
+     fine bande ne montrant plus que le bouton pour la redéployer, ce qui laisse plus de place à
+     l'éditeur. Ciblé par id pour ne pas affecter la colonne des Scènes, qui partage la même classe. */
+  #blocNotesSidebar.collapsed{flex-basis:44px; overflow:hidden;}
+  #blocNotesSidebar.collapsed .scene-pills,
+  #blocNotesSidebar.collapsed .scene-mobile-select,
+  #blocNotesSidebar.collapsed .scene-sidebar-actions{display:none;}
+  .blocnotes-sidebar-toggle-row{display:flex; justify-content:flex-end;}
+  .blocnotes-sidebar-collapse-btn{
+    flex:0 0 auto; width:28px; height:28px; border:1px solid var(--line); border-radius:8px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.85rem; line-height:1;
+    display:inline-flex; align-items:center; justify-content:center; transition:color .15s ease, border-color .15s ease;
+  }
+  .blocnotes-sidebar-collapse-btn:hover{color:var(--ink); border-color:var(--lavande);}
 
   /* Sélecteur déroulant remplaçant la liste de pastilles sur mobile (voir media query) */
   .scene-mobile-select{
@@ -631,6 +646,8 @@
     .scene-sidebar-actions .btn-add-subtab{flex:1; text-align:center;}
     .week-planner-panel{overflow-x:auto;}
     .week-planner-grid{grid-template-columns:repeat(7,minmax(64px,1fr)); width:max-content; min-width:100%; padding-bottom:4px;}
+    .blocnotes-sidebar-toggle-row{display:none;}
+    #blocNotesSidebar.collapsed{flex-basis:auto;}
   }
 </style>
 </head>
@@ -767,7 +784,10 @@
   <!-- BLOC-NOTES (Global, Parti pris, Mécanisme et sous-onglets personnalisés) -->
   <div class="tab-content" id="content-blocnotes">
     <div class="scenes-layout">
-      <div class="scene-sidebar">
+      <div class="scene-sidebar" id="blocNotesSidebar">
+        <div class="blocnotes-sidebar-toggle-row">
+          <button type="button" class="blocnotes-sidebar-collapse-btn" id="blocNotesSidebarToggleBtn" title="Réduire la colonne des notes">‹</button>
+        </div>
         <div class="scene-pills" id="blocNotesPills"></div>
         <select class="scene-mobile-select" id="blocNotesMobileSelect"></select>
         <div class="scene-sidebar-actions">
@@ -1020,13 +1040,9 @@
     }
     return obj;
   }
-  // Index (0=Lun...6=Dim) du jour courant dans WEEK_DAYS, pour afficher aujourd'hui tout à gauche.
+  // Index (0=Lun...6=Dim) du jour courant dans WEEK_DAYS, pour repérer la case "aujourd'hui".
   function todayWeekDayIndex(){
     return (new Date().getDay() + 6) % 7;
-  }
-  function orderedWeekDays(){
-    const i = todayWeekDayIndex();
-    return WEEK_DAYS.slice(i).concat(WEEK_DAYS.slice(0, i));
   }
 
   // Tout l'état de l'appli vit en mémoire (JS) et n'est persisté que dans Firestore (voir plus bas,
@@ -2017,7 +2033,9 @@
   function renderWeekPlanner(){
     const grid = document.getElementById('weekPlannerGrid');
     if(!grid) return;
-    const days = orderedWeekDays();
+    // Ordre toujours fixe Lundi → Dimanche (les jours ne tournent plus pour mettre "aujourd'hui"
+    // en premier : c'est le défilement horizontal, ci-dessous, qui s'en charge).
+    const days = WEEK_DAYS;
     const todayKey = WEEK_DAYS[todayWeekDayIndex()].key;
     let html = days.map(d => `<div class="wp-cell-header${d.key===todayKey?' is-today':''}">${escapeHtml(d.label)}</div>`).join('');
     html += days.map(d =>
@@ -2030,6 +2048,13 @@
         saveWeekPlanner();
         autoGrowWpCell(ta);
       });
+    });
+    // Quand la grille déborde horizontalement (typiquement sur mobile), on amène la case du jour J
+    // tout à gauche de la zone visible à l'ouverture ; les jours précédents restent atteignables
+    // en scrollant vers la gauche. Sans débordement (desktop), ceci n'a aucun effet visible.
+    requestAnimationFrame(()=>{
+      const todayHeader = grid.querySelector('.wp-cell-header.is-today');
+      if(todayHeader) todayHeader.scrollIntoView({inline:'start', block:'nearest'});
     });
   }
   window.__rg_growWeekPlannerCells = () => {
@@ -2548,6 +2573,19 @@
   // ---------- BLOC-NOTES (onglet "Bloc-notes" : Global, Parti pris, Mécanisme, sous-onglets perso) ----------
   const blocNotesPillsEl = document.getElementById('blocNotesPills');
   const blocNotesMobileSelectEl = document.getElementById('blocNotesMobileSelect');
+
+  // Repli/déploiement de la colonne de notes à gauche (desktop) : préférence purement visuelle,
+  // non synchronisée entre appareils (comme le mode "Organiser" ci-dessous).
+  const blocNotesSidebarEl = document.getElementById('blocNotesSidebar');
+  const blocNotesSidebarToggleBtn = document.getElementById('blocNotesSidebarToggleBtn');
+  let blocNotesSidebarCollapsed = false;
+  blocNotesSidebarToggleBtn.addEventListener('click', ()=>{
+    blocNotesSidebarCollapsed = !blocNotesSidebarCollapsed;
+    blocNotesSidebarEl.classList.toggle('collapsed', blocNotesSidebarCollapsed);
+    blocNotesSidebarToggleBtn.textContent = blocNotesSidebarCollapsed ? '›' : '‹';
+    blocNotesSidebarToggleBtn.title = blocNotesSidebarCollapsed ? 'Afficher la colonne des notes' : 'Réduire la colonne des notes';
+  });
+
   let blocNotesOrganizeMode = false;
   const toggleBlocNotesOrganizeBtn = document.getElementById('toggleBlocNotesOrganizeBtn');
   toggleBlocNotesOrganizeBtn.addEventListener('click', ()=>{
