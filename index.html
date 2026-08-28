@@ -2758,7 +2758,13 @@
       html += `<div class="scene-pills-section-label">Toutes les notes</div>`;
     }
 
-    blocNotesOrder.forEach((entry)=>{ html += renderBlocNotesPillEntry(entry); });
+    // Le reste de la liste n'inclut plus les entrées déjà épinglées ci-dessus, pour éviter
+    // qu'une même note apparaisse deux fois. Dès qu'on la désépingle, elle disparaît de la
+    // section "Épinglées" et réapparaît ici, à sa place habituelle dans l'ordre de rangement.
+    blocNotesOrder.forEach((entry)=>{
+      if(entry.type !== 'divider' && pinnedNotes[pinKeyFor(entry)]) return;
+      html += renderBlocNotesPillEntry(entry);
+    });
 
     blocNotesPillsEl.innerHTML = html;
 
