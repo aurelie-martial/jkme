@@ -602,6 +602,21 @@
   .parti-card .parti-content{
     font-size: 0.9rem; line-height: 1.5; color: #334155; word-break: break-word;
   }
+  /* Édition directe sur le post-it (titre + contenu), sans passer par le crayon/la modale. */
+  .parti-card h4[contenteditable="true"],
+  .parti-card .parti-content[contenteditable="true"]{
+    outline:none; cursor:text; border-radius:4px; transition:background .15s ease; min-height:1.3em;
+  }
+  .parti-card h4[contenteditable="true"]:focus,
+  .parti-card .parti-content[contenteditable="true"]:focus{
+    background:rgba(255,255,255,0.35); box-shadow:0 0 0 2px rgba(0,0,0,0.08);
+  }
+  .parti-card h4[contenteditable="true"]:empty:before{
+    content:'Titre du post-it...'; color:rgba(30,41,59,0.4); font-weight:700;
+  }
+  .parti-card .parti-content[contenteditable="true"]:empty:before{
+    content:'Écris ici...'; color:rgba(30,41,59,0.4);
+  }
   .parti-card .last-modified{
     font-size: 0.68rem; color: rgba(30,41,59,0.5); margin-top: 12px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 6px;
   }
@@ -2208,6 +2223,10 @@
     `;
     }).join('');
 
+    grid.querySelectorAll('.parti-card').forEach((card, i)=>{
+      wirePostitCardInlineEdit(card, partis[i], savePartis);
+    });
+
     grid.querySelectorAll('button[data-act]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const id = btn.dataset.id;
@@ -2390,6 +2409,35 @@
     if(!content) return '';
     if(/<[a-z][\s\S]*>/i.test(content)) return content;
     return escapeHtml(content).replace(/\n/g, '<br>');
+  }
+
+  // Édition directe sur un post-it (titre + contenu), sans repasser par le crayon/la modale.
+  // `card` est l'élément .parti-card fraîchement inséré, `item` l'objet {title, content, updatedAt}
+  // correspondant, `saveFn` la fonction de sauvegarde (savePartis / saveCustomSceneTabs).
+  // On ne redessine jamais la grille sur un simple "input" (ça ferait perdre le curseur) :
+  // seul un clic sur ✎ ou ✕ redessine.
+  function wirePostitCardInlineEdit(card, item, saveFn){
+    const titleEl = card.querySelector('h4');
+    const contentEl = card.querySelector('.parti-content');
+    if(titleEl){
+      titleEl.setAttribute('contenteditable', 'true');
+      titleEl.addEventListener('input', ()=>{
+        item.title = titleEl.textContent;
+        item.updatedAt = Date.now();
+        saveFn();
+      });
+      titleEl.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){ e.preventDefault(); contentEl && contentEl.focus(); }
+      });
+    }
+    if(contentEl){
+      contentEl.setAttribute('contenteditable', 'true');
+      contentEl.addEventListener('input', ()=>{
+        item.content = contentEl.innerHTML;
+        item.updatedAt = Date.now();
+        saveFn();
+      });
+    }
   }
 
   // S'assure que chaque scène a une entrée dans l'ordre d'affichage (ajout en fin de liste des
@@ -3201,6 +3249,10 @@
         </div>
       `;
       }).join('');
+
+      grid.querySelectorAll('.parti-card').forEach((card, i)=>{
+        wirePostitCardInlineEdit(card, data.items[i], saveCustomSceneTabs);
+      });
 
       grid.querySelectorAll('button[data-act]').forEach(btn=>{
         btn.addEventListener('click', ()=>{
