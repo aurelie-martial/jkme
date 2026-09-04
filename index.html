@@ -212,6 +212,31 @@
   .storage-footer .storage-bar-fill{display:block; height:100%; border-radius:999px; background:var(--menthe); transition:width .3s ease;}
   .storage-footer .storage-bar-fill.is-warning{background:var(--peche);}
   .storage-footer .storage-bar-fill.is-danger{background:var(--rose);}
+
+  /* BACKUP FOOTER (sauvegarde automatique quotidienne) */
+  .backup-footer{
+    margin-top:10px; text-align:center; font-size:0.76rem; font-weight:500; color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
+  }
+  .backup-footer .dot-sync{width:7px; height:7px; border-radius:50%; background:var(--menthe); flex:0 0 auto;}
+  .backup-footer .dot-sync.is-warning{background:var(--peche);}
+  .backup-footer .dot-sync.is-error{background:#B54D4D;}
+  #openBackupRestoreBtn{
+    border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:3px 10px;
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.74rem; cursor:pointer; color:var(--ink-soft);
+  }
+  #openBackupRestoreBtn:hover{background:var(--gris); color:var(--ink);}
+  .backup-restore-intro{color:var(--ink-soft); font-weight:500; font-size:0.85rem; margin:0 0 16px;}
+  .backup-restore-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    border:1px solid var(--line); border-radius:8px; padding:9px 12px; margin-bottom:8px; background:var(--bg);
+  }
+  .backup-restore-row .brr-date{font-weight:600; font-size:0.88rem;}
+  .backup-restore-row .brr-restore{
+    border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer;
+    font-weight:600; padding:5px 11px; color:var(--ink-soft); flex:0 0 auto; font-size:0.8rem;
+  }
+  .backup-restore-row .brr-restore:hover{color:#fff; background:var(--lavande); border-color:var(--lavande);}
   .wp-cell:focus{outline:none; border-color:var(--lavande);}
   .wp-cell::placeholder{color:var(--ink-soft);}
 
@@ -916,6 +941,12 @@
 
   <div class="storage-footer" id="storageFooter"></div>
 
+  <div class="backup-footer" id="backupFooter">
+    <span class="dot-sync" id="backupFooterDot"></span>
+    <span id="backupFooterLabel">Sauvegarde automatique…</span>
+    <button type="button" id="openBackupRestoreBtn">Restaurer une sauvegarde</button>
+  </div>
+
 </div>
 
 <!-- MODAL JOUR -->
@@ -1033,6 +1064,16 @@
       <div class="parti-content-editable" id="postitContentInput" contenteditable="true" data-placeholder="Ex : Il s'appellera LUI, un ancien libraire qui..."></div>
       <button type="submit" class="btn" id="postitSubmitBtn" style="margin-top:14px;">+ Ajouter le post-it</button>
     </form>
+  </div>
+</div>
+
+<!-- MODAL RESTAURATION DE SAUVEGARDE AUTOMATIQUE -->
+<div class="overlay" id="backupRestoreOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeBackupRestoreModal">✕</button>
+    <h3>Restaurer une sauvegarde</h3>
+    <p class="backup-restore-intro">Une copie de tes données est enregistrée automatiquement chaque jour (conservée 30 jours). Choisis une date pour revenir à cette version — tes données actuelles seront remplacées.</p>
+    <div id="backupRestoreList"></div>
   </div>
 </div>
 
@@ -3864,7 +3905,8 @@
     getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
   import {
-    getFirestore, doc, getDoc, setDoc, serverTimestamp
+    getFirestore, doc, getDoc, getDocFromServer, setDoc, serverTimestamp,
+    collection, getDocs, deleteDoc
   } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -3889,8 +3931,15 @@
   const loginError = document.getElementById('loginError');
   const syncStatus = document.getElementById('syncStatus');
   const syncStatusLabel = document.getElementById('syncStatusLabel');
+  const backupFooterDot = document.getElementById('backupFooterDot');
+  const backupFooterLabel = document.getElementById('backupFooterLabel');
+  const backupRestoreOverlay = document.getElementById('backupRestoreOverlay');
+  const backupRestoreList = document.getElementById('backupRestoreList');
+  const openBackupRestoreBtn = document.getElementById('openBackupRestoreBtn');
+  const closeBackupRestoreModal = document.getElementById('closeBackupRestoreModal');
 
   let userDocRef = null;
+  let currentUid = null;
   let syncTimer = null;
   let applyingRemoteState = false;
 
@@ -3925,9 +3974,121 @@
 
   signOutBtn.addEventListener('click', ()=>{ signOut(auth); });
 
+  // ---------- SAUVEGARDE AUTOMATIQUE QUOTIDIENNE (users/{uid}/backups/{YYYY-MM-DD}) ----------
+  // Gratuite (dans le quota Firestore gratuit, largement suffisant pour ~30 documents de moins de
+  // 1 Mo) et sans rien à gérer : une copie de l'état chargé au démarrage est prise une fois par
+  // jour (heure locale), les copies de plus de 30 jours sont supprimées automatiquement.
+  function localDateKey(d){
+    d = d || new Date();
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function formatBackupDate(dateKey){
+    const [y,m,d] = dateKey.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    return dt.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  }
+
+  function updateBackupFooter(lastBackupKey, isError){
+    if(!backupFooterDot || !backupFooterLabel) return;
+    backupFooterDot.classList.remove('is-warning','is-error');
+    if(isError){
+      backupFooterDot.classList.add('is-error');
+      backupFooterLabel.textContent = 'Sauvegarde automatique : échec (nouvel essai à la prochaine ouverture)';
+    } else if(lastBackupKey){
+      backupFooterLabel.textContent = `Sauvegarde automatique active — dernière : ${formatBackupDate(lastBackupKey)}`;
+    } else {
+      backupFooterLabel.textContent = 'Sauvegarde automatique active';
+    }
+  }
+
+  async function purgeOldBackups(uid){
+    const backupsCol = collection(db, 'users', uid, 'backups');
+    const snap = await getDocs(backupsCol);
+    const cutoffKey = localDateKey(new Date(Date.now() - 30*24*60*60*1000));
+    const deletions = [];
+    snap.forEach(d => { if(d.id < cutoffKey) deletions.push(deleteDoc(d.ref)); });
+    if(deletions.length) await Promise.all(deletions);
+  }
+
+  // Appelée juste après avoir chargé l'état depuis Firestore au démarrage : sauvegarde ce qui
+  // vient d'être chargé (donc les données déjà enregistrées, pas les modifications en cours de
+  // frappe), une seule fois par jour civil (heure locale).
+  async function runDailyBackup(uid, dataToBackup){
+    const todayKey = localDateKey();
+    try{
+      const backupRef = doc(db, 'users', uid, 'backups', todayKey);
+      const existing = await getDoc(backupRef);
+      if(!existing.exists()){
+        await setDoc(backupRef, { ...dataToBackup, backedUpAt: serverTimestamp() });
+      }
+      updateBackupFooter(todayKey, false);
+      purgeOldBackups(uid).catch(err => console.error('Purge des sauvegardes automatiques :', err));
+    }catch(err){
+      console.error('Sauvegarde automatique impossible :', err);
+      updateBackupFooter(null, true);
+    }
+  }
+
+  async function restoreBackup(uid, key){
+    const ok = confirm(`Restaurer la sauvegarde du ${formatBackupDate(key)} ?\n\nToutes tes données actuelles seront remplacées par cette version. Cette action ne peut pas être annulée.`);
+    if(!ok) return;
+    try{
+      const backupRef = doc(db, 'users', uid, 'backups', key);
+      const snap = await getDocFromServer(backupRef);
+      if(!snap.exists()){ alert('Cette sauvegarde est introuvable.'); return; }
+      const data = snap.data();
+      delete data.backedUpAt;
+      applyingRemoteState = true;
+      window.__rg_setState(data);
+      applyingRemoteState = false;
+      window.__rg_renderAll();
+      await setDoc(userDocRef, { ...data, updatedAt: serverTimestamp() });
+      setSyncStatus('idle');
+      backupRestoreOverlay.classList.remove('active');
+      alert('Sauvegarde restaurée avec succès.');
+    }catch(err){
+      console.error('Erreur de restauration :', err);
+      alert("La restauration a échoué. Réessaie dans quelques instants.");
+    }
+  }
+
+  openBackupRestoreBtn.addEventListener('click', async ()=>{
+    if(!currentUid) return;
+    backupRestoreList.innerHTML = '<p class="modal-empty">Chargement des sauvegardes…</p>';
+    backupRestoreOverlay.classList.add('active');
+    try{
+      const backupsCol = collection(db, 'users', currentUid, 'backups');
+      const snap = await getDocs(backupsCol);
+      const keys = [];
+      snap.forEach(d => keys.push(d.id));
+      keys.sort((a,b)=> b.localeCompare(a)); // la plus récente d'abord
+      if(keys.length === 0){
+        backupRestoreList.innerHTML = '<p class="modal-empty">Aucune sauvegarde disponible pour l\'instant. Une sauvegarde est créée automatiquement à chaque ouverture de l\'appli — reviens un peu plus tard.</p>';
+        return;
+      }
+      backupRestoreList.innerHTML = keys.map(key => `
+        <div class="backup-restore-row" data-key="${key}">
+          <span class="brr-date">${formatBackupDate(key)}</span>
+          <button type="button" class="brr-restore" data-key="${key}">Restaurer</button>
+        </div>
+      `).join('');
+      backupRestoreList.querySelectorAll('.brr-restore').forEach(btn=>{
+        btn.addEventListener('click', ()=> restoreBackup(currentUid, btn.dataset.key));
+      });
+    }catch(err){
+      console.error('Erreur de chargement des sauvegardes :', err);
+      backupRestoreList.innerHTML = '<p class="modal-empty">Impossible de charger les sauvegardes pour le moment.</p>';
+    }
+  });
+  closeBackupRestoreModal.addEventListener('click', ()=> backupRestoreOverlay.classList.remove('active'));
+  backupRestoreOverlay.addEventListener('click', e=>{ if(e.target === backupRestoreOverlay) backupRestoreOverlay.classList.remove('active'); });
+
   onAuthStateChanged(auth, async (user)=>{
     if(!user){
       userDocRef = null;
+      currentUid = null;
       loginScreen.classList.remove('hidden');
       appRoot.classList.add('hidden');
       return;
@@ -3936,26 +4097,50 @@
     loginScreen.classList.add('hidden');
     appRoot.classList.remove('hidden');
     userDocRef = doc(db, 'users', user.uid);
+    currentUid = user.uid;
 
     try{
-      const snap = await getDoc(userDocRef);
-      applyingRemoteState = true;
+      // getDocFromServer (et non getDoc) : on force une vraie lecture réseau plutôt que de risquer
+      // un résultat basé sur un cache local vide/périmé qui déclarerait à tort « aucun document »
+      // et écraserait des données existantes avec un état par défaut. C'est ce qui est arrivé sur
+      // LilyTracker le 2 septembre 2026 (document users/{uid} écrasé par les valeurs par défaut) —
+      // même correctif appliqué ici : lecture serveur forcée + confirmation avant toute création.
+      const snap = await getDocFromServer(userDocRef);
       if(snap.exists()){
+        applyingRemoteState = true;
         window.__rg_setState(snap.data());
+        applyingRemoteState = false;
+        window.__rg_renderAll();
+        setSyncStatus('idle');
+        runDailyBackup(user.uid, snap.data());
       } else {
         // Aucun document cloud pour ce compte : on regarde s'il reste d'anciennes données
-        // locales (versions précédentes de l'appli) pour ne rien perdre, avant de les migrer
-        // définitivement vers Firestore et de nettoyer le localStorage.
+        // locales (versions précédentes de l'appli) pour ne rien perdre. Dans tous les cas, on
+        // demande confirmation avant de créer quoi que ce soit : si ce compte a déjà des données
+        // dans le cloud et qu'on arrive quand même ici, c'est le signe d'un problème réseau plutôt
+        // qu'un compte réellement vide, et il ne faut surtout pas écraser silencieusement.
         const legacyState = window.__rg_readLegacyLocalStorage ? window.__rg_readLegacyLocalStorage() : null;
+        const confirmMsg = legacyState
+          ? `D'anciennes données ont été trouvées dans ce navigateur, mais aucun document n'existe encore dans le cloud pour « ${user.email} ». Cliquer sur OK pour les migrer vers le cloud.`
+          : `Aucune donnée n'a été trouvée dans le cloud pour « ${user.email} ».\n\nSi c'est ta première connexion avec ce compte, c'est normal : clique sur OK pour créer un nouvel espace vide.\n\nSi tu as déjà utilisé JKME avec ce compte, clique sur Annuler et réessaie dans quelques instants (ça peut être un problème de connexion réseau) plutôt que de continuer.`;
+        if(!confirm(confirmMsg)){
+          setSyncStatus('error');
+          syncStatusLabel.textContent = 'Chargement annulé — recharge la page pour réessayer';
+          userDocRef = null;
+          currentUid = null;
+          return;
+        }
+        applyingRemoteState = true;
         if(legacyState) window.__rg_setState(legacyState);
         const initialState = window.__rg_getState();
         await setDoc(userDocRef, { ...initialState, updatedAt: serverTimestamp() });
         if(legacyState && window.__rg_clearLegacyLocalStorage) window.__rg_clearLegacyLocalStorage();
+        applyingRemoteState = false;
+        window.__rg_renderAll();
+        setSyncStatus('idle');
       }
-      applyingRemoteState = false;
-      window.__rg_renderAll();
-      setSyncStatus('idle');
     }catch(err){
+      console.error('Erreur de chargement Firestore :', err);
       applyingRemoteState = false;
       window.__rg_renderAll();
       setSyncStatus('error');
