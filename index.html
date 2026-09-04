@@ -3586,6 +3586,26 @@
     imgResizeHandle.addEventListener('pointerup', onUp);
   });
 
+  // Retrouve une image proche du point (x,y) même quand le clic ne tombe pas pile dessus.
+  // L'image a une marge (0.4em) au-dessus/en-dessous, et une fois sélectionnée son contour
+  // s'affiche 2px à l'extérieur d'elle (outline-offset) : ces zones ont l'air de faire partie de
+  // l'image mais n'en font pas partie au sens du DOM, donc un clic dessus rate `closest('img')`.
+  // Résultat perçu par l'utilisatrice : « parfois j'arrive à attraper l'image, parfois non ».
+  // On élargit donc la détection avec une tolérance en pixels autour du rectangle de chaque image
+  // (plus large au doigt qu'à la souris, le tactile étant naturellement moins précis).
+  function findImageNear(containerEl, x, y, tolerance){
+    const imgs = containerEl.querySelectorAll('img');
+    let best = null, bestDist = tolerance;
+    imgs.forEach(img=>{
+      const r = img.getBoundingClientRect();
+      const dx = Math.max(r.left - x, 0, x - r.right);
+      const dy = Math.max(r.top - y, 0, y - r.bottom);
+      const dist = Math.hypot(dx, dy);
+      if(dist <= bestDist){ bestDist = dist; best = img; }
+    });
+    return best;
+  }
+
   // Sélection au clic + déplacement par glisser-déposer d'une image insérée dans un éditeur du
   // Bloc-notes. On s'appuie sur les Pointer Events (et non l'API HTML5 drag-and-drop, mal supportée
   // au toucher mobile) — même logique que pour le réordonnancement des onglets par glisser-déposer.
@@ -3593,10 +3613,16 @@
     let dragImg = null, dragClone = null, dragMoved = false, dragStartX = 0, dragStartY = 0;
 
     containerEl.addEventListener('pointerdown', (e)=>{
-      const img = e.target.closest('img');
+      const direct = e.target.closest('img');
+      const tolerance = e.pointerType === 'touch' ? 18 : 8;
+      const img = (direct && containerEl.contains(direct)) ? direct : findImageNear(containerEl, e.clientX, e.clientY, tolerance);
       if(!img || !containerEl.contains(img)) return;
       e.preventDefault();
       selectImage(img, onChange);
+      // Le clic qui suit ce pointerdown (même geste) peut retomber en dehors du <img> quand on
+      // vient d'utiliser la tolérance ci-dessus ; sans ceci le gestionnaire de clic global (plus
+      // bas) désélectionnerait l'image aussitôt après l'avoir sélectionnée.
+      markInteractionJustHappened();
       dragImg = img; dragMoved = false;
       dragStartX = e.clientX; dragStartY = e.clientY;
       try{ containerEl.setPointerCapture(e.pointerId); }catch(err){}
