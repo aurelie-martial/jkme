@@ -671,6 +671,27 @@
     .blocnotes-sidebar-toggle-row{display:none;}
     #blocNotesSidebar.collapsed{flex-basis:auto;}
   }
+
+  /* --- EXPORT PDF (bouton 🖨 dans les barres d'outils du Bloc-notes) --- */
+  .toolbar-export-btn{ margin-left:auto; }
+  #printExportRoot{ display:none; }
+  @media print{
+    body *{ visibility:hidden; }
+    #printExportRoot, #printExportRoot *{ visibility:visible; }
+    #printExportRoot{
+      display:block; visibility:visible; position:absolute; left:0; top:0; width:100%;
+      margin:0; padding:0; box-sizing:border-box; color:#1a1a1a; background:#fff;
+    }
+    #printExportRoot .pe-title{ font-size:1.4rem; font-weight:700; margin:0 0 4px; }
+    #printExportRoot .pe-meta{ font-size:0.85rem; color:#666; margin:0 0 18px; }
+    #printExportRoot .pe-body{ font-size:0.95rem; line-height:1.5; }
+    #printExportRoot .pe-body img{ max-width:100%; }
+    #printExportRoot .pe-postit{ margin:0 0 20px; padding-bottom:16px; border-bottom:1px solid #ccc; page-break-inside:avoid; }
+    #printExportRoot .pe-postit:last-child{ border-bottom:none; }
+    #printExportRoot .pe-postit h4{ margin:0 0 8px; font-size:1.05rem; }
+    #printExportRoot table{ border-collapse:collapse; }
+    #printExportRoot table td, #printExportRoot table th{ border:1px solid #999; padding:4px 8px; }
+  }
 </style>
 </head>
 <body>
@@ -839,6 +860,7 @@
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~13 Ko)">🖼 Image</button>
             <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
+            <button type="button" class="toolbar-export-btn" data-cmd="exportPdf" title="Exporter cette note en PDF">🖨 PDF</button>
           </div>
           <div class="scene-editor-content" id="notesArea" contenteditable="true" data-placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></div>
         </div>
@@ -848,8 +870,9 @@
           <div class="subtab-header" style="margin-bottom:14px;">
             <div class="subtab-title">Parti pris</div>
           </div>
-          <div style="margin-bottom:18px;">
+          <div style="margin-bottom:18px; display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="btn" id="addPartiBtn">+ Ajouter un post-it</button>
+            <button type="button" class="btn btn-secondary" id="exportPartisPdfBtn" title="Exporter tous les post-it de Parti pris en PDF">🖨 Exporter en PDF</button>
           </div>
           <div class="parti-grid" id="partiGrid"></div>
         </div>
@@ -869,6 +892,7 @@
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~13 Ko)">🖼 Image</button>
             <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
+            <button type="button" class="toolbar-export-btn" data-cmd="exportPdf" title="Exporter cette note en PDF">🖨 PDF</button>
           </div>
           <div class="scene-editor-content" id="mecanismeContentInput" contenteditable="true" data-placeholder="Décris ici les mécanismes de la violence psychologique, les schémas comportementaux..."></div>
         </div>
@@ -1014,6 +1038,10 @@
 
 <!-- Popover de couleurs de surlignage, partagé par tous les éditeurs enrichis -->
 <div class="highlight-popover" id="highlightPopover"></div>
+
+<!-- Zone dédiée à l'export PDF (impression navigateur) : remplie juste avant window.print(),
+     vidée juste après. Le CSS @media print masque tout le reste de la page et n'affiche que ceci. -->
+<div id="printExportRoot"></div>
 
 <!-- Poignée de redimensionnement d'image, partagée par tous les éditeurs du Bloc-notes -->
 <div class="img-resize-handle" id="imgResizeHandle" title="Glisser pour redimensionner"></div>
@@ -1771,6 +1799,10 @@
   document.querySelectorAll('#mecanismeToolbar button').forEach(btn => {
     btn.addEventListener('mousedown', e => e.preventDefault());
     btn.addEventListener('click', () => {
+      if(btn.dataset.cmd === 'exportPdf'){
+        exportHtmlToPdf(mecanismeTitleInput.value.trim() || 'Mécanisme', buildNoteExportHtml(mecanismeTitleInput.value.trim() || 'Mécanisme', mecanismeContentInput.innerHTML));
+        return;
+      }
       mecanismeContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, mecanismeContentInput); }
@@ -2244,6 +2276,10 @@
   document.querySelectorAll('#globalToolbar button').forEach(btn=>{
     btn.addEventListener('mousedown', e=> e.preventDefault());
     btn.addEventListener('click', ()=>{
+      if(btn.dataset.cmd === 'exportPdf'){
+        exportHtmlToPdf(globalTitleInput.value.trim() || 'Global', buildNoteExportHtml(globalTitleInput.value.trim() || 'Global', notesArea.innerHTML));
+        return;
+      }
       notesArea.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, notesArea); }
@@ -2327,6 +2363,9 @@
         renderPartis();
       }
     });
+  });
+  document.getElementById('exportPartisPdfBtn').addEventListener('click', ()=>{
+    exportHtmlToPdf('Parti pris', buildPostitsExportHtml('Parti pris', partis));
   });
 
   // ---------- SCÈNES (onglet "Scènes", uniquement les scènes) ----------
@@ -2474,6 +2513,52 @@
     if(!content) return '';
     if(/<[a-z][\s\S]*>/i.test(content)) return content;
     return escapeHtml(content).replace(/\n/g, '<br>');
+  }
+
+  // ---------- EXPORT PDF (bouton 🖨 des vues du Bloc-notes) ----------
+  // On s'appuie sur l'impression navigateur (window.print) plutôt que sur une librairie externe :
+  // le texte reste sélectionnable dans le PDF, les images (data URL) s'affichent sans délai de
+  // chargement, et la pagination est gérée nativement. #printExportRoot (voir CSS @media print)
+  // est le seul élément visible pendant l'impression.
+  function exportHtmlToPdf(title, bodyHtml){
+    const root = document.getElementById('printExportRoot');
+    if(!root) return;
+    root.innerHTML = bodyHtml;
+    const prevTitle = document.title;
+    document.title = title ? `JKME – ${title}` : 'JKME';
+    let cleaned = false;
+    const cleanup = () => {
+      if(cleaned) return;
+      cleaned = true;
+      document.title = prevTitle;
+      root.innerHTML = '';
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    // Filet de sécurité si l'événement afterprint ne se déclenche pas (certains navigateurs mobiles).
+    setTimeout(cleanup, 120000);
+    window.print();
+  }
+
+  // Construit le HTML d'export pour une note "simple" (titre + contenu enrichi, éventuellement une image).
+  function buildNoteExportHtml(title, contentHtml, image){
+    let html = `<div class="pe-title">${escapeHtml(title || '(sans titre)')}</div>`;
+    if(image) html += `<img src="${image}" alt="" style="max-width:320px; margin:0 0 16px; display:block;">`;
+    html += `<div class="pe-body">${contentHtml || ''}</div>`;
+    return html;
+  }
+
+  // Construit le HTML d'export pour une grille de post-it (Parti pris, ou sous-onglet "Bloc-notes").
+  function buildPostitsExportHtml(title, items){
+    let html = `<div class="pe-title">${escapeHtml(title)}</div>`;
+    if(!items || items.length === 0){
+      html += `<div class="pe-meta">Aucun post-it pour l'instant.</div>`;
+      return html;
+    }
+    items.forEach(n=>{
+      html += `<div class="pe-postit"><h4>${escapeHtml(n.title || '(sans titre)')}</h4><div class="pe-body">${toEditableHtml(n.content || '')}</div></div>`;
+    });
+    return html;
   }
 
   // Édition directe sur un post-it (titre + contenu), sans repasser par le crayon/la modale.
@@ -3169,6 +3254,7 @@
     <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
     <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~13 Ko)">🖼 Image</button>
     <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
+    <button type="button" class="toolbar-export-btn" data-cmd="exportPdf" title="Exporter cette note en PDF">🖨 PDF</button>
   `;
 
   function renderCustomSubTabContent(){
@@ -3182,8 +3268,9 @@
         <div class="subtab-header">
           <h3 class="subtab-title">${escapeHtml(ct.label)}</h3>
         </div>
-        <div style="margin-bottom:18px;">
+        <div style="margin-bottom:18px; display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn" id="customAddNoteBtn">+ Ajouter un post-it</button>
+          <button type="button" class="btn btn-secondary" id="customExportNotesPdfBtn" title="Exporter tous les post-it de cette note en PDF">🖨 Exporter en PDF</button>
         </div>
         <div class="parti-grid" id="customNotesGrid"></div>
       `;
@@ -3231,6 +3318,10 @@
     document.querySelectorAll('#customSimpleToolbar button').forEach(btn=>{
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
+        if(btn.dataset.cmd === 'exportPdf'){
+          exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML));
+          return;
+        }
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
@@ -3261,6 +3352,10 @@
     document.querySelectorAll('#customSceneToolbar button').forEach(btn=>{
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{
+        if(btn.dataset.cmd === 'exportPdf'){
+          exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML, data.image));
+          return;
+        }
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
@@ -3304,6 +3399,9 @@
   function wireCustomNotesFormat(ct, data){
     const grid = document.getElementById('customNotesGrid');
     const addBtn = document.getElementById('customAddNoteBtn');
+    document.getElementById('customExportNotesPdfBtn').addEventListener('click', ()=>{
+      exportHtmlToPdf(ct.label, buildPostitsExportHtml(ct.label, data.items));
+    });
 
     function renderGrid(){
       if(!data.items || data.items.length===0){
