@@ -104,11 +104,16 @@
   .btn-ghost{background:var(--gris); color:var(--ink); box-shadow:none;}
 
   /* KANBAN */
-  .kanban{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
-  @media(max-width:1000px){.kanban{grid-template-columns:repeat(2,1fr);}}
+  .kanban{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
   @media(max-width:800px){.kanban{grid-template-columns:1fr;}}
   .kanban-col{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; min-height:160px;}
   .kanban-col-sandbox{background:var(--gris); border-style:dashed;}
+  .kanban-sandbox-section{margin-top:16px;}
+  .kanban-sandbox-section #col-sandbox{display:flex; flex-wrap:wrap; gap:10px;}
+  .kanban-sandbox-section #col-sandbox .cat-group-label{flex:1 1 100%; margin:10px 0 0;}
+  .kanban-sandbox-section #col-sandbox .cat-group-label:first-child{margin-top:0;}
+  .kanban-sandbox-section #col-sandbox .task-card{flex:1 1 240px; max-width:340px; margin-bottom:0;}
+  .kanban-sandbox-section #col-sandbox .empty-msg{flex:1 1 100%;}
   .kanban-col h3{font-family:'Plus Jakarta Sans', sans-serif; margin:0 0 14px; font-weight:600; font-size:1rem; display:flex; align-items:center; gap:8px; color:var(--ink);}
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
   .task-card{
@@ -120,7 +125,7 @@
   .task-card.is-done p{text-decoration:line-through; color:var(--ink-soft);}
   .task-card.is-done .chip{opacity:0.7;}
   /* Bac à sable : cartes neutres, sans le code couleur par catégorie (pas encore prioritaire). */
-  #col-sandbox .task-card{border-left-color:var(--line);}
+  #col-sandbox .task-card{border-left-color:var(--line); background:transparent;}
   #col-sandbox .chip{background:var(--gris); color:var(--ink-soft);}
   #col-sandbox .cat-group-dot{background:var(--ink-soft);}
   .card-icons{position:absolute; top:10px; right:10px; display:flex; gap:4px;}
@@ -797,10 +802,6 @@
     </form>
 
     <div class="kanban">
-      <div class="kanban-col kanban-col-sandbox">
-        <h3><span class="dot" style="background:var(--peche)"></span>Bac à sable</h3>
-        <div id="col-sandbox"></div>
-      </div>
       <div class="kanban-col">
         <h3><span class="dot" style="background:var(--ink-soft)"></span>À faire</h3>
         <div id="col-todo"></div>
@@ -813,6 +814,11 @@
         <h3><span class="dot" style="background:var(--menthe)"></span>Terminé</h3>
         <div id="col-done"></div>
       </div>
+    </div>
+
+    <div class="kanban-col kanban-col-sandbox kanban-sandbox-section">
+      <h3><span class="dot" style="background:var(--peche)"></span>Bac à sable</h3>
+      <div id="col-sandbox"></div>
     </div>
   </div>
 
