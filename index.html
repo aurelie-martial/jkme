@@ -104,9 +104,11 @@
   .btn-ghost{background:var(--gris); color:var(--ink); box-shadow:none;}
 
   /* KANBAN */
-  .kanban{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .kanban{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  @media(max-width:1000px){.kanban{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:800px){.kanban{grid-template-columns:1fr;}}
   .kanban-col{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; min-height:160px;}
+  .kanban-col-sandbox{background:var(--gris); border-style:dashed;}
   .kanban-col h3{font-family:'Plus Jakarta Sans', sans-serif; margin:0 0 14px; font-weight:600; font-size:1rem; display:flex; align-items:center; gap:8px; color:var(--ink);}
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
   .task-card{
@@ -787,9 +789,14 @@
       <select id="taskCategory"></select>
       <button type="button" id="manageCatsBtn" class="btn btn-ghost">⚙ Catégories</button>
       <button type="submit" class="btn">+ Ajouter l'étape</button>
+      <button type="button" id="addToSandboxBtn" class="btn btn-ghost" title="Noter l'idée sans la mettre en priorité tout de suite">+ Bac à sable</button>
     </form>
 
     <div class="kanban">
+      <div class="kanban-col kanban-col-sandbox">
+        <h3><span class="dot" style="background:var(--peche)"></span>Bac à sable</h3>
+        <div id="col-sandbox"></div>
+      </div>
       <div class="kanban-col">
         <h3><span class="dot" style="background:var(--ink-soft)"></span>À faire</h3>
         <div id="col-todo"></div>
@@ -1976,10 +1983,10 @@
   }
 
   function renderTasks(){
-    const cols = {todo: document.getElementById('col-todo'), doing: document.getElementById('col-doing'), done: document.getElementById('col-done')};
+    const cols = {sandbox: document.getElementById('col-sandbox'), todo: document.getElementById('col-todo'), doing: document.getElementById('col-doing'), done: document.getElementById('col-done')};
     Object.values(cols).forEach(c=>c.innerHTML='');
-    const empties = {todo:"Rien pour l'instant, ajoute ta première étape !", doing:"Aucune étape en cours.", done:"Rien de terminé pour le moment."};
-    const statusOrder = ['todo','doing','done'];
+    const empties = {sandbox:"Rien de côté pour l'instant.", todo:"Rien pour l'instant, ajoute ta première étape !", doing:"Aucune étape en cours.", done:"Rien de terminé pour le moment."};
+    const statusOrder = ['sandbox','todo','doing','done'];
     statusOrder.forEach(status=>{
       const grouped = groupedList(status);
       if(grouped.length===0){
@@ -2026,7 +2033,7 @@
             ${!isFirstInRun ? `<button data-act="up" data-id="${t.id}" title="Monter">▲</button>` : ''}
             ${!isLastInRun ? `<button data-act="down" data-id="${t.id}" title="Descendre">▼</button>` : ''}
             ${idx>0 ? `<button data-act="prev" data-id="${t.id}">◀</button>` : ''}
-            ${idx<2 ? `<button data-act="next" data-id="${t.id}">▶</button>` : ''}
+            ${idx<statusOrder.length-1 ? `<button data-act="next" data-id="${t.id}">▶</button>` : ''}
           </div>`;
         cols[status].appendChild(div);
       });
@@ -2068,11 +2075,11 @@
         const id = btn.dataset.id;
         const t = tasks.find(x=>String(x.id)===id);
         if(!t) return;
-        const statusOrder2 = ['todo','doing','done'];
+        const statusOrder2 = ['sandbox','todo','doing','done'];
         if(btn.dataset.act==='edit'){ editingTaskId = id; renderTasks(); return; }
         if(btn.dataset.act==='save-edit'){ commitEdit(id); return; }
         if(btn.dataset.act==='cancel-edit'){ editingTaskId = null; renderTasks(); return; }
-        if(btn.dataset.act==='next') t.status = statusOrder2[Math.min(statusOrder2.indexOf(t.status)+1,2)];
+        if(btn.dataset.act==='next') t.status = statusOrder2[Math.min(statusOrder2.indexOf(t.status)+1,statusOrder2.length-1)];
         if(btn.dataset.act==='prev') t.status = statusOrder2[Math.max(statusOrder2.indexOf(t.status)-1,0)];
         if(btn.dataset.act==='del') tasks = tasks.filter(x=>String(x.id)!==id);
         if(btn.dataset.act==='up' || btn.dataset.act==='down'){
@@ -2099,6 +2106,17 @@
     tasks.push({id: Date.now()+Math.random(), title, category, status:'todo'});
     saveTasks();
     document.getElementById('taskTitle').value='';
+    renderTasks();
+  });
+
+  document.getElementById('addToSandboxBtn').addEventListener('click', ()=>{
+    const titleInput = document.getElementById('taskTitle');
+    const title = titleInput.value.trim();
+    const category = document.getElementById('taskCategory').value;
+    if(!title || !category) return;
+    tasks.push({id: Date.now()+Math.random(), title, category, status:'sandbox'});
+    saveTasks();
+    titleInput.value='';
     renderTasks();
   });
 
