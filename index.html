@@ -119,6 +119,10 @@
   .task-card.is-done{background:var(--gris); border-left-color:var(--ink-soft); opacity:0.72;}
   .task-card.is-done p{text-decoration:line-through; color:var(--ink-soft);}
   .task-card.is-done .chip{opacity:0.7;}
+  /* Bac à sable : cartes neutres, sans le code couleur par catégorie (pas encore prioritaire). */
+  #col-sandbox .task-card{border-left-color:var(--line);}
+  #col-sandbox .chip{background:var(--gris); color:var(--ink-soft);}
+  #col-sandbox .cat-group-dot{background:var(--ink-soft);}
   .card-icons{position:absolute; top:10px; right:10px; display:flex; gap:4px;}
   .card-icons button{
     border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer;
