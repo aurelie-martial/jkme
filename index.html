@@ -616,8 +616,12 @@
   .parti-content-editable img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
   .parti-form-actions{display:flex; gap:10px; align-items:center; margin-top:4px;}
 
+  /* Disposition en colonnes façon "mur de post-it" : contrairement à une grille classique (où
+     chaque ligne prend la hauteur de sa carte la plus haute, laissant un vide sous les cartes plus
+     courtes de la même ligne), les colonnes CSS font remonter chaque nouvelle carte dans la
+     première colonne qui a de la place, comblant automatiquement les espaces vides. */
   .parti-grid{
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; align-items:start;
+    column-width:280px; column-gap:20px;
   }
   .parti-card{
     background: var(--postit-bg, #FEF08A);
@@ -629,6 +633,7 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     animation: fadeIn .3s ease;
     border-top: 6px solid rgba(0,0,0,0.08);
+    margin:0 0 20px; break-inside:avoid; -webkit-column-break-inside:avoid; page-break-inside:avoid;
   }
   .parti-card:hover{
     transform: translateY(-3px) rotate(0.5deg);
