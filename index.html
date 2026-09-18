@@ -523,6 +523,8 @@
   .scene-editor-content h2{font-size:1.35em; font-weight:700; margin:0.7em 0 0.3em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content h3{font-size:1.12em; font-weight:700; margin:0.6em 0 0.25em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content p{margin:0 0 0.6em; overflow-wrap:anywhere; word-break:break-word;}
+  .scene-editor-content ul, .parti-content-editable ul, .parti-card .parti-content ul{margin:0 0 0.6em; padding-left:1.3em;}
+  .scene-editor-content li, .parti-content-editable li, .parti-card .parti-content li{margin:0 0 0.2em; overflow-wrap:anywhere; word-break:break-word;}
   .scene-editor-content a, .parti-content-editable a{overflow-wrap:anywhere; word-break:break-word; color:var(--lavande); text-decoration:underline; text-decoration-color:var(--lavande);}
   .scene-editor-content img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
   .scene-editor-content img, .parti-content-editable img{
@@ -1425,6 +1427,50 @@
     placeCursorAtEnd(newBlock, sel);
   }
 
+  // Transforme automatiquement "- " tapé en tout début de ligne en liste à puce (comme dans la
+  // plupart des éditeurs type Notion/Google Docs). Comme pour formatBlock ci-dessus, on manipule
+  // le DOM à la main plutôt que document.execCommand('insertUnorderedList') pour un comportement
+  // fiable partout ; une fois la liste créée, Entrée/Retour arrière dans la liste sont gérés
+  // nativement par le navigateur, sans code supplémentaire.
+  function enableDashToBulletList(containerEl){
+    containerEl.addEventListener('input', (e)=>{
+      if(e.inputType && e.inputType !== 'insertText') return;
+      if(e.data !== ' ') return;
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount === 0 || !sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      if(!containerEl.contains(range.startContainer)) return;
+
+      // Retrouve l'enfant direct de containerEl qui porte le curseur (ou containerEl lui-même si
+      // le contenu n'est pas encore enveloppé dans un bloc, typiquement la toute première ligne).
+      let block = range.startContainer;
+      while(block && block !== containerEl && block.parentNode && block.parentNode !== containerEl){
+        block = block.parentNode;
+      }
+      if(block && block.nodeType !== 1) block = block.parentNode;
+      if(!block || block.tagName === 'LI') return;
+
+      // Un espace tapé en toute fin de bloc est souvent inséré par le navigateur comme une espace
+      // insécable (&nbsp;, U+00A0) plutôt qu'une espace normale, pour éviter qu'il ne s'affiche
+      // pas ; on normalise avant de comparer.
+      const rawText = block === containerEl ? containerEl.textContent : block.textContent;
+      const text = (rawText || '').replace(/ /g, ' ');
+      if(text !== '- ') return;
+
+      const ul = document.createElement('ul');
+      const li = document.createElement('li');
+      ul.appendChild(li);
+      if(block === containerEl){
+        containerEl.innerHTML = '';
+        containerEl.appendChild(ul);
+      } else {
+        block.parentNode.replaceChild(ul, block);
+      }
+      placeCursorAtEnd(li, sel);
+      containerEl.dispatchEvent(new Event('input', {bubbles:true}));
+    });
+  }
+
   function runToolbarCmd(cmd, value, containerEl){
     if(cmd === 'formatBlock' && value && containerEl){
       applyBlockFormat(containerEl, value.toUpperCase());
@@ -1825,6 +1871,7 @@
     });
   });
   enableImageEditing(postitContentInput, ()=>{});
+  enableDashToBulletList(postitContentInput);
 
   function getCategoryColor(name){
     const c = categories.find(x=>x.name===name);
@@ -1904,6 +1951,7 @@
     });
   });
   enableImageEditing(mecanismeContentInput, ()=>{ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); });
+  enableDashToBulletList(mecanismeContentInput);
 
 
   // ---------- CATEGORIES ----------
@@ -2392,6 +2440,7 @@
     });
   });
   enableImageEditing(notesArea, ()=>{ notesData.content = notesArea.innerHTML; saveNotes(); });
+  enableDashToBulletList(notesArea);
 
   // ---------- PROJET / PARTIS PRIS ----------
   const POSTIT_COLORS = [
@@ -2690,6 +2739,7 @@
         item.updatedAt = Date.now();
         saveFn();
       });
+      enableDashToBulletList(contentEl);
     }
   }
 
@@ -2856,6 +2906,7 @@
     stampSceneModified();
     saveScenes();
   });
+  enableDashToBulletList(sceneContentInput);
   document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
     btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
@@ -3531,6 +3582,7 @@
       });
     });
     enableImageEditing(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); });
+    enableDashToBulletList(contentEl);
   }
 
   function wireCustomSceneFormat(ct, data){
@@ -3565,6 +3617,7 @@
       });
     });
     enableImageEditing(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); });
+    enableDashToBulletList(contentEl);
 
     imageBox.addEventListener('click', (e)=>{
       if(e.target === imageRemoveBtn) return;
