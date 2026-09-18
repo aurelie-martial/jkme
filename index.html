@@ -3053,6 +3053,13 @@
     // section "Épinglées" et réapparaît ici, à sa place habituelle dans l'ordre de rangement.
     // Un dossier replié masque aussi les notes qu'il contient (sauf celles déjà remontées
     // ci-dessus car épinglées), jusqu'au séparateur/dossier suivant qui referme sa portée.
+    // Important : une entrée masquée garde quand même un élément DOM (juste caché avec
+    // display:none) plutôt que d'être complètement omise. enableDragReorder() reconstruit le
+    // nouvel ordre à partir des enfants DOM du conteneur et n'applique le résultat que si leur
+    // nombre correspond exactement à blocNotesOrder.length ; en omettre complètement cassait
+    // silencieusement tout glisser-déposer fait pendant qu'un dossier était replié (le
+    // rangement semblait fonctionner un instant puis revenait à l'ordre initial au rendu
+    // suivant, faute d'avoir été sauvegardé).
     let inCollapsedFolder = false;
     blocNotesOrder.forEach((entry)=>{
       if(entry.type === 'divider'){
@@ -3061,7 +3068,10 @@
         return;
       }
       if(pinnedNotes[pinKeyFor(entry)]) return;
-      if(inCollapsedFolder) return;
+      if(inCollapsedFolder){
+        html += `<div class="scene-pill-row" data-order-key="${entry.id}" style="display:none;" aria-hidden="true"></div>`;
+        return;
+      }
       html += renderBlocNotesPillEntry(entry);
     });
 
