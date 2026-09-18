@@ -2740,6 +2740,11 @@
         saveFn();
       });
       enableDashToBulletList(contentEl);
+      enableImageEditing(contentEl, ()=>{
+        item.content = contentEl.innerHTML;
+        item.updatedAt = Date.now();
+        saveFn();
+      });
     }
   }
 
@@ -2907,6 +2912,12 @@
     saveScenes();
   });
   enableDashToBulletList(sceneContentInput);
+  enableImageEditing(sceneContentInput, ()=>{
+    const s = currentScene(); if(!s) return;
+    s.content = sceneContentInput.innerHTML;
+    stampSceneModified();
+    saveScenes();
+  });
   document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
     btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
