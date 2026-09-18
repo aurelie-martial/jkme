@@ -394,15 +394,40 @@
      suppression d'un séparateur s'aligne exactement avec celle des pastilles au-dessus/en dessous. */
   .scene-pill-color-spacer{flex:0 0 auto; width:20px; height:20px;}
 
+  /* Dossiers du Bloc-notes : un séparateur nommé, repliable, qui regroupe les notes placées
+     en dessous de lui (jusqu'au séparateur/dossier suivant). Visuellement distinct d'un simple
+     trait de séparation pour bien marquer qu'il est cliquable. */
+  .scene-folder-row{display:flex; align-items:center; gap:4px; margin:12px 0 4px;}
+  .scene-folder-row:first-child{margin-top:2px;}
+  .scene-folder-toggle{
+    flex:1; min-width:0; display:flex; align-items:center; gap:6px;
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:0.72rem; letter-spacing:0.02em;
+    text-transform:uppercase; padding:6px 8px; border:none; border-radius:8px;
+    background:var(--gris); color:var(--ink-soft); cursor:pointer; text-align:left;
+    transition:background .15s ease, color .15s ease;
+  }
+  .scene-folder-toggle:hover{color:var(--ink); background:var(--line);}
+  .scene-folder-caret{flex:0 0 auto; font-size:0.62rem; opacity:0.7; transition:transform .15s ease;}
+  .scene-folder-icon{flex:0 0 auto;}
+  .scene-folder-label{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .scene-folder-row.collapsed .scene-folder-toggle{color:var(--ink-soft); opacity:0.8;}
+  .scene-pill-rename{
+    flex:0 0 auto; width:20px; height:20px; border:1px solid var(--line); border-radius:6px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.62rem; line-height:1; padding:0;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .scene-pill-rename:hover{background:var(--lavande); color:#fff; border-color:var(--lavande);}
+
   /* Épingle : toujours visible (contrairement aux actions du mode "Organiser"), pour marquer
-     rapidement les notes sur lesquelles on travaille actuellement. */
+     rapidement les notes sur lesquelles on travaille actuellement. Étoile pleine et dorée une
+     fois épinglée, vide et discrète sinon (pas d'icône séparée ni de rotation). */
   .scene-pill-pin{
     flex:0 0 auto; width:20px; height:20px; border:none; border-radius:6px;
-    background:none; color:var(--ink-soft); cursor:pointer; font-size:0.78rem; line-height:1; padding:0;
-    opacity:0.32; transition:opacity .15s ease, transform .15s ease;
+    background:none; color:var(--ink-soft); cursor:pointer; font-size:0.92rem; line-height:1; padding:0;
+    opacity:0.4; transition:opacity .15s ease, color .15s ease, transform .15s ease;
   }
-  .scene-pill-pin:hover{opacity:0.75;}
-  .scene-pill-pin.active{opacity:1; transform:rotate(-15deg);}
+  .scene-pill-pin:hover{opacity:0.85;}
+  .scene-pill-pin.active{opacity:1; color:var(--peche); transform:scale(1.08);}
   .scene-pills-section-label{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:0.66rem; letter-spacing:0.05em;
     text-transform:uppercase; color:var(--ink-soft); margin:12px 2px 4px;
@@ -833,6 +858,7 @@
           <div class="scene-toolbar" id="sceneToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+            <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
             <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
@@ -860,7 +886,7 @@
         <select class="scene-mobile-select" id="blocNotesMobileSelect"></select>
         <div class="scene-sidebar-actions">
           <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter une note</button>
-          <button type="button" class="btn-add-subtab" id="addBlocNotesDividerBtn">+ Séparateur</button>
+          <button type="button" class="btn-add-subtab" id="addBlocNotesDividerBtn" title="Crée un dossier repliable pour regrouper des notes (ex. « Roman », « Réseaux sociaux »)">+ Dossier</button>
           <button type="button" class="btn-organize-toggle" id="toggleBlocNotesOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
         </div>
       </div>
@@ -876,6 +902,7 @@
           <div class="scene-toolbar" id="globalToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+            <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
             <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
@@ -908,6 +935,7 @@
           <div class="scene-toolbar" id="mecanismeToolbar">
             <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+            <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
             <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
@@ -1052,6 +1080,7 @@
       <div class="scene-toolbar" id="postitToolbar">
         <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
         <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+        <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
         <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
         <div class="scene-toolbar-sep"></div>
         <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
@@ -2846,17 +2875,19 @@
     let optionsHtml = '';
     blocNotesOrder.forEach(entry=>{
       if(entry.type === 'divider'){
-        optionsHtml += `<option disabled>──────────</option>`;
+        optionsHtml += entry.label
+          ? `<option disabled>── 📁 ${escapeHtml(entry.label)} ──</option>`
+          : `<option disabled>──────────</option>`;
         return;
       }
       if(entry.type === 'special'){
-        const pin = pinnedNotes[entry.id] ? '📌 ' : '';
+        const pin = pinnedNotes[entry.id] ? '★ ' : '';
         optionsHtml += `<option value="special:${entry.id}">${pin}${SPECIAL_LABELS[entry.id]}</option>`;
         return;
       }
       const ct = customSceneTabs.find(x=>x.id===entry.id);
       if(!ct) return;
-      const pin = pinnedNotes['custom:' + ct.id] ? '📌 ' : '';
+      const pin = pinnedNotes['custom:' + ct.id] ? '★ ' : '';
       optionsHtml += `<option value="custom:${ct.id}">${pin}${escapeHtml(ct.label)}</option>`;
     });
     blocNotesMobileSelectEl.innerHTML = optionsHtml;
@@ -2935,6 +2966,25 @@
 
   function renderBlocNotesPillEntry(entry){
     if(entry.type === 'divider'){
+      // Un séparateur nommé ("label") est un dossier repliable qui regroupe les notes placées
+      // en dessous de lui, jusqu'au séparateur/dossier suivant (voir le filtrage dans
+      // renderBlocNotesPills). Un séparateur sans nom garde l'ancien rendu, un simple trait.
+      if(entry.label){
+        const collapsed = !!entry.collapsed;
+        return `
+          <div class="scene-folder-row ${collapsed?'collapsed':''}" data-order-key="${entry.id}">
+            <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
+            <button type="button" class="scene-folder-toggle" data-folder-toggle-key="${entry.id}" title="${collapsed?'Déplier ce dossier':'Replier ce dossier'}">
+              <span class="scene-folder-caret">${collapsed?'▸':'▾'}</span>
+              <span class="scene-folder-icon">📁</span>
+              <span class="scene-folder-label">${escapeHtml(entry.label)}</span>
+            </button>
+            <div class="scene-pill-actions">
+              <button type="button" class="scene-pill-rename" data-rename-key="${entry.id}" title="Renommer ce dossier">✎</button>
+              <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce dossier (les notes qu'il contient ne sont pas supprimées)">✕</button>
+            </div>
+          </div>`;
+      }
       return `
         <div class="scene-divider-row" data-order-key="${entry.id}">
           <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
@@ -2953,7 +3003,7 @@
       return `
         <div class="scene-pill-row" data-order-key="${entry.id}">
           <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-          <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${key}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">📌</button>
+          <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${key}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">${pinned?'★':'☆'}</button>
           <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${pillCustomColorClass(key)} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
           <div class="scene-pill-actions">
             <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur de fond">
@@ -2971,12 +3021,13 @@
     return `
       <div class="scene-pill-row" data-order-key="${entry.id}">
         <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-        <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${colorKey}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">📌</button>
+        <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${colorKey}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">${pinned?'★':'☆'}</button>
         <button type="button" class="scene-pill custom ${pillCustomColorClass(colorKey)} ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
           ${escapeHtml(ct.label)}
         </button>
         <div class="scene-pill-actions">
           <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur de fond">
+          <button type="button" class="scene-pill-rename" data-rename-note-key="${ct.id}" title="Renommer cette note">✎</button>
           <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer cette note">✕</button>
         </div>
       </div>`;
@@ -2992,7 +3043,7 @@
     const pinnedEntries = blocNotesOrder.filter(e => e.type !== 'divider' && pinnedNotes[pinKeyFor(e)]);
 
     if(pinnedEntries.length){
-      html += `<div class="scene-pills-section-label">📌 Épinglées</div>`;
+      html += `<div class="scene-pills-section-label">★ Épinglées</div>`;
       pinnedEntries.forEach(entry => { html += renderBlocNotesPillEntry(entry); });
       html += `<div class="scene-pills-section-label">Toutes les notes</div>`;
     }
@@ -3000,8 +3051,17 @@
     // Le reste de la liste n'inclut plus les entrées déjà épinglées ci-dessus, pour éviter
     // qu'une même note apparaisse deux fois. Dès qu'on la désépingle, elle disparaît de la
     // section "Épinglées" et réapparaît ici, à sa place habituelle dans l'ordre de rangement.
+    // Un dossier replié masque aussi les notes qu'il contient (sauf celles déjà remontées
+    // ci-dessus car épinglées), jusqu'au séparateur/dossier suivant qui referme sa portée.
+    let inCollapsedFolder = false;
     blocNotesOrder.forEach((entry)=>{
-      if(entry.type !== 'divider' && pinnedNotes[pinKeyFor(entry)]) return;
+      if(entry.type === 'divider'){
+        html += renderBlocNotesPillEntry(entry);
+        inCollapsedFolder = !!(entry.label && entry.collapsed);
+        return;
+      }
+      if(pinnedNotes[pinKeyFor(entry)]) return;
+      if(inCollapsedFolder) return;
       html += renderBlocNotesPillEntry(entry);
     });
 
@@ -3014,6 +3074,53 @@
         else if(idx === 'parti') selectParti();
         else if(idx === 'mecanisme') selectMecanismeSub();
         else if(idx.startsWith('custom:')) selectCustomSubTab(idx.slice(7));
+      });
+    });
+
+    blocNotesPillsEl.querySelectorAll('.scene-folder-toggle').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.folderToggleKey;
+        const entry = blocNotesOrder.find(en=>en.type==='divider' && String(en.id)===key);
+        if(!entry) return;
+        entry.collapsed = !entry.collapsed;
+        saveBlocNotesOrder();
+        renderBlocNotesPills();
+      });
+    });
+
+    blocNotesPillsEl.querySelectorAll('.scene-pill-rename[data-rename-key]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const key = btn.dataset.renameKey;
+        const entry = blocNotesOrder.find(en=>en.type==='divider' && String(en.id)===key);
+        if(!entry) return;
+        const name = prompt('Nom du dossier', entry.label || '');
+        if(name === null) return;
+        const trimmed = name.trim();
+        if(!trimmed) return;
+        entry.label = trimmed;
+        saveBlocNotesOrder();
+        renderBlocNotesPills();
+      });
+    });
+
+    // Renommer une note personnalisée (sous-onglet du Bloc-notes créé via "+ Ajouter une note").
+    // Les onglets spéciaux (Global, Parti pris, Mécanisme) ne sont pas renommables : ce sont des
+    // sections fixes de l'application, pas des notes créées par l'utilisatrice.
+    blocNotesPillsEl.querySelectorAll('.scene-pill-rename[data-rename-note-key]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.renameNoteKey;
+        const ct = customSceneTabs.find(t=>String(t.id)===id);
+        if(!ct) return;
+        const name = prompt('Nom de la note', ct.label || '');
+        if(name === null) return;
+        const trimmed = name.trim();
+        if(!trimmed) return;
+        ct.label = trimmed;
+        saveCustomSceneTabs();
+        if(currentBlocView === 'custom' && currentCustomTabId === ct.id) renderCustomSubTabContent();
+        renderBlocNotesPills();
       });
     });
 
@@ -3046,7 +3153,11 @@
         e.stopPropagation();
         const kind = btn.dataset.delKind;
         if(kind === 'divider'){
-          if(!confirm('Supprimer ce séparateur ?')) return;
+          const delEntry = blocNotesOrder.find(en=>en.type==='divider' && String(en.id)===btn.dataset.delKey);
+          const confirmMsg = delEntry && delEntry.label
+            ? `Supprimer le dossier « ${delEntry.label} » ? Les notes qu'il contient ne seront pas supprimées.`
+            : 'Supprimer ce séparateur ?';
+          if(!confirm(confirmMsg)) return;
           blocNotesOrder = blocNotesOrder.filter(en=>String(en.id)!==btn.dataset.delKey);
           saveBlocNotesOrder();
           renderBlocNotesPills();
@@ -3071,8 +3182,12 @@
   }
 
   document.getElementById('addBlocNotesDividerBtn').addEventListener('click', ()=>{
+    const name = prompt('Nom du dossier (ex. "Roman", "Réseaux sociaux")', '');
+    if(name === null) return;
+    const trimmed = name.trim();
+    if(!trimmed) return;
     reconcileBlocNotesOrder();
-    blocNotesOrder.push({type:'divider', id: makeOrderId()});
+    blocNotesOrder.push({type:'divider', id: makeOrderId(), label: trimmed, collapsed:false});
     saveBlocNotesOrder();
     renderBlocNotesPills();
   });
@@ -3286,6 +3401,7 @@
   const toolbarButtonsHtml = `
     <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
     <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+    <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
     <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
     <div class="scene-toolbar-sep"></div>
     <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
