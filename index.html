@@ -4308,7 +4308,10 @@
   closeBackupRestoreModal.addEventListener('click', ()=> backupRestoreOverlay.classList.remove('active'));
   backupRestoreOverlay.addEventListener('click', e=>{ if(e.target === backupRestoreOverlay) backupRestoreOverlay.classList.remove('active'); });
 
-  const ALLOWED_EMAIL = 'aureliemartial87@gmail.com';
+  const ALLOWED_EMAILS = ['aureliemartial87@gmail.com', 'a.gueudelot@gmail.com'];
+  // Les deux comptes autorisés partagent le même espace de données (un seul document Firestore,
+  // sous un identifiant fixe plutôt que l'UID de connexion), pour voir et modifier le même contenu.
+  const SHARED_DOC_ID = 'jkme-shared';
 
   onAuthStateChanged(auth, async (user)=>{
     if(!user){
@@ -4319,9 +4322,9 @@
       return;
     }
 
-    // Refuse tout compte Google autre que le tien : déconnexion immédiate,
+    // Refuse tout compte Google qui n'est pas dans la liste autorisée : déconnexion immédiate,
     // avant même d'afficher le contenu de l'app (même garde-fou que sur LilyTracker).
-    if((user.email || '').toLowerCase() !== ALLOWED_EMAIL){
+    if(!ALLOWED_EMAILS.includes((user.email || '').toLowerCase())){
       console.warn('Connexion refusée : compte Google non autorisé (' + user.email + ').');
       loginError.textContent = "Ce compte Google n'est pas autorisé à accéder à cette application.";
       signOut(auth);
@@ -4331,8 +4334,8 @@
 
     loginScreen.classList.add('hidden');
     appRoot.classList.remove('hidden');
-    userDocRef = doc(db, 'users', user.uid);
-    currentUid = user.uid;
+    userDocRef = doc(db, 'users', SHARED_DOC_ID);
+    currentUid = SHARED_DOC_ID;
 
     try{
       // getDocFromServer (et non getDoc) : on force une vraie lecture réseau plutôt que de risquer
@@ -4341,19 +4344,32 @@
       // LilyTracker le 2 septembre 2026 (document users/{uid} écrasé par les valeurs par défaut) —
       // même correctif appliqué ici : lecture serveur forcée + confirmation avant toute création.
       const snap = await getDocFromServer(userDocRef);
+      const legacyOwnSnap = snap.exists() ? null : await getDocFromServer(doc(db, 'users', user.uid));
       if(snap.exists()){
         applyingRemoteState = true;
         window.__rg_setState(snap.data());
         applyingRemoteState = false;
         window.__rg_renderAll();
         setSyncStatus('idle');
-        runDailyBackup(user.uid, snap.data());
+        runDailyBackup(SHARED_DOC_ID, snap.data());
+      } else if(legacyOwnSnap.exists()){
+        // Rien sous l'identifiant partagé, mais ce compte a des données sous son ancien document
+        // individuel (users/{uid}, d'avant le passage à un espace partagé) : on les reprend
+        // automatiquement, une seule fois, pour ne rien perdre lors de ce passage.
+        const legacyOwnData = legacyOwnSnap.data();
+        await setDoc(userDocRef, { ...legacyOwnData, updatedAt: serverTimestamp() });
+        applyingRemoteState = true;
+        window.__rg_setState(legacyOwnData);
+        applyingRemoteState = false;
+        window.__rg_renderAll();
+        setSyncStatus('idle');
+        runDailyBackup(SHARED_DOC_ID, legacyOwnData);
       } else {
-        // Aucun document cloud pour ce compte : on regarde s'il reste d'anciennes données
-        // locales (versions précédentes de l'appli) pour ne rien perdre. Dans tous les cas, on
-        // demande confirmation avant de créer quoi que ce soit : si ce compte a déjà des données
-        // dans le cloud et qu'on arrive quand même ici, c'est le signe d'un problème réseau plutôt
-        // qu'un compte réellement vide, et il ne faut surtout pas écraser silencieusement.
+        // Aucun document cloud (ni partagé, ni ancien document individuel) : on regarde s'il reste
+        // d'anciennes données locales (versions précédentes de l'appli) pour ne rien perdre. Dans
+        // tous les cas, on demande confirmation avant de créer quoi que ce soit : si des données
+        // existent déjà et qu'on arrive quand même ici, c'est le signe d'un problème réseau plutôt
+        // qu'un espace réellement vide, et il ne faut surtout pas écraser silencieusement.
         const legacyState = window.__rg_readLegacyLocalStorage ? window.__rg_readLegacyLocalStorage() : null;
         const confirmMsg = legacyState
           ? `D'anciennes données ont été trouvées dans ce navigateur, mais aucun document n'existe encore dans le cloud pour « ${user.email} ». Cliquer sur OK pour les migrer vers le cloud.`
