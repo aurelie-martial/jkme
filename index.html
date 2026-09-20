@@ -4308,6 +4308,8 @@
   closeBackupRestoreModal.addEventListener('click', ()=> backupRestoreOverlay.classList.remove('active'));
   backupRestoreOverlay.addEventListener('click', e=>{ if(e.target === backupRestoreOverlay) backupRestoreOverlay.classList.remove('active'); });
 
+  const ALLOWED_EMAIL = 'aureliemartial87@gmail.com';
+
   onAuthStateChanged(auth, async (user)=>{
     if(!user){
       userDocRef = null;
@@ -4316,6 +4318,16 @@
       appRoot.classList.add('hidden');
       return;
     }
+
+    // Refuse tout compte Google autre que le tien : déconnexion immédiate,
+    // avant même d'afficher le contenu de l'app (même garde-fou que sur LilyTracker).
+    if((user.email || '').toLowerCase() !== ALLOWED_EMAIL){
+      console.warn('Connexion refusée : compte Google non autorisé (' + user.email + ').');
+      loginError.textContent = "Ce compte Google n'est pas autorisé à accéder à cette application.";
+      signOut(auth);
+      return;
+    }
+    loginError.textContent = '';
 
     loginScreen.classList.add('hidden');
     appRoot.classList.remove('hidden');
