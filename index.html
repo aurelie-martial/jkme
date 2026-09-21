@@ -422,6 +422,11 @@
   .scene-folder-icon{flex:0 0 auto;}
   .scene-folder-label{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .scene-folder-row.collapsed .scene-folder-toggle{color:var(--ink-soft); opacity:0.8;}
+  /* Dossier contenant la note actuellement affichée : mise en avant pour s'y repérer facilement,
+     y compris quand ce dossier est replié. */
+  .scene-folder-row.active-folder .scene-folder-toggle{background:var(--ink); color:#fff;}
+  .scene-folder-row.active-folder .scene-folder-toggle:hover{background:var(--ink); color:#fff;}
+  .scene-folder-row.collapsed.active-folder .scene-folder-toggle{color:#fff; opacity:1;}
   .scene-pill-rename{
     flex:0 0 auto; width:20px; height:20px; border:1px solid var(--line); border-radius:6px;
     background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.62rem; line-height:1; padding:0;
@@ -3007,19 +3012,15 @@
     blocNotesEmptyState.style.display = 'none';
   }
 
-  // Choisit la meilleure vue disponible et l'affiche (utilisé après suppression d'un onglet)
+  // N'ouvre plus aucune note automatiquement (ni au premier chargement de l'appli, ni quand la
+  // note affichée disparaît, par ex. supprimée depuis un autre appareil) : affiche l'état vide,
+  // à l'utilisatrice de choisir une note dans la liste.
   function selectBestAvailableBlocNotesView(){
-    if(!hiddenTabs.global) selectGlobal();
-    else if(!hiddenTabs.parti) selectParti();
-    else if(!hiddenTabs.mecanisme) selectMecanismeSub();
-    else if(customSceneTabs.length) selectCustomSubTab(customSceneTabs[0].id);
-    else {
-      currentBlocView = null;
-      currentCustomTabId = null;
-      hideAllBlocNotesBlocks();
-      blocNotesEmptyState.style.display = '';
-      renderBlocNotesPills();
-    }
+    currentBlocView = null;
+    currentCustomTabId = null;
+    hideAllBlocNotesBlocks();
+    blocNotesEmptyState.style.display = '';
+    renderBlocNotesPills();
   }
 
   const SPECIAL_LABELS = {global:'Global', parti:'Parti pris', mecanisme:'Mécanisme'};
@@ -3059,6 +3060,29 @@
   // "global"/"parti"/"mecanisme" pour les onglets spéciaux, "custom:<id>" pour les sous-onglets perso).
   function pinKeyFor(entry){ return entry.type === 'custom' ? 'custom:' + entry.id : entry.id; }
 
+  // Dossier (séparateur nommé) qui précède immédiatement une entrée donnée dans blocNotesOrder,
+  // pour que toutes les notes d'un même dossier partagent sa couleur. Un séparateur sans nom
+  // referme la portée d'un dossier précédent (mêmes règles que le repli/dépli des dossiers).
+  function containingFolderId(index){
+    for(let i=index-1;i>=0;i--){
+      const e = blocNotesOrder[i];
+      if(e.type === 'divider') return e.label ? e.id : null;
+    }
+    return null;
+  }
+
+  // Dossier qui contient la note actuellement affichée, pour le mettre en valeur dans la liste.
+  function activeFolderId(){
+    let activeIndex = -1;
+    blocNotesOrder.forEach((e, i)=>{
+      if(e.type === 'divider') return;
+      const isActive = (e.type === 'special' && currentBlocView === e.id) ||
+        (e.type === 'custom' && currentBlocView === 'custom' && currentCustomTabId === e.id);
+      if(isActive) activeIndex = i;
+    });
+    return activeIndex === -1 ? null : containingFolderId(activeIndex);
+  }
+
   function renderBlocNotesPillEntry(entry){
     if(entry.type === 'divider'){
       // Un séparateur nommé ("label") est un dossier repliable qui regroupe les notes placées
@@ -3066,8 +3090,10 @@
       // renderBlocNotesPills). Un séparateur sans nom garde l'ancien rendu, un simple trait.
       if(entry.label){
         const collapsed = !!entry.collapsed;
+        const folderColorKey = 'folder:' + entry.id;
+        const isActiveFolder = activeFolderId() === entry.id;
         return `
-          <div class="scene-folder-row ${collapsed?'collapsed':''}" data-order-key="${entry.id}">
+          <div class="scene-folder-row ${collapsed?'collapsed':''} ${isActiveFolder?'active-folder':''}" data-order-key="${entry.id}">
             <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
             <button type="button" class="scene-folder-toggle" data-folder-toggle-key="${entry.id}" title="${collapsed?'Déplier ce dossier':'Replier ce dossier'}">
               <span class="scene-folder-caret">${collapsed?'▸':'▾'}</span>
@@ -3075,6 +3101,7 @@
               <span class="scene-folder-label">${escapeHtml(entry.label)}</span>
             </button>
             <div class="scene-pill-actions">
+              <input type="color" class="scene-pill-color" data-color-key="${folderColorKey}" value="${pillColors[folderColorKey] || '#94a3b8'}" title="Couleur des notes de ce dossier">
               <button type="button" class="scene-pill-rename" data-rename-key="${entry.id}" title="Renommer ce dossier">✎</button>
               <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce dossier (les notes qu'il contient ne sont pas supprimées)">✕</button>
             </div>
@@ -3091,17 +3118,24 @@
         </div>`;
     }
 
+    // Toutes les notes d'un même dossier partagent la couleur du dossier (au lieu d'une couleur
+    // propre à chaque note) ; en dehors de tout dossier, chaque note garde sa propre couleur.
+    const entryIndex = blocNotesOrder.indexOf(entry);
+    const folderId = entryIndex === -1 ? null : containingFolderId(entryIndex);
+    const folderColorKey = folderId != null ? 'folder:' + folderId : null;
+
     if(entry.type === 'special'){
       const key = entry.id;
+      const colorKey = folderColorKey || key;
       const active = currentBlocView === key;
       const pinned = !!pinnedNotes[key];
       return `
         <div class="scene-pill-row" data-order-key="${entry.id}">
           <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
           <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${key}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">${pinned?'★':'☆'}</button>
-          <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${pillCustomColorClass(key)} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(key)}>${SPECIAL_LABELS[key]}</button>
+          <button type="button" class="scene-pill ${SPECIAL_CLASSES[key]} ${pillCustomColorClass(colorKey)} ${active?'active':''}" data-idx="${key}"${pillColorStyleAttr(colorKey)}>${SPECIAL_LABELS[key]}</button>
           <div class="scene-pill-actions">
-            <input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur de fond">
+            ${folderColorKey ? '<span class="scene-pill-color-spacer"></span>' : `<input type="color" class="scene-pill-color" data-color-key="${key}" value="${pillColors[key] || '#94a3b8'}" title="Couleur de fond">`}
             <button type="button" class="scene-pill-del" data-del-key="${key}" data-del-kind="special" title="Supprimer cet onglet">✕</button>
           </div>
         </div>`;
@@ -3110,18 +3144,19 @@
     // entry.type === 'custom'
     const ct = customSceneTabs.find(x=>x.id===entry.id);
     if(!ct) return '';
-    const colorKey = 'custom:' + ct.id;
+    const ownColorKey = 'custom:' + ct.id;
+    const colorKey = folderColorKey || ownColorKey;
     const active = currentBlocView==='custom' && currentCustomTabId===ct.id;
-    const pinned = !!pinnedNotes[colorKey];
+    const pinned = !!pinnedNotes[ownColorKey];
     return `
       <div class="scene-pill-row" data-order-key="${entry.id}">
         <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
-        <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${colorKey}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">${pinned?'★':'☆'}</button>
+        <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${ownColorKey}" title="${pinned?'Désépingler cette note':'Épingler cette note (en cours de travail)'}">${pinned?'★':'☆'}</button>
         <button type="button" class="scene-pill custom ${pillCustomColorClass(colorKey)} ${active?'active':''}" data-idx="custom:${ct.id}"${pillColorStyleAttr(colorKey)}>
           ${escapeHtml(ct.label)}
         </button>
         <div class="scene-pill-actions">
-          <input type="color" class="scene-pill-color" data-color-key="${colorKey}" value="${pillColors[colorKey] || '#94a3b8'}" title="Couleur de fond">
+          ${folderColorKey ? '<span class="scene-pill-color-spacer"></span>' : `<input type="color" class="scene-pill-color" data-color-key="${ownColorKey}" value="${pillColors[ownColorKey] || '#94a3b8'}" title="Couleur de fond">`}
           <button type="button" class="scene-pill-rename" data-rename-note-key="${ct.id}" title="Renommer cette note">✎</button>
           <button type="button" class="scene-pill-del" data-del-key="${ct.id}" data-del-kind="custom" title="Supprimer cette note">✕</button>
         </div>
@@ -3244,6 +3279,22 @@
       inp.addEventListener('input', ()=>{
         pillColors[inp.dataset.colorKey] = inp.value;
         savePillColors();
+        if(inp.dataset.colorKey.startsWith('folder:')){
+          // La couleur d'un dossier s'applique à toutes les notes qu'il contient : on met à jour
+          // chaque pastille concernée directement (plutôt qu'un rendu complet, qui interromprait
+          // le glissement en cours dans le sélecteur de couleur natif).
+          let node = inp.closest('.scene-folder-row').nextElementSibling;
+          while(node && !node.classList.contains('scene-folder-row') && !node.classList.contains('scene-divider-row')){
+            const pillBtn = node.querySelector('.scene-pill');
+            if(pillBtn){
+              pillBtn.style.setProperty('--pill-color', inp.value);
+              pillBtn.style.setProperty('--pill-text-color', getContrastTextColor(inp.value));
+              pillBtn.classList.add('has-custom-color');
+            }
+            node = node.nextElementSibling;
+          }
+          return;
+        }
         const pillBtn = inp.closest('.scene-pill-row').querySelector('.scene-pill');
         if(pillBtn){
           pillBtn.style.setProperty('--pill-color', inp.value);
@@ -3263,6 +3314,10 @@
             ? `Supprimer le dossier « ${delEntry.label} » ? Les notes qu'il contient ne seront pas supprimées.`
             : 'Supprimer ce séparateur ?';
           if(!confirm(confirmMsg)) return;
+          if(delEntry && delEntry.label){
+            delete pillColors['folder:' + delEntry.id];
+            savePillColors();
+          }
           blocNotesOrder = blocNotesOrder.filter(en=>String(en.id)!==btn.dataset.delKey);
           saveBlocNotesOrder();
           renderBlocNotesPills();
