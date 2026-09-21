@@ -3083,17 +3083,34 @@
     return activeIndex === -1 ? null : containingFolderId(activeIndex);
   }
 
+  // Un dossier qui contient au moins une note individuellement épinglée reste toujours ouvert à
+  // l'affichage, même s'il est replié : la note épinglée ne doit jamais sortir de la vue.
+  function folderContainsPinnedNote(folderIndex){
+    for(let i=folderIndex+1;i<blocNotesOrder.length;i++){
+      const e = blocNotesOrder[i];
+      if(e.type === 'divider') return false;
+      if(pinnedNotes[pinKeyFor(e)]) return true;
+    }
+    return false;
+  }
+
   function renderBlocNotesPillEntry(entry){
     if(entry.type === 'divider'){
       // Un séparateur nommé ("label") est un dossier repliable qui regroupe les notes placées
       // en dessous de lui, jusqu'au séparateur/dossier suivant (voir le filtrage dans
       // renderBlocNotesPills). Un séparateur sans nom garde l'ancien rendu, un simple trait.
       if(entry.label){
-        const collapsed = !!entry.collapsed;
-        const folderColorKey = 'folder:' + entry.id;
+        // Un dossier qui contient une note individuellement épinglée reste toujours affiché
+        // déplié (voir folderContainsPinnedNote), même si son état enregistré est "replié" :
+        // cette dérogation n'est jamais elle-même enregistrée, seul l'affichage en tient compte.
+        const entryIndex = blocNotesOrder.indexOf(entry);
+        const forcedOpen = folderContainsPinnedNote(entryIndex);
+        const collapsed = !!entry.collapsed && !forcedOpen;
+        const folderKey = 'folder:' + entry.id;
         const isActiveFolder = activeFolderId() === entry.id;
+        const pinned = !!pinnedNotes[folderKey];
         return `
-          <div class="scene-folder-row ${collapsed?'collapsed':''} ${isActiveFolder?'active-folder':''}" data-order-key="${entry.id}">
+          <div class="scene-folder-row ${collapsed?'collapsed':''} ${isActiveFolder?'active-folder':''} ${pinned?'pinned-folder':''}" data-order-key="${entry.id}">
             <span class="scene-drag-handle" title="Glisser pour réorganiser">⠿</span>
             <button type="button" class="scene-folder-toggle" data-folder-toggle-key="${entry.id}" title="${collapsed?'Déplier ce dossier':'Replier ce dossier'}">
               <span class="scene-folder-caret">${collapsed?'▸':'▾'}</span>
@@ -3101,7 +3118,8 @@
               <span class="scene-folder-label">${escapeHtml(entry.label)}</span>
             </button>
             <div class="scene-pill-actions">
-              <input type="color" class="scene-pill-color" data-color-key="${folderColorKey}" value="${pillColors[folderColorKey] || '#94a3b8'}" title="Couleur des notes de ce dossier">
+              <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${folderKey}" title="${pinned?'Désépingler ce dossier':'Épingler ce dossier (remonte en tête de liste)'}">${pinned?'★':'☆'}</button>
+              <input type="color" class="scene-pill-color" data-color-key="${folderKey}" value="${pillColors[folderKey] || '#94a3b8'}" title="Couleur des notes de ce dossier">
               <button type="button" class="scene-pill-rename" data-rename-key="${entry.id}" title="Renommer ce dossier">✎</button>
               <button type="button" class="scene-pill-del" data-del-key="${entry.id}" data-del-kind="divider" title="Supprimer ce dossier (les notes qu'il contient ne sont pas supprimées)">✕</button>
             </div>
@@ -3167,22 +3185,55 @@
     reconcileBlocNotesOrder();
     let html = '';
 
-    // Les notes épinglées ("en cours de travail") remontent en tête de liste, dans leur ordre
-    // habituel, suivies du reste des notes (l'ordre de rangement sous-jacent, lui, n'est pas
-    // modifié : seul l'affichage regroupe les épinglées en haut).
-    const pinnedEntries = blocNotesOrder.filter(e => e.type !== 'divider' && pinnedNotes[pinKeyFor(e)]);
+    // Deux façons d'épingler : un dossier entier (remonte en bloc, en-tête + notes qu'il
+    // contient, en tête de liste) ou une note isolée hors de tout dossier (remonte seule, comme
+    // avant). Une note épinglée qui appartient à un dossier non épinglé, elle, ne remonte plus :
+    // elle reste à sa place dans ce dossier, qui est simplement forcé à s'afficher déplié (voir
+    // folderContainsPinnedNote et son utilisation dans renderBlocNotesPillEntry).
+    const pinnedFolderIds = new Set(
+      blocNotesOrder.filter(e => e.type === 'divider' && e.label && pinnedNotes['folder:' + e.id]).map(e => e.id)
+    );
+    const pinnedUngroupedNotes = blocNotesOrder.filter((e, i) =>
+      e.type !== 'divider' && pinnedNotes[pinKeyFor(e)] && containingFolderId(i) == null
+    );
 
-    if(pinnedEntries.length){
+    if(pinnedFolderIds.size || pinnedUngroupedNotes.length){
       html += `<div class="scene-pills-section-label">★ Épinglées</div>`;
-      pinnedEntries.forEach(entry => { html += renderBlocNotesPillEntry(entry); });
+
+      // Bloc(s) de dossier(s) épinglé(s) : en-tête suivi des notes qu'il contient, en respectant
+      // son propre état replié/déplié (sauf s'il contient lui-même une note épinglée, auquel cas
+      // il s'affiche forcément déplié, comme partout ailleurs).
+      let inPinnedFolder = false;
+      let pinnedFolderCollapsed = false;
+      blocNotesOrder.forEach((entry, i)=>{
+        if(entry.type === 'divider'){
+          inPinnedFolder = !!(entry.label && pinnedFolderIds.has(entry.id));
+          if(inPinnedFolder){
+            html += renderBlocNotesPillEntry(entry);
+            pinnedFolderCollapsed = !!entry.collapsed && !folderContainsPinnedNote(i);
+          }
+          return;
+        }
+        if(!inPinnedFolder) return;
+        if(pinnedFolderCollapsed){
+          html += `<div class="scene-pill-row" data-order-key="${entry.id}" style="display:none;" aria-hidden="true"></div>`;
+        } else {
+          html += renderBlocNotesPillEntry(entry);
+        }
+      });
+
+      pinnedUngroupedNotes.forEach(entry => { html += renderBlocNotesPillEntry(entry); });
+
       html += `<div class="scene-pills-section-label">Toutes les notes</div>`;
     }
 
-    // Le reste de la liste n'inclut plus les entrées déjà épinglées ci-dessus, pour éviter
-    // qu'une même note apparaisse deux fois. Dès qu'on la désépingle, elle disparaît de la
-    // section "Épinglées" et réapparaît ici, à sa place habituelle dans l'ordre de rangement.
-    // Un dossier replié masque aussi les notes qu'il contient (sauf celles déjà remontées
-    // ci-dessus car épinglées), jusqu'au séparateur/dossier suivant qui referme sa portée.
+    // Le reste de la liste n'inclut plus les dossiers épinglés (déjà remontés en bloc ci-dessus,
+    // avec les notes qu'ils contiennent) ni les notes épinglées hors dossier (déjà remontées
+    // individuellement) : chaque entrée n'apparaît qu'une seule fois au total. Dès qu'on
+    // désépingle, l'élément disparaît de la section "Épinglées" et réapparaît ici, à sa place
+    // habituelle. Un dossier replié masque aussi les notes qu'il contient (sauf s'il contient une
+    // note individuellement épinglée, auquel cas il reste affiché déplié pour qu'elle reste
+    // visible), jusqu'au séparateur/dossier suivant qui referme sa portée.
     // Important : une entrée masquée garde quand même un élément DOM (juste caché avec
     // display:none) plutôt que d'être complètement omise. enableDragReorder() reconstruit le
     // nouvel ordre à partir des enfants DOM du conteneur et n'applique le résultat que si leur
@@ -3191,13 +3242,17 @@
     // rangement semblait fonctionner un instant puis revenait à l'ordre initial au rendu
     // suivant, faute d'avoir été sauvegardé).
     let inCollapsedFolder = false;
-    blocNotesOrder.forEach((entry)=>{
+    let inPinnedFolderMain = false;
+    blocNotesOrder.forEach((entry, i)=>{
       if(entry.type === 'divider'){
+        inPinnedFolderMain = !!(entry.label && pinnedFolderIds.has(entry.id));
+        if(inPinnedFolderMain) return;
         html += renderBlocNotesPillEntry(entry);
-        inCollapsedFolder = !!(entry.label && entry.collapsed);
+        inCollapsedFolder = !!(entry.label && entry.collapsed && !folderContainsPinnedNote(i));
         return;
       }
-      if(pinnedNotes[pinKeyFor(entry)]) return;
+      if(inPinnedFolderMain) return;
+      if(pinnedNotes[pinKeyFor(entry)] && containingFolderId(i) == null) return;
       if(inCollapsedFolder){
         html += `<div class="scene-pill-row" data-order-key="${entry.id}" style="display:none;" aria-hidden="true"></div>`;
         return;
@@ -3317,6 +3372,8 @@
           if(delEntry && delEntry.label){
             delete pillColors['folder:' + delEntry.id];
             savePillColors();
+            delete pinnedNotes['folder:' + delEntry.id];
+            savePinnedNotes();
           }
           blocNotesOrder = blocNotesOrder.filter(en=>String(en.id)!==btn.dataset.delKey);
           saveBlocNotesOrder();
