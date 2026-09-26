@@ -198,18 +198,25 @@
     border-radius:3px; padding:1px 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:0 0 auto;
   }
   .ev-more{font-size:0.58rem; font-weight:600; color:var(--ink-soft); padding:0 4px; flex:0 0 auto;}
-
-  /* WEEK PLANNER (SEMAINIER) */
-  .week-planner-panel{margin-bottom:20px;}
-  .week-planner-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
-  .wp-cell-header{text-align:center; font-weight:600; font-size:0.68rem; text-transform:uppercase; color:var(--ink-soft); letter-spacing:0.08em; padding:4px 2px;}
-  .wp-cell-header.is-today{color:var(--lavande);}
-  .wp-cell{
-    width:100%; min-height:62px; resize:vertical; border:1px solid var(--line); border-radius:8px;
-    padding:7px 9px; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.78rem;
-    color:var(--ink); background:var(--panel); line-height:1.35; overflow:hidden;
+  /* "Période avec mon fils" : au lieu d'un aperçu textuel, un trait coloré continu qui traverse
+     les jours concernés (arrondi seulement au vrai début/fin de la période, ou en bord de semaine),
+     car ce temps-là ne s'organise pas comme un rendez-vous classique. */
+  .ev-garde-bar{
+    height:7px; flex:0 0 auto; margin:1px -6px 0; background:var(--peche); cursor:pointer;
   }
-  .wp-cell.is-today{border-color:var(--lavande);}
+
+  /* Choix du type d'événement, dans le formulaire d'ajout du calendrier */
+  .ev-type-choice{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:2px;}
+  .ev-type-option{
+    display:flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:20px;
+    padding:5px 11px; font-size:0.76rem; font-weight:600; color:var(--ink-soft); cursor:pointer;
+    text-transform:none; letter-spacing:normal;
+  }
+  .ev-type-option input{margin:0;}
+  .ev-type-option.active{color:#fff;}
+  .ev-type-rdv.active{background:var(--lavande); border-color:var(--lavande);}
+  .ev-type-travail.active{background:var(--ciel); border-color:var(--ciel);}
+  .ev-type-garde.active{background:var(--peche); border-color:var(--peche);}
 
   /* STORAGE FOOTER (poids total des images) */
   .storage-footer{
@@ -248,8 +255,6 @@
     font-weight:600; padding:5px 11px; color:var(--ink-soft); flex:0 0 auto; font-size:0.8rem;
   }
   .backup-restore-row .brr-restore:hover{color:#fff; background:var(--lavande); border-color:var(--lavande);}
-  .wp-cell:focus{outline:none; border-color:var(--lavande);}
-  .wp-cell::placeholder{color:var(--ink-soft);}
 
   /* MODAL */
   .overlay{
@@ -526,7 +531,13 @@
   }
   .ig-grid-tab.active{color:#262626; border-top-color:#262626; margin-top:-1px;}
   .ig-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; margin-top:2px;}
-  .ig-grid .empty-msg{grid-column:1/-1;}
+  /* Même sans aucun post, le cadre garde la hauteur d'un vrai écran de téléphone : le message
+     "Aucun post" occupe tout l'espace qu'occuperait une grille de publications, plutôt que de
+     laisser le cadre s'écraser sur la seule hauteur du texte. */
+  .ig-grid .empty-msg{
+    grid-column:1/-1; display:flex; align-items:center; justify-content:center; text-align:center;
+    min-height:460px; padding:20px;
+  }
   .ig-grid-cell{
     aspect-ratio:1/1; background:var(--gris); cursor:pointer; overflow:hidden;
     display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:1.3rem;
@@ -844,8 +855,6 @@
     .btn-organize-toggle{display:none;}
     .scene-sidebar-actions{width:100%;}
     .scene-sidebar-actions .btn-add-subtab{flex:1; text-align:center;}
-    .week-planner-panel{overflow-x:auto;}
-    .week-planner-grid{grid-template-columns:repeat(7,minmax(64px,1fr)); width:max-content; min-width:100%; padding-bottom:4px;}
     .blocnotes-sidebar-toggle-row{display:none;}
     #blocNotesSidebar.collapsed{flex-basis:auto;}
   }
@@ -941,10 +950,6 @@
 
   <!-- CALENDRIER -->
   <div class="tab-content" id="content-cal">
-    <div class="panel week-planner-panel">
-      <div class="week-planner-grid" id="weekPlannerGrid"></div>
-    </div>
-
     <div class="panel">
       <div class="cal-header">
         <h2 id="calMonthLabel">Mois</h2>
@@ -964,8 +969,8 @@
   <!-- SCÈNES (uniquement les scènes 1 à 20) -->
   <div class="tab-content" id="content-scenes">
     <div class="scene-subview-toggle" id="sceneSubviewToggle">
-      <button type="button" class="scene-subview-btn active" data-subview="scenes">Scènes</button>
       <button type="button" class="scene-subview-btn" data-subview="posts">Posts</button>
+      <button type="button" class="scene-subview-btn active" data-subview="scenes">Scènes</button>
     </div>
 
     <div class="scene-subview-panel" id="sceneSubviewScenes">
@@ -1197,13 +1202,19 @@
     <h3 id="modalDateLabel">Date</h3>
     <div id="modalEventList"></div>
     <form id="addEventForm">
-      <label>Titre du rendez-vous</label>
-      <input type="text" id="evTitle" placeholder="Ex : RDV éditeur" required>
+      <label>Type</label>
+      <div class="ev-type-choice" id="evTypeChoice">
+        <label class="ev-type-option ev-type-rdv"><input type="radio" name="evType" value="rdv" checked><span>RDV</span></label>
+        <label class="ev-type-option ev-type-travail"><input type="radio" name="evType" value="travail"><span>Créneau de travail</span></label>
+        <label class="ev-type-option ev-type-garde"><input type="radio" name="evType" value="garde"><span>Période avec mon fils</span></label>
+      </div>
+      <label id="evTitleLabel">Titre du rendez-vous</label>
+      <input type="text" id="evTitle" placeholder="Ex : RDV éditeur">
       <label>Jusqu'au (optionnel, pour un événement sur plusieurs jours)</label>
       <input type="date" id="evEndDate">
-      <label>Note (optionnel)</label>
+      <label id="evNoteLabel">Note (optionnel)</label>
       <input type="text" id="evNote" placeholder="Adresse, détails...">
-      <button type="submit" class="btn btn-secondary">+ Ajouter le rendez-vous</button>
+      <button type="submit" class="btn btn-secondary" id="evSubmitBtn">+ Ajouter le rendez-vous</button>
     </form>
   </div>
 </div>
@@ -1350,40 +1361,6 @@
     return {avatar:null, username:'', displayName:'', bio:'', website:'', followers:0, following:0};
   }
 
-  // Semainier (au-dessus du calendrier mensuel) : une grille libre Lun→Dim, une seule case par jour,
-  // remplie à la main par l'utilisatrice pour s'organiser sur le projet.
-  const WEEK_DAYS = [
-    {key:'lun', label:'Lun'}, {key:'mar', label:'Mar'}, {key:'mer', label:'Mer'},
-    {key:'jeu', label:'Jeu'}, {key:'ven', label:'Ven'}, {key:'sam', label:'Sam'}, {key:'dim', label:'Dim'}
-  ];
-  // Anciennes clés de créneaux (Matin/Midi/Après-midi/Soir), conservées uniquement pour migrer
-  // les données existantes vers une case unique par jour.
-  const LEGACY_WEEK_SLOT_KEYS = ['matin', 'midi', 'apresmidi', 'soir'];
-  function defaultWeekPlanner(){
-    const obj = {};
-    WEEK_DAYS.forEach(d=> obj[d.key] = '');
-    return obj;
-  }
-  function normalizeWeekPlanner(data){
-    const obj = defaultWeekPlanner();
-    if(data && typeof data === 'object'){
-      WEEK_DAYS.forEach(d=>{
-        const val = data[d.key];
-        if(typeof val === 'string'){
-          obj[d.key] = val;
-        } else if(val && typeof val === 'object'){
-          // Ancien format à 4 créneaux : on fusionne les textes non vides en une seule case.
-          obj[d.key] = LEGACY_WEEK_SLOT_KEYS.map(k => (typeof val[k] === 'string' ? val[k].trim() : '')).filter(Boolean).join('\n');
-        }
-      });
-    }
-    return obj;
-  }
-  // Index (0=Lun...6=Dim) du jour courant dans WEEK_DAYS, pour repérer la case "aujourd'hui".
-  function todayWeekDayIndex(){
-    return (new Date().getDay() + 6) % 7;
-  }
-
   // Tout l'état de l'appli vit en mémoire (JS) et n'est persisté que dans Firestore (voir plus bas,
   // syncCloud()/__rg_scheduleSync) — aucune donnée n'est écrite en localStorage. Ces valeurs par défaut
   // ne servent que le temps très bref avant que la synchro cloud n'ait chargé l'état réel de l'utilisatrice.
@@ -1413,8 +1390,6 @@
   // clé stable que pillColors ("global", "parti", "mecanisme", "custom:<id>").
   let pinnedNotes = {};
 
-  let weekPlanner = defaultWeekPlanner();
-
   // Simulateur Instagram (sous-onglet "Posts" de l'onglet "Scènes / Posts") : un profil unique
   // (photo, pseudo, nom, bio, stats) et une liste de posts (image + légende + mentions J'aime),
   // pour prévisualiser à quoi ressembleraient un compte et différentes publications avant de les
@@ -1435,7 +1410,6 @@
   const saveBlocNotesOrder = () => { syncCloud(); };
   const savePillColors = () => { syncCloud(); };
   const savePinnedNotes = () => { syncCloud(); };
-  const saveWeekPlanner = () => { syncCloud(); };
   const saveIgProfile = () => { syncCloud(); };
   const saveIgPosts = () => { syncCloud(); };
 
@@ -2085,7 +2059,7 @@
   // ---------- RENDER TABS SYSTEM ----------
   const BASE_TABS = [
     {id: 'plan', label: "Todo"},
-    {id: 'scenes', label: 'Scènes / Posts'},
+    {id: 'scenes', label: 'Posts / Scènes'},
     {id: 'blocnotes', label: 'Bloc-notes'},
     {id: 'cal', label: 'Calendrier'},
     {id: 'livre', label: 'Livre'}
@@ -2110,7 +2084,6 @@
         btn.classList.add('active');
         const targetContent = document.getElementById('content-' + activeTabId);
         if(targetContent) targetContent.classList.add('active');
-        if(activeTabId === 'cal' && window.__rg_growWeekPlannerCells) window.__rg_growWeekPlannerCells();
       });
     });
   }
@@ -2448,6 +2421,12 @@
     saveEvents();
   }
 
+  // Couleur associée à chaque type d'événement (RDV / créneau de travail / période avec mon fils).
+  // Les événements créés avant l'ajout de cette notion n'ont pas de champ "type" : ils sont alors
+  // traités comme des RDV classiques (couleur historique, inchangée).
+  const EVENT_TYPE_COLORS = { rdv: 'var(--lavande)', travail: 'var(--ciel)', garde: 'var(--peche)' };
+  function eventType(ev){ return ev.type === 'travail' || ev.type === 'garde' ? ev.type : 'rdv'; }
+
   function renderCalendar(){
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     document.getElementById('calMonthLabel').textContent = `${MONTHS[m]} ${y}`;
@@ -2471,56 +2450,32 @@
       }
       const key = fmtKey(y,m,dayNum);
       const evs = sortEvents(events[key] || []);
+      // Les périodes "avec mon fils" ne s'affichent pas comme les RDV/créneaux (texte dans une
+      // pastille) mais comme un trait continu qui traverse les jours concernés : le temps ne
+      // s'organise pas de la même façon, donc l'affichage doit le distinguer nettement.
+      const gardeEvs = evs.filter(ev => eventType(ev) === 'garde');
+      const otherEvs = evs.filter(ev => eventType(ev) !== 'garde');
       cell.className = 'cal-cell' + (key===todayKey ? ' today' : '') + (evs.length ? ' has-events' : '');
+      const isMonday = (i % 7) === 0;
+      const isSunday = (i % 7) === 6;
       const maxPreview = 3;
       cell.innerHTML = `<span class="daynum">${dayNum}</span>` +
-        evs.slice(0, maxPreview).map(ev => {
+        gardeEvs.map(ev => {
+          const leftRound = ev.startDate === key || isMonday;
+          const rightRound = ev.endDate === key || isSunday;
+          const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
+          return `<div class="ev-garde-bar" style="border-radius:${radius}" title="${escapeHtml(ev.title || 'Mon fils')}"></div>`;
+        }).join('') +
+        otherEvs.slice(0, maxPreview).map(ev => {
           const multi = ev.startDate !== ev.endDate;
           const label = ev.time ? `${escapeHtml(ev.time)} · ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
-          return `<div class="ev-preview" style="--ev-color:var(--lavande)">${multi ? '↔ ' : ''}${label}</div>`;
+          return `<div class="ev-preview" style="--ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}">${multi ? '↔ ' : ''}${label}</div>`;
         }).join('') +
-        (evs.length > maxPreview ? `<div class="ev-more">+${evs.length - maxPreview} autre${evs.length - maxPreview > 1 ? 's' : ''}</div>` : '');
+        (otherEvs.length > maxPreview ? `<div class="ev-more">+${otherEvs.length - maxPreview} autre${otherEvs.length - maxPreview > 1 ? 's' : ''}</div>` : '');
       cell.addEventListener('click', ()=>openDayModal(key));
       grid.appendChild(cell);
     }
   }
-
-  // ---------- SEMAINIER ----------
-  function autoGrowWpCell(ta){
-    ta.style.height = 'auto';
-    ta.style.height = Math.max(ta.scrollHeight, 62) + 'px';
-  }
-
-  function renderWeekPlanner(){
-    const grid = document.getElementById('weekPlannerGrid');
-    if(!grid) return;
-    // Ordre toujours fixe Lundi → Dimanche (les jours ne tournent plus pour mettre "aujourd'hui"
-    // en premier : c'est le défilement horizontal, ci-dessous, qui s'en charge).
-    const days = WEEK_DAYS;
-    const todayKey = WEEK_DAYS[todayWeekDayIndex()].key;
-    let html = days.map(d => `<div class="wp-cell-header${d.key===todayKey?' is-today':''}">${escapeHtml(d.label)}</div>`).join('');
-    html += days.map(d =>
-      `<textarea class="wp-cell${d.key===todayKey?' is-today':''}" data-day="${d.key}" placeholder="…">${escapeHtml(weekPlanner[d.key])}</textarea>`
-    ).join('');
-    grid.innerHTML = html;
-    grid.querySelectorAll('.wp-cell').forEach(ta=>{
-      ta.addEventListener('input', ()=>{
-        weekPlanner[ta.dataset.day] = ta.value;
-        saveWeekPlanner();
-        autoGrowWpCell(ta);
-      });
-    });
-    // Quand la grille déborde horizontalement (typiquement sur mobile), on amène la case du jour J
-    // tout à gauche de la zone visible à l'ouverture ; les jours précédents restent atteignables
-    // en scrollant vers la gauche. Sans débordement (desktop), ceci n'a aucun effet visible.
-    requestAnimationFrame(()=>{
-      const todayHeader = grid.querySelector('.wp-cell-header.is-today');
-      if(todayHeader) todayHeader.scrollIntoView({inline:'start', block:'nearest'});
-    });
-  }
-  window.__rg_growWeekPlannerCells = () => {
-    document.querySelectorAll('.wp-cell').forEach(autoGrowWpCell);
-  };
 
   document.getElementById('prevMonth').addEventListener('click', ()=>{
     viewDate.setMonth(viewDate.getMonth()-1); renderCalendar();
@@ -2535,6 +2490,55 @@
   // ---------- DAY MODAL ----------
   let currentKey = null;
   const overlay = document.getElementById('dayOverlay');
+  const EVENT_TYPE_LABELS = { rdv: 'RDV', travail: 'Créneau de travail', garde: 'Mon fils' };
+
+  // Formulaire d'ajout : le champ "Titre" et la note n'ont pas le même sens selon le type choisi
+  // (une "période avec mon fils" n'a pas vraiment besoin de titre), donc le formulaire s'adapte.
+  const evTypeChoiceEl = document.getElementById('evTypeChoice');
+  const evTitleLabelEl = document.getElementById('evTitleLabel');
+  const evTitleInputEl = document.getElementById('evTitle');
+  const evNoteLabelEl = document.getElementById('evNoteLabel');
+  const evNoteInputEl = document.getElementById('evNote');
+  const evSubmitBtnEl = document.getElementById('evSubmitBtn');
+
+  function currentEvType(){
+    const checked = evTypeChoiceEl.querySelector('input[name="evType"]:checked');
+    return checked ? checked.value : 'rdv';
+  }
+
+  function updateEvFormForType(type){
+    evTypeChoiceEl.querySelectorAll('.ev-type-option').forEach(opt=>{
+      opt.classList.toggle('active', opt.querySelector('input').value === type);
+    });
+    if(type === 'garde'){
+      evTitleLabelEl.textContent = 'Titre (optionnel)';
+      evTitleInputEl.placeholder = 'Ex : Chez son père, vacances...';
+      evNoteLabelEl.style.display = 'none';
+      evNoteInputEl.style.display = 'none';
+      evSubmitBtnEl.textContent = '+ Ajouter la période';
+    } else if(type === 'travail'){
+      evTitleLabelEl.textContent = 'Titre du créneau';
+      evTitleInputEl.placeholder = 'Ex : Écriture, relecture...';
+      evNoteLabelEl.style.display = '';
+      evNoteInputEl.style.display = '';
+      evSubmitBtnEl.textContent = '+ Ajouter le créneau';
+    } else {
+      evTitleLabelEl.textContent = 'Titre du rendez-vous';
+      evTitleInputEl.placeholder = 'Ex : RDV éditeur';
+      evNoteLabelEl.style.display = '';
+      evNoteInputEl.style.display = '';
+      evSubmitBtnEl.textContent = '+ Ajouter le rendez-vous';
+    }
+  }
+  evTypeChoiceEl.querySelectorAll('input[name="evType"]').forEach(inp=>{
+    inp.addEventListener('change', ()=> updateEvFormForType(inp.value));
+  });
+
+  function resetEvForm(){
+    evTypeChoiceEl.querySelector('input[value="rdv"]').checked = true;
+    updateEvFormForType('rdv');
+  }
+  resetEvForm();
 
   function openDayModal(key){
     currentKey = key;
@@ -2543,6 +2547,7 @@
     const label = dateObj.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
     document.getElementById('modalDateLabel').textContent = label.charAt(0).toUpperCase()+label.slice(1);
     document.getElementById('evEndDate').min = key;
+    resetEvForm();
     renderEventList();
     overlay.classList.add('active');
   }
@@ -2556,11 +2561,12 @@
     }
     container.innerHTML = list.map(ev => {
       const multi = ev.startDate !== ev.endDate;
+      const type = eventType(ev);
       return `
-      <div class="ev-item">
+      <div class="ev-item" style="border-left:3px solid ${EVENT_TYPE_COLORS[type]}">
         <span class="time">${ev.time ? escapeHtml(ev.time) : 'Journée'}</span>
         <div class="info">
-          <div class="t">${escapeHtml(ev.title)}</div>
+          <div class="t">${escapeHtml(ev.title || (type==='garde' ? 'Mon fils' : ''))} <span class="n">· ${EVENT_TYPE_LABELS[type]}</span></div>
           ${multi ? `<div class="n">Du ${formatShort(ev.startDate)} au ${formatShort(ev.endDate)}</div>` : ''}
           ${ev.note ? `<div class="n">${escapeHtml(ev.note)}</div>` : ''}
         </div>
@@ -2578,20 +2584,26 @@
 
   document.getElementById('addEventForm').addEventListener('submit', e=>{
     e.preventDefault();
-    const title = document.getElementById('evTitle').value.trim();
+    const type = currentEvType();
+    let title = document.getElementById('evTitle').value.trim();
     const note = document.getElementById('evNote').value.trim();
     const endDateVal = document.getElementById('evEndDate').value;
-    if(!title) return;
+    if(type === 'garde'){
+      if(!title) title = 'Mon fils';
+    } else if(!title){
+      return;
+    }
     const startDate = currentKey;
     const endDate = (endDateVal && endDateVal >= startDate) ? endDateVal : startDate;
     const id = Date.now()+Math.random();
     const range = getDateRange(startDate, endDate);
     range.forEach(d=>{
       if(!events[d]) events[d] = [];
-      events[d].push({id, time:'', title, note, startDate, endDate});
+      events[d].push({id, time:'', title, note, startDate, endDate, type});
     });
     saveEvents();
     document.getElementById('evTitle').value=''; document.getElementById('evNote').value=''; document.getElementById('evEndDate').value='';
+    resetEvForm();
     renderEventList(); renderCalendar();
   });
 
@@ -4595,7 +4607,6 @@
     renderCategorySelect();
     renderTasks();
     renderCalendar();
-    renderWeekPlanner();
     renderPartis();
     renderStorageFooter();
     renderIgProfile();
@@ -4641,7 +4652,7 @@
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
-    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, weekPlanner, igProfile, igPosts
+    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, igProfile, igPosts
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
@@ -4661,8 +4672,7 @@
     blocNotesOrder = Array.isArray(state.blocNotesOrder) ? state.blocNotesOrder : null;
     pillColors = (state.pillColors && typeof state.pillColors === 'object') ? state.pillColors : {};
     pinnedNotes = (state.pinnedNotes && typeof state.pinnedNotes === 'object') ? state.pinnedNotes : {};
-    weekPlanner = normalizeWeekPlanner(state.weekPlanner);
-    igProfile = (state.igProfile && typeof state.igProfile === 'object') ? {...defaultIgProfile(), ...state.igProfile} : defaultIgProfile();
+    igProfile =(state.igProfile && typeof state.igProfile === 'object') ? {...defaultIgProfile(), ...state.igProfile} : defaultIgProfile();
     igPosts = Array.isArray(state.igPosts) ? state.igPosts : [];
   };
 
@@ -4674,7 +4684,7 @@
   const LEGACY_LS_KEYS = [
     'rg_tasks','rg_events','rg_categories','rg_partis','rg_scenes','rg_custom_scene_tabs',
     'rg_custom_scene_tabs_data','rg_mecanisme','rg_hidden_tabs','rg_scene_order','rg_blocnotes_order',
-    'rg_pill_colors','rg_week_planner','rg_notes'
+    'rg_pill_colors','rg_notes'
   ];
   window.__rg_readLegacyLocalStorage = function(){
     try{
@@ -4701,8 +4711,7 @@
         sceneOrder: readJSON('rg_scene_order', null),
         blocNotesOrder: readJSON('rg_blocnotes_order', null),
         pillColors: readJSON('rg_pill_colors', {}),
-        pinnedNotes: {},
-        weekPlanner: readJSON('rg_week_planner', null)
+        pinnedNotes: {}
       };
     }catch(e){
       return null;
