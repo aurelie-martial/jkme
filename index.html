@@ -465,6 +465,106 @@
   .btn-organize-toggle.active{background:var(--ink); color:#fff; border-color:var(--ink);}
   .scene-sidebar-actions{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
 
+  /* Bascule Scènes / Posts : deux sous-vues du même onglet "Scènes / Posts". */
+  .scene-subview-toggle{display:flex; gap:8px; margin-bottom:18px;}
+  .scene-subview-btn{
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:0.85rem;
+    padding:8px 16px; border:1px solid var(--line); border-radius:10px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer; transition:all .15s ease;
+  }
+  .scene-subview-btn:hover{border-color:var(--lavande); color:var(--lavande);}
+  .scene-subview-btn.active{background:var(--ink); border-color:var(--ink); color:#fff;}
+
+  /* Simulateur Instagram (sous-vue "Posts") : un cadre façon écran de téléphone pour un aperçu
+     réaliste de la bio, du compte et des posts -- purement visuel, sans connexion à un vrai compte. */
+  .ig-phone{
+    max-width:400px; margin:0 auto; background:#fff; border:1px solid var(--line);
+    border-radius:26px; overflow:hidden; box-shadow:var(--shadow);
+    font-family:'Plus Jakarta Sans', sans-serif; color:#262626;
+  }
+  .ig-phone-topbar{
+    display:flex; align-items:center; justify-content:center; gap:6px; position:relative;
+    padding:12px 40px; border-bottom:1px solid #efefef; font-weight:700; font-size:0.85rem;
+  }
+  .ig-phone-topbar-lock{position:absolute; left:14px; font-size:0.68rem; opacity:0.5;}
+  .ig-phone-topbar-icon{position:absolute; right:14px; font-size:0.95rem; opacity:0.7;}
+  .ig-phone-topbar-username{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #igGridView, #igDetailView{padding:16px;}
+  .ig-profile-header{display:flex; align-items:center; gap:18px; margin-bottom:12px;}
+  .ig-avatar-box{
+    flex:0 0 72px; width:72px; height:72px; border-radius:50%; overflow:hidden;
+    background:var(--gris); border:1px solid var(--line); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .ig-avatar-box img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ig-avatar-box .placeholder-txt{font-size:0.6rem; font-weight:600; color:var(--ink-soft); text-align:center; padding:4px;}
+  .ig-stats-row{flex:1; display:flex; justify-content:space-around; gap:6px;}
+  .ig-stat{display:flex; flex-direction:column; align-items:center; font-size:0.78rem; color:#262626;}
+  .ig-stat b{font-size:0.95rem; font-weight:700;}
+  .ig-stat-input{
+    width:62px; text-align:center; border:1px solid var(--line); border-radius:6px;
+    font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:0.95rem; padding:1px 2px; color:#262626;
+  }
+  .ig-displayname-input, .ig-username-input, .ig-bio-input{
+    display:block; width:100%; border:none; border-bottom:1px dashed transparent; background:none;
+    font-family:inherit; color:#262626; padding:2px 0;
+  }
+  .ig-displayname-input{font-weight:700; font-size:0.85rem; margin-bottom:2px;}
+  .ig-username-input{font-weight:400; font-size:0.8rem; color:var(--ink-soft); padding-bottom:6px;}
+  .ig-bio-input{resize:none; font-size:0.82rem; line-height:1.4; padding-bottom:10px; min-height:38px;}
+  .ig-displayname-input:hover, .ig-username-input:hover, .ig-bio-input:hover{border-bottom-color:var(--line);}
+  .ig-displayname-input:focus, .ig-username-input:focus, .ig-bio-input:focus{outline:none; border-bottom-color:var(--lavande);}
+  .ig-grid-tabs{display:flex; justify-content:center; border-top:1px solid #efefef; margin-top:6px;}
+  .ig-grid-tab{
+    padding:10px 0; font-size:0.66rem; font-weight:700; letter-spacing:0.04em; color:var(--ink-soft);
+    border-top:1px solid transparent;
+  }
+  .ig-grid-tab.active{color:#262626; border-top-color:#262626; margin-top:-1px;}
+  .ig-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; margin-top:2px;}
+  .ig-grid .empty-msg{grid-column:1/-1;}
+  .ig-grid-cell{
+    aspect-ratio:1/1; background:var(--gris); cursor:pointer; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:1.3rem;
+  }
+  .ig-grid-cell img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ig-grid-cell:hover{opacity:0.85;}
+  .ig-post-card-header{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .ig-back-btn{flex:0 0 auto; border:none; background:none; font-size:1.1rem; cursor:pointer; color:#262626; padding:0 4px 0 0;}
+  .ig-post-card-avatar{flex:0 0 32px; width:32px; height:32px; border-radius:50%; overflow:hidden; background:var(--gris);}
+  .ig-post-card-avatar img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ig-post-card-username{flex:1; font-weight:700; font-size:0.82rem; color:#262626;}
+  .ig-post-card-image{
+    width:100%; aspect-ratio:1/1; background:var(--gris); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:var(--ink-soft);
+    border-radius:8px; overflow:hidden; margin-bottom:8px;
+  }
+  .ig-post-card-image img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ig-post-card-actions{display:flex; gap:12px; font-size:1.25rem; margin-bottom:6px;}
+  .ig-icon-save{margin-left:auto;}
+  .ig-post-card-likes{font-weight:700; font-size:0.82rem; margin-bottom:4px; display:flex; align-items:center; gap:5px;}
+  .ig-post-card-likes input{
+    width:56px; border:1px solid var(--line); border-radius:6px; font-weight:700;
+    font-family:inherit; font-size:0.82rem; padding:1px 4px; text-align:center; color:#262626;
+  }
+  .ig-post-card-caption{font-size:0.82rem; line-height:1.4; margin-bottom:6px;}
+  .ig-post-card-caption b{margin-right:4px;}
+  .ig-post-card-caption textarea{
+    width:100%; border:none; resize:vertical; font-family:inherit; font-size:0.82rem;
+    line-height:1.4; color:#262626; padding:0; min-height:36px; background:none;
+  }
+  .ig-post-card-caption textarea:focus{outline:none;}
+  .ig-post-card-date{font-size:0.68rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:10px;}
+  .ig-post-card-comment-placeholder{
+    font-size:0.8rem; color:var(--ink-soft); border-top:1px solid #efefef; padding-top:10px; margin-bottom:14px;
+  }
+  .ig-delete-post-btn{
+    display:block; width:100%; padding:9px; border:1px solid var(--line); border-radius:10px;
+    background:var(--panel); color:var(--rose); font-weight:600; font-size:0.8rem; cursor:pointer;
+    font-family:'Plus Jakarta Sans', sans-serif;
+  }
+  .ig-delete-post-btn:hover{background:var(--rose); color:#fff; border-color:var(--rose);}
+  .ig-pill-actions{display:flex; align-items:center; gap:3px; flex:0 0 auto;}
+
   /* Repli de la colonne de notes du Bloc-notes (desktop uniquement) : la colonne se réduit à une
      fine bande ne montrant plus que le bouton pour la redéployer, ce qui laisse plus de place à
      l'éditeur. Ciblé par id pour ne pas affecter la colonne des Scènes, qui partage la même classe. */
@@ -858,6 +958,12 @@
 
   <!-- SCÈNES (uniquement les scènes 1 à 20) -->
   <div class="tab-content" id="content-scenes">
+    <div class="scene-subview-toggle" id="sceneSubviewToggle">
+      <button type="button" class="scene-subview-btn active" data-subview="scenes">Scènes</button>
+      <button type="button" class="scene-subview-btn" data-subview="posts">Posts</button>
+    </div>
+
+    <div class="scene-subview-panel" id="sceneSubviewScenes">
     <div class="scenes-layout">
       <div class="scene-sidebar">
         <div class="scene-pills" id="scenePills"></div>
@@ -900,6 +1006,78 @@
           <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
         </div>
 
+      </div>
+    </div>
+    </div>
+
+    <!-- Simulateur Instagram : aperçu local (bio, compte, grille de posts) avant de publier
+         réellement. Aucune connexion à un vrai compte Instagram. -->
+    <div class="scene-subview-panel" id="sceneSubviewPosts" style="display:none;">
+      <div class="scenes-layout">
+        <div class="scene-sidebar">
+          <div class="scene-pills" id="igPostPills"></div>
+          <div class="scene-sidebar-actions">
+            <button type="button" class="btn-add-subtab" id="addIgPostBtn">+ Ajouter un post</button>
+          </div>
+        </div>
+
+        <div class="scene-editor-area">
+          <div class="ig-phone" id="igPhone">
+            <div class="ig-phone-topbar">
+              <span class="ig-phone-topbar-lock">🔒</span>
+              <span class="ig-phone-topbar-username" id="igTopbarUsername">ton_pseudo</span>
+              <span class="ig-phone-topbar-icon">☰</span>
+            </div>
+
+            <div id="igGridView">
+              <div class="ig-profile-header">
+                <div class="ig-avatar-box" id="igAvatarBox">
+                  <span class="placeholder-txt" id="igAvatarPlaceholder">+ Photo</span>
+                </div>
+                <input type="file" id="igAvatarInput" accept="image/*" style="display:none;">
+                <div class="ig-stats-row">
+                  <div class="ig-stat"><b id="igStatPosts">0</b><span>publications</span></div>
+                  <div class="ig-stat"><input type="number" class="ig-stat-input" id="igStatFollowers" min="0" value="0"><span>abonnés</span></div>
+                  <div class="ig-stat"><input type="number" class="ig-stat-input" id="igStatFollowing" min="0" value="0"><span>abonnements</span></div>
+                </div>
+              </div>
+              <input type="text" class="ig-displayname-input" id="igDisplayNameInput" placeholder="Nom affiché">
+              <input type="text" class="ig-username-input" id="igUsernameInput" placeholder="pseudo_instagram">
+              <textarea class="ig-bio-input" id="igBioInput" maxlength="150" placeholder="Bio (150 caractères max)"></textarea>
+
+              <div class="ig-grid-tabs"><span class="ig-grid-tab active">⊞ PUBLICATIONS</span></div>
+              <div class="ig-grid" id="igGrid"></div>
+            </div>
+
+            <div id="igDetailView" style="display:none;">
+              <div class="ig-post-card-header">
+                <button type="button" class="ig-back-btn" id="igBackBtn" title="Retour à la grille">←</button>
+                <div class="ig-post-card-avatar" id="igPostCardAvatar"></div>
+                <div class="ig-post-card-username" id="igPostCardUsername"></div>
+              </div>
+              <div class="ig-post-card-image" id="igPostImageBox">
+                <span class="placeholder-txt" id="igPostImagePlaceholder">+ Image</span>
+              </div>
+              <input type="file" id="igPostImageInput" accept="image/*" style="display:none;">
+              <div class="ig-post-card-actions">
+                <span class="ig-icon">♡</span>
+                <span class="ig-icon">💬</span>
+                <span class="ig-icon">📤</span>
+                <span class="ig-icon ig-icon-save">🔖</span>
+              </div>
+              <div class="ig-post-card-likes">
+                <input type="number" id="igPostLikesInput" min="0" value="0"> mentions J'aime
+              </div>
+              <div class="ig-post-card-caption">
+                <b id="igPostCaptionUsername"></b>
+                <textarea id="igPostCaptionInput" placeholder="Écris une légende..." rows="2"></textarea>
+              </div>
+              <div class="ig-post-card-date" id="igPostDateLabel"></div>
+              <div class="ig-post-card-comment-placeholder">Ajouter un commentaire...</div>
+              <button type="button" class="ig-delete-post-btn" id="igDeletePostBtn">✕ Supprimer ce post</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1160,6 +1338,12 @@
     return Array.from({length:20}, (_,i)=>({id:i+1, title:'Scène '+(i+1), content:'', image:null, mechanismTags:[], updatedAt:null}));
   }
 
+  // Profil par défaut du simulateur Instagram (sous-onglet "Posts") : aucune donnée, l'utilisatrice
+  // remplit elle-même la bio, le pseudo et les stats pour prévisualiser son compte.
+  function defaultIgProfile(){
+    return {avatar:null, username:'', displayName:'', bio:'', followers:0, following:0};
+  }
+
   // Semainier (au-dessus du calendrier mensuel) : une grille libre Lun→Dim, une seule case par jour,
   // remplie à la main par l'utilisatrice pour s'organiser sur le projet.
   const WEEK_DAYS = [
@@ -1225,6 +1409,13 @@
 
   let weekPlanner = defaultWeekPlanner();
 
+  // Simulateur Instagram (sous-onglet "Posts" de l'onglet "Scènes / Posts") : un profil unique
+  // (photo, pseudo, nom, bio, stats) et une liste de posts (image + légende + mentions J'aime),
+  // pour prévisualiser à quoi ressembleraient un compte et différentes publications avant de les
+  // poster réellement. Purement visuel : aucune vraie connexion à Instagram.
+  let igProfile = defaultIgProfile();
+  let igPosts = [];
+
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); renderStorageFooter(); };
   const saveTasks = () => { syncCloud(); };
   const saveEvents = () => { syncCloud(); };
@@ -1239,6 +1430,8 @@
   const savePillColors = () => { syncCloud(); };
   const savePinnedNotes = () => { syncCloud(); };
   const saveWeekPlanner = () => { syncCloud(); };
+  const saveIgProfile = () => { syncCloud(); };
+  const saveIgPosts = () => { syncCloud(); };
 
   function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
 
@@ -1886,7 +2079,7 @@
   // ---------- RENDER TABS SYSTEM ----------
   const BASE_TABS = [
     {id: 'plan', label: "Todo"},
-    {id: 'scenes', label: 'Scènes'},
+    {id: 'scenes', label: 'Scènes / Posts'},
     {id: 'blocnotes', label: 'Bloc-notes'},
     {id: 'cal', label: 'Calendrier'},
     {id: 'livre', label: 'Livre'}
@@ -3578,6 +3771,264 @@
     }
   });
 
+  // ---------- BASCULE SCÈNES / POSTS ----------
+  // Pas persistée : l'onglet rouvre toujours sur "Scènes" au chargement, comme currentBlocView.
+  let sceneSubView = 'scenes';
+  document.querySelectorAll('.scene-subview-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      sceneSubView = btn.dataset.subview;
+      document.querySelectorAll('.scene-subview-btn').forEach(b=>b.classList.toggle('active', b.dataset.subview === sceneSubView));
+      document.getElementById('sceneSubviewScenes').style.display = sceneSubView === 'scenes' ? '' : 'none';
+      document.getElementById('sceneSubviewPosts').style.display = sceneSubView === 'posts' ? '' : 'none';
+      if(sceneSubView === 'posts'){
+        renderIgProfile();
+        renderIgGrid();
+        renderIgPostPills();
+      }
+    });
+  });
+
+  // ---------- SIMULATEUR INSTAGRAM (sous-onglet "Posts") ----------
+  // Aperçu local (bio, compte, grille de posts) pour visualiser à quoi ressemblerait un compte
+  // avant de publier réellement : aucune connexion à un vrai compte Instagram, tout reste dans
+  // cette appli (et se synchronise comme le reste via Firestore).
+  const igPostPillsEl = document.getElementById('igPostPills');
+  const igAvatarBox = document.getElementById('igAvatarBox');
+  const igAvatarPlaceholder = document.getElementById('igAvatarPlaceholder');
+  const igAvatarInput = document.getElementById('igAvatarInput');
+  const igUsernameInput = document.getElementById('igUsernameInput');
+  const igDisplayNameInput = document.getElementById('igDisplayNameInput');
+  const igBioInput = document.getElementById('igBioInput');
+  const igStatFollowersInput = document.getElementById('igStatFollowers');
+  const igStatFollowingInput = document.getElementById('igStatFollowing');
+  const igStatPostsEl = document.getElementById('igStatPosts');
+  const igGridEl = document.getElementById('igGrid');
+  const igGridViewEl = document.getElementById('igGridView');
+  const igDetailViewEl = document.getElementById('igDetailView');
+  const igPostImageBox = document.getElementById('igPostImageBox');
+  const igPostImagePlaceholder = document.getElementById('igPostImagePlaceholder');
+  const igPostImageInput = document.getElementById('igPostImageInput');
+  const igPostLikesInput = document.getElementById('igPostLikesInput');
+  const igPostCaptionInput = document.getElementById('igPostCaptionInput');
+  const igPostCaptionUsernameEl = document.getElementById('igPostCaptionUsername');
+  const igPostCardAvatar = document.getElementById('igPostCardAvatar');
+  const igPostCardUsername = document.getElementById('igPostCardUsername');
+  const igPostDateLabel = document.getElementById('igPostDateLabel');
+  const igTopbarUsername = document.getElementById('igTopbarUsername');
+
+  let currentIgPostId = null;
+  let igDetailVisible = false;
+
+  function currentIgPost(){ return igPosts.find(x=>String(x.id)===String(currentIgPostId)); }
+
+  function formatIgPostDate(ts){
+    if(!ts) return '';
+    return new Date(ts).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'}).toUpperCase();
+  }
+
+  // Pseudo affiché dans l'en-tête du post, la légende et la barre du haut : identique partout,
+  // basé sur le profil (avec une valeur de repli tant qu'elle n'a rien renseigné).
+  function renderIgAccountBadges(){
+    const uname = (igProfile.username || 'ton_pseudo').trim().replace(/^@/, '') || 'ton_pseudo';
+    igPostCardUsername.textContent = uname;
+    igPostCaptionUsernameEl.textContent = uname + ' ';
+    igTopbarUsername.textContent = uname;
+    const existing = igPostCardAvatar.querySelector('img');
+    if(igProfile.avatar){
+      if(existing) existing.src = igProfile.avatar;
+      else igPostCardAvatar.insertAdjacentHTML('afterbegin', `<img src="${igProfile.avatar}" alt="">`);
+    } else if(existing) existing.remove();
+  }
+
+  function renderIgProfile(){
+    igUsernameInput.value = igProfile.username || '';
+    igDisplayNameInput.value = igProfile.displayName || '';
+    igBioInput.value = igProfile.bio || '';
+    igStatFollowersInput.value = igProfile.followers || 0;
+    igStatFollowingInput.value = igProfile.following || 0;
+    igStatPostsEl.textContent = igPosts.length;
+    const existing = igAvatarBox.querySelector('img');
+    if(igProfile.avatar){
+      if(existing) existing.src = igProfile.avatar;
+      else igAvatarBox.insertAdjacentHTML('afterbegin', `<img src="${igProfile.avatar}" alt="">`);
+      igAvatarPlaceholder.style.display = 'none';
+    } else {
+      if(existing) existing.remove();
+      igAvatarPlaceholder.style.display = '';
+    }
+    renderIgAccountBadges();
+  }
+
+  function renderIgGrid(){
+    if(igPosts.length === 0){
+      igGridEl.innerHTML = `<div class="empty-msg">Aucun post pour l'instant. Clique sur « + Ajouter un post » pour simuler ta première publication.</div>`;
+      return;
+    }
+    igGridEl.innerHTML = igPosts.map(p => `
+      <div class="ig-grid-cell" data-post-id="${p.id}">
+        ${p.image ? `<img src="${p.image}" alt="">` : '+'}
+      </div>
+    `).join('');
+    igGridEl.querySelectorAll('.ig-grid-cell').forEach(cell=>{
+      cell.addEventListener('click', ()=> selectIgPost(cell.dataset.postId));
+    });
+  }
+
+  function renderIgPostPills(){
+    if(igPosts.length === 0){
+      igPostPillsEl.innerHTML = `<div class="empty-msg">Aucun post pour l'instant.</div>`;
+      return;
+    }
+    igPostPillsEl.innerHTML = igPosts.map(p=>{
+      const label = (p.caption || '').trim().slice(0, 40) || '(sans légende)';
+      const active = igDetailVisible && String(p.id) === String(currentIgPostId);
+      return `
+        <div class="scene-pill-row" data-order-key="${p.id}">
+          <button type="button" class="scene-pill ${active?'active':''}" data-idx="${p.id}">${escapeHtml(label)}</button>
+          <div class="ig-pill-actions">
+            <button type="button" class="scene-pill-del" data-del-key="${p.id}" title="Supprimer ce post">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+    igPostPillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
+      btn.addEventListener('click', ()=> selectIgPost(btn.dataset.idx));
+    });
+    igPostPillsEl.querySelectorAll('.scene-pill-del').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        deleteIgPost(btn.dataset.delKey);
+      });
+    });
+  }
+
+  function renderIgPostImage(p){
+    const existingImg = igPostImageBox.querySelector('img');
+    if(p.image){
+      if(existingImg) existingImg.src = p.image;
+      else igPostImageBox.insertAdjacentHTML('afterbegin', `<img src="${p.image}" alt="">`);
+      igPostImagePlaceholder.style.display = 'none';
+    } else {
+      if(existingImg) existingImg.remove();
+      igPostImagePlaceholder.style.display = '';
+    }
+  }
+
+  function renderIgDetailView(){
+    const p = currentIgPost();
+    if(!p) return;
+    renderIgPostImage(p);
+    igPostLikesInput.value = p.likes || 0;
+    igPostCaptionInput.value = p.caption || '';
+    igPostDateLabel.textContent = formatIgPostDate(p.createdAt);
+    renderIgAccountBadges();
+  }
+
+  function selectIgPost(id){
+    const p = igPosts.find(x=>String(x.id)===String(id));
+    if(!p) return;
+    currentIgPostId = p.id;
+    igDetailVisible = true;
+    renderIgDetailView();
+    igGridViewEl.style.display = 'none';
+    igDetailViewEl.style.display = '';
+    renderIgPostPills();
+  }
+
+  function showIgGridView(){
+    igDetailVisible = false;
+    igGridViewEl.style.display = '';
+    igDetailViewEl.style.display = 'none';
+    renderIgPostPills();
+  }
+
+  function deleteIgPost(id){
+    const p = igPosts.find(x=>String(x.id)===String(id));
+    if(!p) return;
+    if(!confirm('Supprimer ce post ?')) return;
+    igPosts = igPosts.filter(x=>String(x.id)!==String(id));
+    saveIgPosts();
+    if(String(currentIgPostId) === String(id)) showIgGridView();
+    renderIgGrid();
+    renderIgPostPills();
+    renderIgProfile();
+  }
+
+  igUsernameInput.addEventListener('input', ()=>{
+    igProfile.username = igUsernameInput.value.replace(/\s/g, '');
+    saveIgProfile();
+    renderIgAccountBadges();
+  });
+  igDisplayNameInput.addEventListener('input', ()=>{
+    igProfile.displayName = igDisplayNameInput.value;
+    saveIgProfile();
+  });
+  igBioInput.addEventListener('input', ()=>{
+    igProfile.bio = igBioInput.value;
+    saveIgProfile();
+  });
+  igStatFollowersInput.addEventListener('input', ()=>{
+    igProfile.followers = parseInt(igStatFollowersInput.value, 10) || 0;
+    saveIgProfile();
+  });
+  igStatFollowingInput.addEventListener('input', ()=>{
+    igProfile.following = parseInt(igStatFollowingInput.value, 10) || 0;
+    saveIgProfile();
+  });
+  igAvatarBox.addEventListener('click', ()=> igAvatarInput.click());
+  igAvatarInput.addEventListener('change', async ()=>{
+    const file = igAvatarInput.files[0];
+    igAvatarInput.value = '';
+    if(!file) return;
+    try{
+      const dataUrl = await compressImageSquare(file, {targetKB:10, startSize:240, minSize:64});
+      igProfile.avatar = dataUrl;
+      saveIgProfile();
+      renderIgProfile();
+    }catch(err){
+      console.error('Erreur photo de profil Instagram :', err);
+    }
+  });
+
+  igPostLikesInput.addEventListener('input', ()=>{
+    const p = currentIgPost(); if(!p) return;
+    p.likes = parseInt(igPostLikesInput.value, 10) || 0;
+    saveIgPosts();
+  });
+  igPostCaptionInput.addEventListener('input', ()=>{
+    const p = currentIgPost(); if(!p) return;
+    p.caption = igPostCaptionInput.value;
+    saveIgPosts();
+    renderIgPostPills();
+  });
+  igPostImageBox.addEventListener('click', ()=> igPostImageInput.click());
+  igPostImageInput.addEventListener('change', async ()=>{
+    const file = igPostImageInput.files[0];
+    igPostImageInput.value = '';
+    if(!file) return;
+    const p = currentIgPost(); if(!p) return;
+    try{
+      const dataUrl = await compressImageSquare(file);
+      p.image = dataUrl;
+      saveIgPosts();
+      renderIgPostImage(p);
+      renderIgGrid();
+    }catch(err){
+      console.error('Erreur image de post Instagram :', err);
+    }
+  });
+
+  document.getElementById('igBackBtn').addEventListener('click', showIgGridView);
+  document.getElementById('igDeletePostBtn').addEventListener('click', ()=> deleteIgPost(currentIgPostId));
+  document.getElementById('addIgPostBtn').addEventListener('click', ()=>{
+    const p = {id: Date.now()+Math.random(), image:null, caption:'', likes:0, createdAt: Date.now()};
+    igPosts.unshift(p);
+    saveIgPosts();
+    renderIgGrid();
+    renderIgPostPills();
+    renderIgProfile();
+    selectIgPost(p.id);
+  });
+
 
   // ---------- SOUS-ONGLETS PERSONNALISÉS ----------
   function ensureCustomTabData(ct){
@@ -4124,6 +4575,10 @@
     renderWeekPlanner();
     renderPartis();
     renderStorageFooter();
+    renderIgProfile();
+    renderIgGrid();
+    renderIgPostPills();
+    if(igDetailVisible) renderIgDetailView();
 
     // Correction du bug : S'assurer que le premier onglet principal affiché à l'ouverture correspond bien à activeTabId
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -4163,7 +4618,7 @@
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
-    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, weekPlanner
+    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, weekPlanner, igProfile, igPosts
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
@@ -4184,6 +4639,8 @@
     pillColors = (state.pillColors && typeof state.pillColors === 'object') ? state.pillColors : {};
     pinnedNotes = (state.pinnedNotes && typeof state.pinnedNotes === 'object') ? state.pinnedNotes : {};
     weekPlanner = normalizeWeekPlanner(state.weekPlanner);
+    igProfile = (state.igProfile && typeof state.igProfile === 'object') ? {...defaultIgProfile(), ...state.igProfile} : defaultIgProfile();
+    igPosts = Array.isArray(state.igPosts) ? state.igPosts : [];
   };
 
   // Filet de sécurité pour la migration : les versions précédentes de l'appli écrivaient encore
