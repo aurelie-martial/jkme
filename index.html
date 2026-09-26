@@ -222,6 +222,7 @@
   .ev-type-rdv.active{background:var(--lavande); border-color:var(--lavande);}
   .ev-type-travail.active{background:var(--ciel); border-color:var(--ciel);}
   .ev-type-garde.active{background:var(--peche); border-color:var(--peche);}
+  .ev-type-off.active{background:var(--menthe); border-color:var(--menthe);}
   /* Répétition "une semaine sur deux" (période avec mon fils uniquement) : évite de recréer
      chaque occurrence à la main quand l'alternance est fixe. */
   .modal form label.ev-repeat-row{
@@ -1225,6 +1226,7 @@
         <label class="ev-type-option ev-type-rdv"><input type="radio" name="evType" value="rdv" checked><span>RDV</span></label>
         <label class="ev-type-option ev-type-travail"><input type="radio" name="evType" value="travail"><span>Créneau de travail</span></label>
         <label class="ev-type-option ev-type-garde"><input type="radio" name="evType" value="garde"><span>Période avec mon fils</span></label>
+        <label class="ev-type-option ev-type-off"><input type="radio" name="evType" value="off"><span>Temps off</span></label>
       </div>
       <label id="evTitleLabel">Titre du rendez-vous</label>
       <input type="text" id="evTitle" placeholder="Ex : RDV éditeur">
@@ -2469,11 +2471,12 @@
     saveEvents();
   }
 
-  // Couleur associée à chaque type d'événement (RDV / créneau de travail / période avec mon fils).
-  // Les événements créés avant l'ajout de cette notion n'ont pas de champ "type" : ils sont alors
-  // traités comme des RDV classiques (couleur historique, inchangée).
-  const EVENT_TYPE_COLORS = { rdv: 'var(--lavande)', travail: 'var(--ciel)', garde: 'var(--peche)' };
-  function eventType(ev){ return ev.type === 'travail' || ev.type === 'garde' ? ev.type : 'rdv'; }
+  // Couleur associée à chaque type d'événement (RDV / créneau de travail / période avec mon fils /
+  // temps off). Les événements créés avant l'ajout de cette notion n'ont pas de champ "type" : ils
+  // sont alors traités comme des RDV classiques (couleur historique, inchangée).
+  const EVENT_TYPE_COLORS = { rdv: 'var(--lavande)', travail: 'var(--ciel)', garde: 'var(--peche)', off: 'var(--menthe)' };
+  const EVENT_TYPES = ['travail', 'garde', 'off'];
+  function eventType(ev){ return EVENT_TYPES.includes(ev.type) ? ev.type : 'rdv'; }
 
   function renderCalendar(){
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
@@ -2550,7 +2553,7 @@
   // ---------- DAY MODAL ----------
   let currentKey = null;
   const overlay = document.getElementById('dayOverlay');
-  const EVENT_TYPE_LABELS = { rdv: 'RDV', travail: 'Créneau de travail', garde: 'Mon fils' };
+  const EVENT_TYPE_LABELS = { rdv: 'RDV', travail: 'Créneau de travail', garde: 'Mon fils', off: 'Temps off' };
 
   // Formulaire d'ajout : le champ "Titre" et la note n'ont pas le même sens selon le type choisi
   // (une "période avec mon fils" n'a pas vraiment besoin de titre), donc le formulaire s'adapte.
@@ -2589,6 +2592,17 @@
       evNoteLabelEl.style.display = '';
       evNoteInputEl.style.display = '';
       evSubmitBtnEl.textContent = '+ Ajouter le créneau';
+      evRepeatRowEl.style.display = 'none';
+      evRepeatCheckboxEl.checked = false;
+      evRepeatUntilWrapEl.style.display = 'none';
+    } else if(type === 'off'){
+      // Un temps "off" volontairement protégé dans l'agenda, pour ne pas se laisser submerger :
+      // se pose comme n'importe quel créneau, juste dans une couleur qui lui est propre.
+      evTitleLabelEl.textContent = 'Titre (optionnel)';
+      evTitleInputEl.placeholder = 'Ex : Pause, déconnexion, rien de prévu...';
+      evNoteLabelEl.style.display = '';
+      evNoteInputEl.style.display = '';
+      evSubmitBtnEl.textContent = '+ Ajouter le temps off';
       evRepeatRowEl.style.display = 'none';
       evRepeatCheckboxEl.checked = false;
       evRepeatUntilWrapEl.style.display = 'none';
@@ -2683,7 +2697,7 @@
       <div class="ev-item" style="border-left:3px solid ${EVENT_TYPE_COLORS[type]}">
         <span class="time">${ev.time ? escapeHtml(ev.time) : 'Journée'}</span>
         <div class="info">
-          <div class="t">${escapeHtml(ev.title || (type==='garde' ? 'Mon fils' : ''))} <span class="n">· ${EVENT_TYPE_LABELS[type]}</span></div>
+          <div class="t">${escapeHtml(ev.title || (type==='garde' ? 'Mon fils' : (type==='off' ? 'Temps off' : ''))) } <span class="n">· ${EVENT_TYPE_LABELS[type]}</span></div>
           ${multi ? `<div class="n">Du ${formatShort(ev.startDate)} au ${formatShort(ev.endDate)}</div>` : ''}
           ${ev.note ? `<div class="n">${escapeHtml(ev.note)}</div>` : ''}
           ${ev.recurrenceId ? `<div class="n">↻ Se répète une semaine sur deux · <button type="button" class="link-btn del-series" data-recurrence-id="${ev.recurrenceId}">supprimer toute la série</button></div>` : ''}
@@ -2714,6 +2728,8 @@
     const endDateVal = document.getElementById('evEndDate').value;
     if(type === 'garde'){
       if(!title) title = 'Mon fils';
+    } else if(type === 'off'){
+      if(!title) title = 'Temps off';
     } else if(!title){
       return;
     }
