@@ -6,26 +6,29 @@
 <title>JKME — Plan d'action</title>
 <link rel="icon" type="image/jpeg" href="jkme.jpg">
 <link rel="apple-touch-icon" href="jkme.jpg">
-<meta name="theme-color" content="#16324F">
+<meta name="theme-color" content="#4A443E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F7F9FA;
+    /* Palette douce et apaisante (bleu poudré / sauge / terracotta clair), en cohérence avec le
+       sujet du site : moins de couleurs vives, des teintes plus feutrées pour ne pas surcharger.
+       Le fond reste blanc/gris très clair (neutre), à la demande explicite de l'utilisatrice. */
+    --bg:#FAFAFA;
     --panel:#FFFFFF;
-    --ink:#1E293B;
-    --ink-soft:#94A3B8;
-    --line:#E2E8F0;
-    --lavande:#6366F1;
-    --rose:#F43F5E;
-    --menthe:#10B981;
-    --peche:#F59E0B;
-    --ciel:#0EA5E9;
-    --jaune:#14B8A6;
-    --navy:#6366F1;
-    --gris:#F1F5F9;
-    --shadow: 0 4px 14px rgba(30,41,59,0.06);
-    --shadow-sm: 0 1px 4px rgba(30,41,59,0.05);
+    --ink:#4A443E;
+    --ink-soft:#A39A8D;
+    --line:#E8E1D6;
+    --lavande:#93A0C4;
+    --rose:#C98686;
+    --menthe:#9BAF8F;
+    --peche:#E3A47E;
+    --ciel:#9FC2D6;
+    --jaune:#D9AE6E;
+    --navy:#93A0C4;
+    --gris:#F1F1EF;
+    --shadow: 0 4px 14px rgba(74,68,62,0.06);
+    --shadow-sm: 0 1px 4px rgba(74,68,62,0.05);
     --radius: 16px;
   }
   *{box-sizing:border-box;}
@@ -202,7 +205,7 @@
      hachurage (background-image) se superpose à leur couleur de fond (background-color) sans
      l'effacer, y compris sur une case qui a aussi des événements. */
   .cal-cell.past{
-    background-image: repeating-linear-gradient(135deg, rgba(30,41,59,0.07) 0, rgba(30,41,59,0.07) 1px, transparent 1px, transparent 7px);
+    background-image: repeating-linear-gradient(135deg, rgba(74,68,62,0.07) 0, rgba(74,68,62,0.07) 1px, transparent 1px, transparent 7px);
   }
   .ev-preview{
     font-size:0.62rem; font-weight:600; line-height:1.3; color:var(--ink);
@@ -683,12 +686,12 @@
   .scene-editor-content img.rg-img-ghost, .parti-content-editable img.rg-img-ghost{opacity:0.3;}
   .rg-img-drag-clone{
     position:fixed; z-index:80; pointer-events:none; border-radius:8px; opacity:0.85;
-    box-shadow:0 6px 18px rgba(30,41,59,0.25); object-fit:cover;
+    box-shadow:0 6px 18px rgba(74,68,62,0.25); object-fit:cover;
   }
   .img-resize-handle{
     position:fixed; z-index:81; width:16px; height:16px; margin:-8px 0 0 -8px;
     background:var(--lavande); border:2px solid #fff; border-radius:50%;
-    box-shadow:0 1px 4px rgba(30,41,59,0.35); cursor:nwse-resize; touch-action:none; display:none;
+    box-shadow:0 1px 4px rgba(74,68,62,0.35); cursor:nwse-resize; touch-action:none; display:none;
   }
   .rich-table{border-collapse:collapse; margin:0.6em 0; width:100%; max-width:100%;}
   .rich-table td{border:1px solid var(--line); padding:7px 10px; min-width:60px; vertical-align:top;}
@@ -834,13 +837,13 @@
     background:rgba(255,255,255,0.35); box-shadow:0 0 0 2px rgba(0,0,0,0.08);
   }
   .parti-card h4[contenteditable="true"]:empty:before{
-    content:'Titre du post-it...'; color:rgba(30,41,59,0.4); font-weight:700;
+    content:'Titre du post-it...'; color:rgba(74,68,62,0.4); font-weight:700;
   }
   .parti-card .parti-content[contenteditable="true"]:empty:before{
-    content:'Écris ici...'; color:rgba(30,41,59,0.4);
+    content:'Écris ici...'; color:rgba(74,68,62,0.4);
   }
   .parti-card .last-modified{
-    font-size: 0.68rem; color: rgba(30,41,59,0.5); margin-top: 12px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 6px;
+    font-size: 0.68rem; color: rgba(74,68,62,0.5); margin-top: 12px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 6px;
   }
 
   /* LIVRE */
