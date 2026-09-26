@@ -2065,7 +2065,17 @@
     {id: 'livre', label: 'Livre'}
   ];
 
-  let activeTabId = 'plan';
+  // L'onglet principal actif est mémorisé dans ce navigateur (localStorage, pas Firestore : c'est
+  // une préférence d'affichage locale, pas une donnée du projet) pour qu'un rechargement de page
+  // rouvre sur le même onglet plutôt que de revenir systématiquement sur le premier ("Todo").
+  function getStoredActiveTab(){
+    try{
+      const saved = localStorage.getItem('rg_active_tab');
+      if(saved && BASE_TABS.some(t => t.id === saved)) return saved;
+    }catch(e){}
+    return 'plan';
+  }
+  let activeTabId = getStoredActiveTab();
 
   function renderTabs(){
     const listEl = document.getElementById('mainTabsList');
@@ -2079,6 +2089,7 @@
     listEl.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         activeTabId = btn.dataset.tab;
+        try{ localStorage.setItem('rg_active_tab', activeTabId); }catch(e){}
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
