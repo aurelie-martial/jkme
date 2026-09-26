@@ -777,7 +777,7 @@
   }
   .parti-card{
     background: var(--postit-bg, #FEF08A);
-    color: #1E293B;
+    color: var(--ink);
     border-radius: 4px;
     padding: 24px 20px 20px 20px;
     box-shadow: 2px 5px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
@@ -810,22 +810,22 @@
   .parti-card:hover .parti-actions{opacity: 1;}
   .parti-actions button{
     border: none; background: rgba(0,0,0,0.06); border-radius: 6px; cursor: pointer;
-    font-size: 0.75rem; padding: 3px 7px; color: #1E293B; font-weight: 600;
+    font-size: 0.75rem; padding: 3px 7px; color: var(--ink); font-weight: 600;
   }
   .parti-actions button:hover{background: rgba(0,0,0,0.15);}
   .parti-drag-handle{
     border: none; background: rgba(0,0,0,0.06); border-radius: 6px; cursor: grab;
-    font-size: 0.75rem; padding: 3px 7px; color: #1E293B; font-weight: 600; touch-action: none;
+    font-size: 0.75rem; padding: 3px 7px; color: var(--ink); font-weight: 600; touch-action: none;
   }
   .parti-drag-handle:hover{background: rgba(0,0,0,0.15);}
   .parti-drag-handle:active{cursor: grabbing;}
   .parti-card.dragging{opacity: 0.45;}
   .parti-card h4{
     font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1.05rem;
-    margin: 0 0 10px 0; padding-right: 40px; color: #1E293B;
+    margin: 0 0 10px 0; padding-right: 40px; color: var(--ink);
   }
   .parti-card .parti-content{
-    font-size: 0.9rem; line-height: 1.5; color: #334155; word-break: break-word;
+    font-size: 0.9rem; line-height: 1.5; color: var(--ink); word-break: break-word;
   }
   /* Édition directe sur le post-it (titre + contenu), sans passer par le crayon/la modale. */
   .parti-card h4[contenteditable="true"],
@@ -2825,12 +2825,14 @@
   enableDashToBulletList(notesArea);
 
   // ---------- PROJET / PARTIS PRIS ----------
+  // Les post-it se distinguent par des nuances de gris (blanc → gris foncé) plutôt que par des
+  // couleurs vives : ça fait moins "arc-en-ciel" quand plusieurs post-it sont affichés ensemble.
   const POSTIT_COLORS = [
-    { bg: '#FEF08A', rotate: '-1deg' }, // Jaune pastel
-    { bg: '#BFDBFE', rotate: '1deg' },  // Bleu pastel
-    { bg: '#FED7AA', rotate: '-0.5deg'}, // Orange pastel
-    { bg: '#BBF7D0', rotate: '1.2deg'}, // Vert pastel
-    { bg: '#FBCFE8', rotate: '-1.5deg'}  // Rose pastel
+    { bg: '#FFFFFF', rotate: '-1deg' },  // Blanc
+    { bg: '#F5F3EF', rotate: '1deg' },   // Gris très clair
+    { bg: '#E8E4DC', rotate: '-0.5deg'}, // Gris clair
+    { bg: '#D6D0C4', rotate: '1.2deg'},  // Gris moyen
+    { bg: '#C2BAAA', rotate: '-1.5deg'}  // Gris foncé
   ];
   function renderPartis(){
     const grid = document.getElementById('partiGrid');
@@ -3397,6 +3399,13 @@
   // sous-onglet perso).
   function firstAvailableBlocNotesEntry(){
     reconcileBlocNotesOrder();
+    // Une note isolée (hors de tout dossier) épinglée est prioritaire sur un dossier épinglé :
+    // épingler une note précise est un geste plus ciblé qu'épingler tout un dossier, donc c'est
+    // elle qui s'ouvre par défaut si les deux cas se présentent en même temps.
+    const pinnedUngroupedNotes = blocNotesOrder.filter((e, i) =>
+      e.type !== 'divider' && pinnedNotes[pinKeyFor(e)] && containingFolderId(i) == null
+    );
+    if(pinnedUngroupedNotes.length) return pinnedUngroupedNotes[0];
     const pinnedFolderIds = new Set(
       blocNotesOrder.filter(e => e.type === 'divider' && e.label && pinnedNotes['folder:' + e.id]).map(e => e.id)
     );
@@ -3407,10 +3416,6 @@
         if(inPinnedFolder) return entry;
       }
     }
-    const pinnedUngroupedNotes = blocNotesOrder.filter((e, i) =>
-      e.type !== 'divider' && pinnedNotes[pinKeyFor(e)] && containingFolderId(i) == null
-    );
-    if(pinnedUngroupedNotes.length) return pinnedUngroupedNotes[0];
     return blocNotesOrder.find(e => e.type !== 'divider') || null;
   }
 
@@ -3607,6 +3612,11 @@
     if(pinnedFolderIds.size || pinnedUngroupedNotes.length){
       html += `<div class="scene-pills-section-label">★ Épinglées</div>`;
 
+      // Une note isolée épinglée passe avant les dossiers épinglés : épingler une note précise
+      // est un geste plus ciblé qu'épingler tout un dossier (voir aussi firstAvailableBlocNotesEntry,
+      // qui applique la même priorité pour choisir la note ouverte par défaut).
+      pinnedUngroupedNotes.forEach(entry => { html += renderBlocNotesPillEntry(entry); });
+
       // Bloc(s) de dossier(s) épinglé(s) : en-tête suivi des notes qu'il contient, en respectant
       // son propre état replié/déplié (sauf s'il contient lui-même une note épinglée, auquel cas
       // il s'affiche forcément déplié, comme partout ailleurs).
@@ -3628,8 +3638,6 @@
           html += renderBlocNotesPillEntry(entry);
         }
       });
-
-      pinnedUngroupedNotes.forEach(entry => { html += renderBlocNotesPillEntry(entry); });
 
       html += `<div class="scene-pills-section-label">Toutes les notes</div>`;
     }
