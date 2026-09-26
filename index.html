@@ -197,6 +197,13 @@
   .cal-cell.today .daynum{color:#FFFFFF; position:relative;}
   .cal-cell.has-events{background:var(--gris);}
   .cal-cell.today.has-events{background:var(--jaune); border:2px solid var(--menthe);}
+  /* Léger hachurage sur les jours déjà passés, pour les distinguer d'un coup d'œil sans recourir
+     à une couleur (traits fins et très discrets). Placée après les règles de fond ci-dessus : le
+     hachurage (background-image) se superpose à leur couleur de fond (background-color) sans
+     l'effacer, y compris sur une case qui a aussi des événements. */
+  .cal-cell.past{
+    background-image: repeating-linear-gradient(135deg, rgba(30,41,59,0.07) 0, rgba(30,41,59,0.07) 1px, transparent 1px, transparent 7px);
+  }
   .ev-preview{
     font-size:0.62rem; font-weight:600; line-height:1.3; color:var(--ink);
     background:rgba(255,255,255,0.65); border-left:2px solid var(--ev-color, var(--lavande));
@@ -2491,7 +2498,10 @@
     const today = new Date();
     const todayKey = fmtKey(today.getFullYear(), today.getMonth(), today.getDate());
 
-    const totalCells = 42;
+    // La grille ne montre du mois précédent/suivant que ce qu'il faut pour compléter la 1re et la
+    // dernière semaine du mois affiché (pas une semaine entière de plus si elle n'est pas nécessaire).
+    const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    grid.style.gridTemplateRows = `repeat(${totalCells / 7}, 1fr)`;
     for(let i=0;i<totalCells;i++){
       const dayNum = i - startOffset + 1;
       // Les jours hors du mois affiché (fin du mois précédent en tête de grille, début du mois
@@ -2518,7 +2528,7 @@
       // s'organise pas de la même façon, donc l'affichage doit le distinguer nettement.
       const gardeEvs = evs.filter(ev => eventType(ev) === 'garde');
       const otherEvs = evs.filter(ev => eventType(ev) !== 'garde');
-      cell.className = 'cal-cell' + (outside ? ' outside-month' : '') + (key===todayKey ? ' today' : '') + (evs.length ? ' has-events' : '');
+      cell.className = 'cal-cell' + (outside ? ' outside-month' : '') + (key===todayKey ? ' today' : '') + (key<todayKey ? ' past' : '') + (evs.length ? ' has-events' : '');
       const isMonday = (i % 7) === 0;
       const isSunday = (i % 7) === 6;
       const maxPreview = 3;
