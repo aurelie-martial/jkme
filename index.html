@@ -1138,60 +1138,11 @@
 
   <!-- SCÈNES (uniquement les scènes 1 à 20) -->
   <div class="tab-content" id="content-scenes">
-    <div class="scene-subview-toggle" id="sceneSubviewToggle">
-      <button type="button" class="scene-subview-btn active" data-subview="posts">Posts</button>
-      <button type="button" class="scene-subview-btn" data-subview="scenes">Scènes</button>
-    </div>
-
-    <div class="scene-subview-panel" id="sceneSubviewScenes" style="display:none;">
-    <div class="scenes-layout">
-      <div class="scene-sidebar">
-        <div class="scene-pills" id="scenePills"></div>
-        <select class="scene-mobile-select" id="sceneMobileSelect"></select>
-        <div class="scene-sidebar-actions">
-          <button type="button" class="btn-add-subtab" id="addSceneDividerBtn">+ Ajouter un séparateur</button>
-          <button type="button" class="btn-organize-toggle" id="toggleSceneOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
-        </div>
-      </div>
-
-      <div class="scene-editor-area">
-
-        <div class="panel" id="sceneModeBlock">
-          <div class="subtab-header">
-            <div class="last-modified" id="sceneLastModified"></div>
-          </div>
-          <div class="scene-photo-block">
-            <div class="scene-image-box" id="sceneImageBox">
-              <span class="placeholder-txt" id="sceneImagePlaceholder">+ Image</span>
-              <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
-            </div>
-            <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
-            <div class="scene-tags-input" id="sceneMechanismTags"></div>
-          </div>
-          <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
-
-          <div class="scene-toolbar" id="sceneToolbar">
-            <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
-            <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
-            <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
-            <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
-            <div class="scene-toolbar-sep"></div>
-            <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
-            <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
-            <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
-            <div class="scene-toolbar-sep"></div>
-            <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
-            <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
-          </div>
-          <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
-        </div>
-
-      </div>
-    </div>
-    </div>
-
     <!-- Simulateur Instagram : aperçu local (bio, compte, grille de posts) avant de publier
-         réellement. Aucune connexion à un vrai compte Instagram. -->
+         réellement. Aucune connexion à un vrai compte Instagram. L'éditeur de Scènes vivait ici
+         auparavant, sous un sous-onglet "Posts / Scènes" ; il a été déplacé dans l'onglet Livre
+         (voir #livreSubviewScenes) pour rapprocher scènes et roman graphique, laissant cet onglet
+         entièrement dédié au simulateur Instagram. -->
     <div class="scene-subview-panel" id="sceneSubviewPosts">
       <div class="scenes-layout">
         <div class="scene-sidebar">
@@ -1363,12 +1314,68 @@
 
   <!-- LIVRE -->
   <div class="tab-content" id="content-livre">
-    <div class="book-viewer">
-      <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf#view=FitH&pagemode=thumbs" allow="autoplay"></iframe>
+    <div class="scene-subview-toggle" id="livreSubviewToggle">
+      <button type="button" class="scene-subview-btn active" data-subview="livre">Livre</button>
+      <button type="button" class="scene-subview-btn" data-subview="scenes">Scènes</button>
     </div>
-    <a href="jusqua-meteindre.pdf" target="_blank" rel="noopener" class="book-fallback-link" id="bookFallbackLink">
-      ⧉ Le PDF ne s'affiche pas correctement ? Ouvre-le dans un nouvel onglet
-    </a>
+
+    <div class="scene-subview-panel" id="livreSubviewBook">
+      <div class="book-viewer">
+        <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf#view=FitH&pagemode=thumbs" allow="autoplay"></iframe>
+      </div>
+      <a href="jusqua-meteindre.pdf" target="_blank" rel="noopener" class="book-fallback-link" id="bookFallbackLink">
+        ⧉ Le PDF ne s'affiche pas correctement ? Ouvre-le dans un nouvel onglet
+      </a>
+    </div>
+
+    <!-- Éditeur de Scènes, déplacé ici depuis l'onglet Post (voir le commentaire dans
+         #content-scenes) : rapproche l'écriture des scènes du roman graphique lui-même. -->
+    <div class="scene-subview-panel" id="livreSubviewScenes" style="display:none;">
+    <div class="scenes-layout">
+      <div class="scene-sidebar">
+        <div class="scene-pills" id="scenePills"></div>
+        <select class="scene-mobile-select" id="sceneMobileSelect"></select>
+        <div class="scene-sidebar-actions">
+          <button type="button" class="btn-add-subtab" id="addSceneDividerBtn">+ Ajouter un séparateur</button>
+          <button type="button" class="btn-organize-toggle" id="toggleSceneOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
+        </div>
+      </div>
+
+      <div class="scene-editor-area">
+
+        <div class="panel" id="sceneModeBlock">
+          <div class="subtab-header">
+            <div class="last-modified" id="sceneLastModified"></div>
+          </div>
+          <div class="scene-photo-block">
+            <div class="scene-image-box" id="sceneImageBox">
+              <span class="placeholder-txt" id="sceneImagePlaceholder">+ Image</span>
+              <button type="button" class="scene-image-remove" id="sceneImageRemoveBtn" style="display:none;">✕</button>
+            </div>
+            <input type="file" id="sceneImageInput" accept="image/*" style="display:none;">
+            <div class="scene-tags-input" id="sceneMechanismTags"></div>
+          </div>
+          <input type="text" class="scene-editor-title" id="sceneTitleInput" placeholder="Titre de la scène">
+
+          <div class="scene-toolbar" id="sceneToolbar">
+            <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
+            <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
+            <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
+            <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
+            <div class="scene-toolbar-sep"></div>
+            <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
+            <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
+            <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <div class="scene-toolbar-sep"></div>
+            <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
+            <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
+          </div>
+          <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
+        </div>
+
+      </div>
+    </div>
+    </div>
   </div>
 
   <div class="storage-footer" id="storageFooter"></div>
@@ -2312,7 +2319,7 @@
   // ---------- RENDER TABS SYSTEM ----------
   const BASE_TABS = [
     {id: 'plan', label: "Todo"},
-    {id: 'scenes', label: 'Posts / Scènes'},
+    {id: 'scenes', label: 'Post'},
     {id: 'blocnotes', label: 'Bloc-notes'},
     {id: 'cal', label: 'Agenda'},
     {id: 'livre', label: 'Livre'}
@@ -4750,27 +4757,22 @@
     }
   });
 
-  // ---------- BASCULE SCÈNES / POSTS ----------
-  // Pas persistée : l'onglet rouvre toujours sur "Posts" au chargement, comme currentBlocView.
-  let sceneSubView = 'posts';
-  // Ciblé par #sceneSubviewToggle (et non .scene-subview-btn tout court, qui correspond aussi aux
-  // boutons Mois/Semaine de l'Agenda) : un sélecteur non ciblé attachait ce gestionnaire à ces
-  // boutons-là aussi, ce qui perturbait leur propre état actif dès qu'on cliquait sur "Semaine".
-  document.querySelectorAll('#sceneSubviewToggle .scene-subview-btn').forEach(btn=>{
+  // ---------- BASCULE LIVRE / SCÈNES ----------
+  // Pas persistée : l'onglet rouvre toujours sur "Livre" au chargement, comme currentBlocView.
+  // L'éditeur de Scènes vivait auparavant dans l'onglet Post, sous un sous-onglet "Posts / Scènes" ;
+  // il a été déplacé ici (voir #livreSubviewScenes) pour rapprocher scènes et roman graphique. Pas
+  // besoin de rappeler renderScenePills()/selectScene() ici au moment de basculer : renderAll()
+  // les appelle déjà à chaque rendu, indépendamment de l'onglet/sous-onglet affiché (voir plus bas).
+  let livreSubView = 'livre';
+  // Ciblé par #livreSubviewToggle (et non .scene-subview-btn tout court, qui correspond aussi aux
+  // boutons Mois/Semaine de l'Agenda) : un sélecteur non ciblé attacherait ce gestionnaire à ces
+  // boutons-là aussi, ce qui perturberait leur propre état actif dès qu'on cliquerait sur "Semaine".
+  document.querySelectorAll('#livreSubviewToggle .scene-subview-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      sceneSubView = btn.dataset.subview;
-      document.querySelectorAll('#sceneSubviewToggle .scene-subview-btn').forEach(b=>b.classList.toggle('active', b.dataset.subview === sceneSubView));
-      document.getElementById('sceneSubviewScenes').style.display = sceneSubView === 'scenes' ? '' : 'none';
-      document.getElementById('sceneSubviewPosts').style.display = sceneSubView === 'posts' ? '' : 'none';
-      if(sceneSubView === 'posts'){
-        renderIgProfile();
-        renderIgGrid();
-        renderIgPostPills();
-        // Redevient visible : recalculer la hauteur des champs à ajustement automatique (voir
-        // refreshIgActiveTextareas), sinon la bio/légende peut rester coincée à une hauteur ~0 si
-        // elle a été calculée pendant que ce sous-onglet était caché.
-        refreshIgActiveTextareas();
-      }
+      livreSubView = btn.dataset.subview;
+      document.querySelectorAll('#livreSubviewToggle .scene-subview-btn').forEach(b=>b.classList.toggle('active', b.dataset.subview === livreSubView));
+      document.getElementById('livreSubviewBook').style.display = livreSubView === 'livre' ? '' : 'none';
+      document.getElementById('livreSubviewScenes').style.display = livreSubView === 'scenes' ? '' : 'none';
     });
   });
 
