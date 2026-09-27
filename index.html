@@ -596,20 +596,30 @@
   .scene-subview-btn.active{background:var(--ink); border-color:var(--ink); color:#fff;}
 
   /* Simulateur Instagram (sous-vue "Posts") : un cadre façon écran de téléphone pour un aperçu
-     réaliste de la bio, du compte et des posts -- purement visuel, sans connexion à un vrai compte. */
+     réaliste de la bio, du compte et des posts -- purement visuel, sans connexion à un vrai compte.
+     Hauteur fixée au ratio d'un vrai écran de téléphone (comme un iPhone récent, environ 9/19.5)
+     plutôt que de suivre la hauteur du contenu : le cadre garde toujours une vraie forme de
+     téléphone, et c'est le contenu (grille de posts ou détail d'un post) qui défile à l'intérieur
+     quand il dépasse, comme sur un vrai téléphone -- voir #igGridView/#igDetailView ci-dessous. */
   .ig-phone{
-    max-width:400px; margin:0 auto; background:#fff; border:1px solid var(--line);
-    border-radius:26px; overflow:hidden; box-shadow:var(--shadow);
+    max-width:400px; width:100%; aspect-ratio:9/19.5; margin:0 auto; background:#fff; border:1px solid var(--line);
+    border-radius:36px; overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column;
     font-family:'Plus Jakarta Sans', sans-serif; color:#262626;
   }
   .ig-phone-topbar{
-    display:flex; align-items:center; justify-content:center; gap:6px; position:relative;
+    flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:6px; position:relative;
     padding:12px 40px; border-bottom:1px solid #efefef; font-weight:700; font-size:0.85rem;
   }
   .ig-phone-topbar-lock{position:absolute; left:14px; font-size:0.68rem; opacity:0.5;}
   .ig-phone-topbar-icon{position:absolute; right:14px; font-size:0.95rem; opacity:0.7;}
   .ig-phone-topbar-username{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  #igGridView, #igDetailView{padding:16px;}
+  /* flex:1 1 auto occupe tout l'espace restant sous la barre du haut (et au-dessus de la barre
+     d'accueil) ; overflow-y:auto fait défiler le contenu s'il dépasse, sans jamais faire grandir
+     le cadre lui-même. */
+  #igGridView, #igDetailView{flex:1 1 auto; overflow-y:auto; padding:16px;}
+  /* Petite barre d'accueil en bas de l'écran, comme sur un vrai téléphone : purement décorative,
+     mais aide à lire le cadre comme un téléphone plutôt qu'une simple carte. */
+  .ig-phone-home-indicator{flex:0 0 auto; width:120px; height:4px; margin:6px auto 10px; border-radius:2px; background:#dbdbdb;}
   .ig-profile-header{display:flex; align-items:center; gap:18px; margin-bottom:12px;}
   .ig-avatar-box{
     flex:0 0 72px; width:72px; height:72px; border-radius:50%; overflow:hidden;
@@ -646,12 +656,11 @@
   }
   .ig-grid-tab.active{color:#262626; border-top-color:#262626; margin-top:-1px;}
   .ig-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; margin-top:2px;}
-  /* Même sans aucun post, le cadre garde la hauteur d'un vrai écran de téléphone : le message
-     "Aucun post" occupe tout l'espace qu'occuperait une grille de publications, plutôt que de
-     laisser le cadre s'écraser sur la seule hauteur du texte. */
+  /* Le cadre garde désormais toujours la hauteur d'un vrai écran de téléphone (voir .ig-phone,
+     dont la hauteur ne dépend plus du contenu) : plus besoin de forcer une hauteur minimale ici
+     pour ça, un simple message centré suffit. */
   .ig-grid .empty-msg{
-    grid-column:1/-1; display:flex; align-items:center; justify-content:center; text-align:center;
-    min-height:460px; padding:20px;
+    grid-column:1/-1; text-align:center; padding:60px 20px;
   }
   .ig-grid-cell{
     aspect-ratio:1/1; background:var(--gris); cursor:pointer; overflow:hidden;
@@ -1249,6 +1258,8 @@
               <div class="ig-post-card-comment-placeholder">Ajouter un commentaire...</div>
               <button type="button" class="ig-delete-post-btn" id="igDeletePostBtn">✕ Supprimer ce post</button>
             </div>
+
+            <div class="ig-phone-home-indicator"></div>
           </div>
 
           <!-- Bloc de réflexion, à droite du téléphone : plusieurs brouillons de profil empilés,
