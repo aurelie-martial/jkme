@@ -982,11 +982,38 @@
     font-size: 0.68rem; color: rgba(51,65,85,0.5); margin-top: 12px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 6px;
   }
 
-  /* LIVRE */
+  /* LIVRE : feuilletage façon magazine (voir loadBookFlipbook). Les pages du PDF sont dessinées
+     dans des <canvas> par pdf.js puis remises à la bibliothèque page-flip (classes .stf__* :
+     injectées par cette bibliothèque elle-même dans <head>, pas besoin de les définir ici). */
   .book-viewer{
-    background:var(--gris); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
+    position:relative; background:var(--gris); border-radius:var(--radius); overflow:hidden;
+    box-shadow:var(--shadow); min-height:500px; display:flex; flex-direction:column;
   }
-  .book-iframe{width:100%; height:80vh; min-height:500px; border:none; display:block; background:#fff;}
+  .book-flip-loading{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    min-height:500px; color:var(--ink-soft); font-weight:600; font-size:0.85rem; text-align:center; padding:20px;
+  }
+  .book-flip-spinner{
+    width:34px; height:34px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--lavande);
+    animation:bookFlipSpin .8s linear infinite;
+  }
+  @keyframes bookFlipSpin{ to{ transform:rotate(360deg); } }
+  .book-flip-stage{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:24px 10px 10px;
+    min-height:500px;
+  }
+  .book-flip-container{max-width:100%;}
+  .book-flip-nav{
+    flex:0 0 auto; width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
+    background:var(--panel); color:var(--ink); font-size:1.4rem; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:all .15s ease;
+  }
+  .book-flip-nav:hover{border-color:var(--lavande); color:var(--lavande);}
+  .book-flip-nav:disabled{opacity:.35; cursor:default;}
+  .book-flip-nav:disabled:hover{border-color:var(--line); color:var(--ink);}
+  .book-flip-pageindicator{
+    text-align:center; font-size:0.78rem; font-weight:600; color:var(--ink-soft); padding:0 0 16px;
+  }
   .book-fallback-link{
     display:block; text-align:center; margin-top:10px; font-size:0.78rem; font-weight:600;
     color:var(--ink-soft); text-decoration:none; padding:8px;
@@ -1012,7 +1039,8 @@
     .tabs::-webkit-scrollbar{display:none;}
     .tab-btn{flex:0 0 auto; padding:7px 7px; font-size:0.8rem; gap:2px; white-space:nowrap;}
     .scene-editor-content{min-height:300px;}
-    .book-iframe{height:75vh;}
+    .book-flip-loading, .book-flip-stage{min-height:75vh;}
+    .book-flip-nav{width:34px; height:34px; font-size:1.2rem;}
     .scenes-layout{flex-direction:column;}
     .scene-sidebar{position:static; flex:0 0 auto; width:100%; flex-direction:column;}
     .scene-pills{display:none;}
@@ -1320,11 +1348,24 @@
     </div>
 
     <div class="scene-subview-panel" id="livreSubviewBook">
-      <div class="book-viewer">
-        <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf" allow="autoplay"></iframe>
+      <div class="book-viewer" id="bookViewer" data-pdf-src="jusqua-meteindre.pdf">
+        <!-- Chargement : les pages du PDF sont dessinées une à une dans des <canvas> (pdf.js) avant
+             de pouvoir construire le feuilletage (page-flip) — voir loadBookFlipbook. Ça prend
+             quelques secondes sur un livre de plus de 100 pages, d'où cet indicateur plutôt qu'un
+             écran vide pendant ce temps. -->
+        <div class="book-flip-loading" id="bookFlipLoading">
+          <div class="book-flip-spinner"></div>
+          <div id="bookFlipLoadingLabel">Préparation du feuilletage…</div>
+        </div>
+        <div class="book-flip-stage" id="bookFlipStage" style="display:none;">
+          <button type="button" class="book-flip-nav book-flip-prev" id="bookFlipPrevBtn" title="Page précédente" aria-label="Page précédente">‹</button>
+          <div class="book-flip-container" id="bookFlipContainer"></div>
+          <button type="button" class="book-flip-nav book-flip-next" id="bookFlipNextBtn" title="Page suivante" aria-label="Page suivante">›</button>
+        </div>
       </div>
+      <div class="book-flip-pageindicator" id="bookFlipPageIndicator" style="display:none;"></div>
       <a href="jusqua-meteindre.pdf" target="_blank" rel="noopener" class="book-fallback-link" id="bookFallbackLink">
-        ⧉ Le PDF ne s'affiche pas correctement ? Ouvre-le dans un nouvel onglet
+        ⧉ Besoin du PDF classique (recherche de texte, impression) ? Ouvre-le dans un nouvel onglet
       </a>
     </div>
 
@@ -1563,6 +1604,13 @@
 
 <!-- Poignée de redimensionnement d'image, partagée par tous les éditeurs du Bloc-notes -->
 <div class="img-resize-handle" id="imgResizeHandle" title="Glisser pour redimensionner"></div>
+
+<!-- Feuilletage façon magazine du Livre (onglet Livre, sous-onglet Livre) : pdf.js dessine chaque
+     page du PDF dans un <canvas>, page-flip anime le tournage des pages. Voir loadBookFlipbook
+     plus bas pour leur utilisation. -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'; }</script>
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 
 <script>
   const DEFAULT_CATS = [
@@ -2358,6 +2406,12 @@
         // Onglet Posts/Scènes : recalculer la hauteur des champs à ajustement automatique (bio,
         // légende du post ouvert) maintenant qu'il redevient visible (voir refreshIgActiveTextareas).
         if(activeTabId === 'scenes') refreshIgActiveTextareas();
+        // Onglet Livre : démarre (une seule fois, voir ensureBookFlipReady) le chargement du
+        // feuilletage façon magazine, plutôt qu'au premier rendu de la page pour ne pas ralentir
+        // l'ouverture de l'appli si cet onglet n'est jamais consulté ; et si déjà chargé, force un
+        // recalcul de ses dimensions (voir nudgeBookFlipResize) au cas où on revient dessus après
+        // être passé par un autre onglet.
+        else if(activeTabId === 'livre'){ ensureBookFlipReady(); nudgeBookFlipResize(); }
       });
     });
   }
@@ -4773,6 +4827,9 @@
       document.querySelectorAll('#livreSubviewToggle .scene-subview-btn').forEach(b=>b.classList.toggle('active', b.dataset.subview === livreSubView));
       document.getElementById('livreSubviewBook').style.display = livreSubView === 'livre' ? '' : 'none';
       document.getElementById('livreSubviewScenes').style.display = livreSubView === 'scenes' ? '' : 'none';
+      // Sans effet si déjà lancé (voir ensureBookFlipReady) : couvre le cas où l'onglet Livre a été
+      // ouvert directement sur "Scènes" (état restauré) sans jamais afficher "Livre" avant.
+      if(livreSubView === 'livre'){ ensureBookFlipReady(); nudgeBookFlipResize(); }
     });
   });
 
@@ -5711,19 +5768,147 @@
   }
   window.__rg_renderAll = renderAll;
 
-  // Le moteur de rendu PDF natif du navigateur est trop variable d'un appareil à l'autre : sur
-  // mobile (Safari iOS en tête) il ne sait souvent pas afficher un PDF dans une iframe, et même sur
-  // desktop il pouvait ignorer les réglages demandés et retomber sur un zoom "page entière" (tout
-  // petit, façon "dézoomé", et sans confort de défilement continu). On bascule donc toujours sur la
-  // visionneuse PDF.js : elle dessine le PDF elle-même (dans un <canvas>), avec un rendu identique
-  // partout, et #zoom=page-width l'ajuste à la largeur (lecture confortable, défilement continu
-  // d'une page à l'autre) plutôt que ce zoom "page entière" par défaut.
-  (function setupBookViewer(){
-    const bookIframe = document.getElementById('bookIframe');
-    if(!bookIframe) return;
-    const pdfUrl = new URL(bookIframe.getAttribute('src').split('#')[0], window.location.href).href;
-    bookIframe.src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(pdfUrl) + '#zoom=page-width';
-  })();
+  // ---------- FEUILLETAGE DU LIVRE (façon magazine) ----------
+  // pdf.js (pdf.min.js/pdf.worker.min.js) dessine chaque page du PDF dans un <canvas>, puis
+  // page-flip (page-flip.browser.js, classe globale St.PageFlip) anime le tournage des pages —
+  // moteur de rendu identique partout (contrairement au visionneur PDF natif du navigateur,
+  // beaucoup trop variable d'un appareil à l'autre). Page unique sur petit écran, double page en
+  // vis-à-vis dès que la fenêtre est assez large, comme un vrai magazine (voir size:'stretch' et
+  // showCover ci-dessous). Les deux bibliothèques sont chargées depuis un CDN (voir plus haut,
+  // comme les polices Google Fonts déjà utilisées par l'appli), pas besoin de les héberger ici.
+  //
+  // Chargé une seule fois par session (voir bookFlipStarted), au moment où l'onglet Livre devient
+  // vraiment visible (voir les appels à ensureBookFlipReady plus haut dans renderTabs() et dans la
+  // bascule Livre/Scènes) plutôt qu'au chargement de la page : ce PDF fait plus de 100 pages, pas
+  // question de payer ce coût si cet onglet n'est jamais ouvert.
+  let bookFlipInstance = null;
+  let bookFlipStarted = false;
+
+  function ensureBookFlipReady(){
+    if(bookFlipStarted) return;
+    bookFlipStarted = true;
+    loadBookFlipbook();
+  }
+
+  // page-flip (mode size:'stretch') recalcule ses dimensions sur l'événement window 'resize', pas
+  // sur un simple changement de display du conteneur : sans ce petit coup de pouce, revenir sur le
+  // sous-onglet Livre après être passé par un autre onglet/sous-onglet (donc display:none entre
+  // temps) laisserait le feuilletage avec les dimensions d'un conteneur alors invisible.
+  function nudgeBookFlipResize(){
+    if(!bookFlipInstance) return;
+    setTimeout(()=> window.dispatchEvent(new Event('resize')), 60);
+  }
+
+  async function loadBookFlipbook(){
+    const viewerEl = document.getElementById('bookViewer');
+    const loadingEl = document.getElementById('bookFlipLoading');
+    const loadingLabelEl = document.getElementById('bookFlipLoadingLabel');
+    const stageEl = document.getElementById('bookFlipStage');
+    const containerEl = document.getElementById('bookFlipContainer');
+    const pageIndicatorEl = document.getElementById('bookFlipPageIndicator');
+    const prevBtn = document.getElementById('bookFlipPrevBtn');
+    const nextBtn = document.getElementById('bookFlipNextBtn');
+    if(!viewerEl || !containerEl) return;
+
+    function showError(msg){
+      if(loadingLabelEl) loadingLabelEl.textContent = msg;
+      const spinner = loadingEl && loadingEl.querySelector('.book-flip-spinner');
+      if(spinner) spinner.style.display = 'none';
+    }
+
+    if(!window.pdfjsLib || !window.St || !window.St.PageFlip){
+      showError("Le feuilletage n'a pas pu se charger. Utilise le lien ci-dessous pour ouvrir le PDF classique.");
+      return;
+    }
+
+    try{
+      const pdfUrl = viewerEl.dataset.pdfSrc;
+      const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+      const numPages = pdf.numPages;
+      const targetWidth = 700; // résolution d'affichage à l'écran (pas d'impression : voir le lien PDF classique)
+      const images = [];
+      let baseWidth = 500, baseHeight = 700;
+
+      for(let i = 1; i <= numPages; i++){
+        const page = await pdf.getPage(i);
+        const unscaledViewport = page.getViewport({scale: 1});
+        if(i === 1){
+          // Sert de dimension de référence à page-flip (voir plus bas) : les pages suivantes,
+          // même de ratio légèrement différent, s'ajusteront dedans sans déformation visible.
+          baseWidth = Math.round(unscaledViewport.width);
+          baseHeight = Math.round(unscaledViewport.height);
+        }
+        const scale = targetWidth / unscaledViewport.width;
+        const viewport = page.getViewport({scale});
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({canvasContext: ctx, viewport}).promise;
+        images.push(canvas.toDataURL('image/jpeg', 0.82));
+        page.cleanup();
+        if(loadingLabelEl) loadingLabelEl.textContent = `Préparation du feuilletage… (${i} / ${numPages})`;
+      }
+
+      // Bascule l'affichage juste avant de construire page-flip (et non dans l'événement 'init' de
+      // la bibliothèque, déclenché plus tard) : avec size:'stretch', la taille du feuilletage est
+      // calculée à partir de celle de son conteneur au moment de sa création — un conteneur encore
+      // masqué (display:none, donc largeur/hauteur nulles) donnerait un rendu mal dimensionné.
+      if(loadingEl) loadingEl.style.display = 'none';
+      if(stageEl) stageEl.style.display = '';
+
+      const pageFlip = new St.PageFlip(containerEl, {
+        width: baseWidth,
+        height: baseHeight,
+        size: 'stretch',
+        minWidth: 260,
+        maxWidth: 1000,
+        minHeight: 360,
+        maxHeight: 1400,
+        showCover: true,
+        maxShadowOpacity: 0.5,
+        mobileScrollSupport: false
+      });
+      bookFlipInstance = pageFlip;
+
+      function updateIndicator(){
+        const current = pageFlip.getCurrentPageIndex();
+        const total = pageFlip.getPageCount();
+        if(pageIndicatorEl) pageIndicatorEl.textContent = `Page ${current + 1} / ${total}`;
+        if(prevBtn) prevBtn.disabled = current <= 0;
+        if(nextBtn) nextBtn.disabled = current >= total - 1;
+      }
+
+      pageFlip.on('flip', updateIndicator);
+      pageFlip.on('init', ()=>{
+        if(pageIndicatorEl) pageIndicatorEl.style.display = '';
+        updateIndicator();
+      });
+      pageFlip.loadFromImages(images);
+
+      if(prevBtn) prevBtn.addEventListener('click', ()=> pageFlip.flipPrev());
+      if(nextBtn) nextBtn.addEventListener('click', ()=> pageFlip.flipNext());
+
+      // Flèches clavier ←/→ pour tourner les pages, seulement quand le sous-onglet Livre est
+      // effectivement affiché et que le focus n'est pas dans un champ de saisie (pour ne pas gêner
+      // la frappe ailleurs dans l'appli, ex. dans le Bloc-notes ou l'éditeur de Scènes).
+      document.addEventListener('keydown', (e)=>{
+        if(activeTabId !== 'livre' || livreSubView !== 'livre') return;
+        const active = document.activeElement;
+        if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+        if(e.key === 'ArrowRight'){ pageFlip.flipNext(); }
+        else if(e.key === 'ArrowLeft'){ pageFlip.flipPrev(); }
+      });
+    }catch(err){
+      console.error('Erreur de chargement du feuilletage du livre :', err);
+      showError("Le feuilletage n'a pas pu se charger. Utilise le lien ci-dessous pour ouvrir le PDF classique.");
+    }
+  }
+
+  // Onglet Livre déjà actif au chargement de la page (ex. dernier onglet consulté, restauré via
+  // localStorage) : les appels à ensureBookFlipReady() dans renderTabs()/la bascule Livre-Scènes ne
+  // se déclenchent que sur un clic, donc ce cas doit être couvert séparément ici.
+  if(activeTabId === 'livre') ensureBookFlipReady();
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
