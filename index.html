@@ -664,9 +664,12 @@
   }
   .ig-post-card-caption{font-size:0.82rem; line-height:1.4; margin-bottom:6px;}
   .ig-post-card-caption b{margin-right:4px;}
+  /* Comme la bio du profil (voir autoResizeTextarea en JS) : la légende s'ajuste automatiquement
+     en hauteur à son contenu, pas de hauteur fixe avec un mini-scroll interne qui la fait paraître
+     coupée. */
   .ig-post-card-caption textarea{
-    width:100%; border:none; resize:vertical; font-family:inherit; font-size:0.82rem;
-    line-height:1.4; color:#262626; padding:0; min-height:36px; background:none;
+    width:100%; border:none; resize:none; overflow:hidden; font-family:inherit; font-size:0.82rem;
+    line-height:1.4; color:#262626; padding:0; min-height:1.4em; background:none;
   }
   .ig-post-card-caption textarea:focus{outline:none;}
   .ig-post-card-date{font-size:0.68rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:10px;}
@@ -2222,6 +2225,9 @@
         btn.classList.add('active');
         const targetContent = document.getElementById('content-' + activeTabId);
         if(targetContent) targetContent.classList.add('active');
+        // Onglet Posts/Scènes : recalculer la hauteur des champs à ajustement automatique (bio,
+        // légende du post ouvert) maintenant qu'il redevient visible (voir refreshIgActiveTextareas).
+        if(activeTabId === 'scenes') refreshIgActiveTextareas();
       });
     });
   }
@@ -4363,6 +4369,10 @@
         renderIgProfile();
         renderIgGrid();
         renderIgPostPills();
+        // Redevient visible : recalculer la hauteur des champs à ajustement automatique (voir
+        // refreshIgActiveTextareas), sinon la bio/légende peut rester coincée à une hauteur ~0 si
+        // elle a été calculée pendant que ce sous-onglet était caché.
+        refreshIgActiveTextareas();
       }
     });
   });
@@ -4413,6 +4423,16 @@
     // +2px : marge pour la bordure inférieure (toujours réservée, même transparente au repos),
     // sinon scrollHeight dépasse clientHeight d'un cheveu et fait apparaître un mini-scroll interne.
     el.style.height = (el.scrollHeight + 2) + 'px';
+  }
+
+  // À appeler chaque fois qu'un conteneur qui était caché (display:none) redevient visible (bascule
+  // d'onglet ou de sous-onglet) : scrollHeight vaut toujours 0 sur un champ cachée, donc si sa
+  // hauteur a été calculée pendant ce temps-là (par ex. via un renderAll() déclenché par une synchro
+  // cloud pendant qu'on est sur un autre onglet), elle reste coincée à quasiment 0 — visuellement,
+  // le champ paraît "coupé" dès la première ligne, même une fois l'onglet réaffiché.
+  function refreshIgActiveTextareas(){
+    autoResizeTextarea(igBioInput);
+    if(igDetailVisible) autoResizeTextarea(igPostCaptionInput);
   }
 
   // Pseudo affiché dans l'en-tête du post, la légende et la barre du haut : identique partout,
@@ -4510,6 +4530,7 @@
     renderIgPostImage(p);
     igPostLikesInput.value = p.likes || 0;
     igPostCaptionInput.value = p.caption || '';
+    autoResizeTextarea(igPostCaptionInput);
     igPostDateLabel.textContent = formatIgPostDate(p.createdAt);
     renderIgAccountBadges();
   }
@@ -4519,9 +4540,11 @@
     if(!p) return;
     currentIgPostId = p.id;
     igDetailVisible = true;
-    renderIgDetailView();
+    // La vue détail doit déjà être visible (display) avant de calculer la hauteur de la légende :
+    // scrollHeight vaut 0 sur un champ caché, ce qui écraserait sa hauteur (voir renderAll).
     igGridViewEl.style.display = 'none';
     igDetailViewEl.style.display = '';
+    renderIgDetailView();
     renderIgPostPills();
   }
 
@@ -4530,6 +4553,10 @@
     igGridViewEl.style.display = '';
     igDetailViewEl.style.display = 'none';
     renderIgPostPills();
+    // La bio (dans la vue grille) redevient visible : recalculer sa hauteur, sinon elle reste
+    // coincée à ~0 si elle avait été (re)calculée pendant qu'un post était ouvert (voir
+    // refreshIgActiveTextareas, qui ne la recalcule pas tant que la vue détail est affichée).
+    autoResizeTextarea(igBioInput);
   }
 
   function deleteIgPost(id){
@@ -4593,6 +4620,7 @@
   igPostCaptionInput.addEventListener('input', ()=>{
     const p = currentIgPost(); if(!p) return;
     p.caption = igPostCaptionInput.value;
+    autoResizeTextarea(igPostCaptionInput);
     saveIgPosts();
     renderIgPostPills();
   });
@@ -5163,6 +5191,16 @@
   }
 
   function renderAll(){
+    // L'onglet actif doit déjà être visible avant les rendus qui suivent : la bio et la légende
+    // d'un post du simulateur Instagram ajustent leur hauteur à leur contenu via scrollHeight, qui
+    // vaut toujours 0 tant que leur onglet est caché (display:none) — le calculer avant que
+    // l'onglet ne soit affiché écrase visuellement le champ, et il reste coupé même une fois
+    // l'onglet réaffiché (la hauteur imposée ne se recalcule pas toute seule). D'où ce petit
+    // aperçu de la restauration de l'onglet actif, en avance sur celle plus bas dans la fonction.
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const earlyActiveContent = document.getElementById('content-' + activeTabId);
+    if(earlyActiveContent) earlyActiveContent.classList.add('active');
+
     renderTabs();
     initMecanismeEditor();
     renderCategorySelect();
