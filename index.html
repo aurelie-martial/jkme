@@ -262,6 +262,46 @@
   }
   .ev-repeat-row input{margin:0;}
 
+  /* VUE SEMAINE : grille horaire, en plus de la vue Mois. Les 3 zones (en-tête des jours, ligne
+     "journée entière", grille des heures) partagent le même gabarit de colonnes (une colonne pour
+     les heures + 7 colonnes de jours) pour rester alignées verticalement. */
+  .week-view{display:flex; flex-direction:column; --week-hour-h: 48px;}
+  .week-cols{display:grid; grid-template-columns:52px repeat(7,1fr); gap:0;}
+  .week-header{border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:4px;}
+  .week-day-head{text-align:center; padding:4px 2px; border-left:1px solid var(--line); cursor:pointer;}
+  .week-day-head:hover{background:var(--gris);}
+  .week-day-name{display:block; font-size:0.66rem; font-weight:600; text-transform:uppercase; color:var(--ink-soft); letter-spacing:0.06em;}
+  .week-day-num{display:inline-block; font-size:0.92rem; font-weight:700; color:var(--ink); margin-top:2px; width:26px; height:26px; line-height:26px; border-radius:50%;}
+  .week-day-head.today .week-day-num{background:var(--jaune); color:#fff;}
+  .week-allday{min-height:22px; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:2px;}
+  .week-allday-cell{border-left:1px solid var(--line); padding:2px 4px; display:flex; flex-direction:column; gap:2px; cursor:pointer;}
+  .week-hour-gutter-label{font-size:0.6rem; font-weight:600; color:var(--ink-soft); text-align:right; padding-right:6px; align-self:center;}
+  .week-body-scroll{max-height:480px; overflow-y:auto; border-top:1px solid var(--line);}
+  .week-body{display:grid; grid-template-columns:52px repeat(7,1fr); position:relative;}
+  .week-hours-col{position:relative; height:calc(var(--week-hour-h) * 24);}
+  .week-hour-label{
+    position:absolute; right:6px; transform:translateY(-50%); font-size:0.62rem; font-weight:600; color:var(--ink-soft);
+  }
+  .week-day-col{
+    position:relative; height:calc(var(--week-hour-h) * 24); border-left:1px solid var(--line);
+    background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h));
+    cursor:pointer;
+  }
+  .week-day-col.today{background-color:rgba(77,143,166,0.05);}
+  .week-day-col.past{background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h)), repeating-linear-gradient(135deg, rgba(51,65,85,0.05) 0, rgba(51,65,85,0.05) 1px, transparent 1px, transparent 7px);}
+  .week-event{
+    position:absolute; overflow:hidden; border-radius:4px; padding:2px 5px; font-size:0.66rem; line-height:1.25;
+    background:rgba(255,255,255,0.9); border-left:2px solid var(--ev-color, var(--ev-rdv)); box-shadow:var(--shadow-sm);
+    cursor:pointer; color:var(--ink);
+  }
+  .week-event .wt{font-weight:700; display:block;}
+  .week-event.ev-off-preview{
+    border-left:none; border:1px dashed var(--ev-off); font-style:italic; color:var(--ev-off); background:rgba(255,255,255,0.9);
+    background-image: repeating-linear-gradient(135deg, rgba(123,138,128,0.12) 0, rgba(123,138,128,0.12) 1px, transparent 1px, transparent 6px);
+  }
+  /* Trait "mon fils" dans la ligne "journée entière" de la semaine, même logique que dans la vue Mois. */
+  .week-garde-bar{height:16px; border-radius:4px; background:var(--ev-garde); cursor:pointer; display:flex; align-items:center; padding:0 5px; font-size:0.62rem; font-weight:600; color:#fff; overflow:hidden; white-space:nowrap;}
+
   /* STORAGE FOOTER (poids total des images) */
   .storage-footer{
     margin-top:36px; padding-top:16px; border-top:1px solid var(--line);
@@ -329,14 +369,25 @@
     color:var(--lavande); text-decoration:underline; cursor:pointer;
   }
   .link-btn:hover{color:var(--ink);}
-  .ev-item .del{border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer; font-weight:600; padding:2px 8px; color:var(--ink-soft);}
-  .ev-item .del:hover{color:var(--ink); border-color:var(--ink);}
+  .ev-item .del, .ev-item .edit{border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer; font-weight:600; padding:2px 8px; color:var(--ink-soft);}
+  .ev-item .del:hover, .ev-item .edit:hover{color:var(--ink); border-color:var(--ink);}
+  .ev-item .item-actions{display:flex; flex-direction:column; gap:4px; flex:0 0 auto;}
   .modal form{margin-top:16px; display:flex; flex-direction:column; gap:8px;}
   .modal form label{font-size:0.7rem; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.06em;}
   .modal form input{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; border:1px solid var(--line); border-radius:8px; padding:9px 11px;
   }
   .modal-empty{color:var(--ink-soft); font-weight:500; font-size:0.83rem; font-style:italic; margin-bottom:6px;}
+  /* Heure de début/fin (optionnelles) d'un événement : côte à côte pour gagner de la place, et
+     c'est ce qui permet à la vue Semaine de positionner l'événement dans la grille horaire. */
+  .ev-time-row{display:flex; gap:8px;}
+  .ev-time-row > div{flex:1; display:flex; flex-direction:column; gap:4px;}
+  .ev-form-actions{display:flex; align-items:center; gap:14px; margin-top:4px;}
+  /* Un événement en cours de modification est visuellement signalé dans le formulaire, pour ne
+     pas confondre "j'édite" avec "j'ajoute un nouvel événement". */
+  .modal form.editing{
+    background:var(--gris); border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:12px;
+  }
 
   /* CATEGORY MANAGEMENT */
   .cat-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
@@ -1008,10 +1059,15 @@
           <button id="nextMonth">›</button>
         </div>
       </div>
-      <div class="weekday-row">
+      <div class="scene-subview-toggle" id="calViewToggle">
+        <button type="button" class="scene-subview-btn active" data-calview="month">Mois</button>
+        <button type="button" class="scene-subview-btn" data-calview="week">Semaine</button>
+      </div>
+      <div class="weekday-row" id="calWeekdayRow">
         <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
       </div>
       <div class="calendar-grid" id="calGrid"></div>
+      <div class="week-view" id="calWeekGrid" style="display:none;"></div>
     </div>
   </div>
 
@@ -1260,6 +1316,16 @@
       </div>
       <label id="evTitleLabel">Titre du rendez-vous</label>
       <input type="text" id="evTitle" placeholder="Ex : RDV éditeur">
+      <div class="ev-time-row" id="evTimeRow">
+        <div>
+          <label>Heure de début (optionnel)</label>
+          <input type="time" id="evStartTime">
+        </div>
+        <div>
+          <label>Heure de fin (optionnel)</label>
+          <input type="time" id="evEndTime">
+        </div>
+      </div>
       <label>Jusqu'au (optionnel, pour un événement sur plusieurs jours)</label>
       <input type="date" id="evEndDate">
       <label class="ev-repeat-row" id="evRepeatRow" style="display:none;">
@@ -1272,7 +1338,10 @@
       </div>
       <label id="evNoteLabel">Note (optionnel)</label>
       <input type="text" id="evNote" placeholder="Adresse, détails...">
-      <button type="submit" class="btn btn-secondary" id="evSubmitBtn">+ Ajouter le rendez-vous</button>
+      <div class="ev-form-actions">
+        <button type="submit" class="btn btn-secondary" id="evSubmitBtn">+ Ajouter le rendez-vous</button>
+        <button type="button" class="link-btn" id="evCancelEditBtn" style="display:none;">Annuler la modification</button>
+      </div>
     </form>
   </div>
 </div>
@@ -2431,8 +2500,12 @@
 
   // ---------- CALENDAR ----------
   const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const WEEKDAYS_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
   let viewDate = new Date();
-  viewDate.setDate(1);
+  // 'month' ou 'week' : quelle grille afficher. Les deux vues partagent viewDate comme date de
+  // référence (le mois qui la contient pour la vue Mois, la semaine qui la contient pour la vue
+  // Semaine) plutôt que deux états séparés, pour rester simple.
+  let calViewMode = 'month';
 
   function fmtKey(y,m,d){
     return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -2471,9 +2544,9 @@
     let changed = false;
     Object.keys(events).forEach(key=>{
       events[key] = events[key].map(ev=>{
-        if(!ev.startDate || !ev.endDate){
+        if(!ev.startDate || !ev.endDate || ev.endTime === undefined){
           changed = true;
-          return {...ev, time: ev.time || '', startDate: key, endDate: key};
+          return {...ev, time: ev.time || '', endTime: ev.endTime || '', startDate: ev.startDate || key, endDate: ev.endDate || key};
         }
         return ev;
       });
@@ -2486,6 +2559,36 @@
     Object.keys(events).forEach(key=>{
       events[key] = events[key].filter(e=>String(e.id)!==String(id));
       if(events[key].length===0) delete events[key];
+    });
+    saveEvents();
+  }
+
+  // Retrouve un événement par son id, où qu'il soit (un événement sur plusieurs jours a la même
+  // entrée dupliquée sous chacune de ses dates).
+  function findEventById(id){
+    for(const key of Object.keys(events)){
+      const found = (events[key] || []).find(e => String(e.id) === String(id));
+      if(found) return found;
+    }
+    return null;
+  }
+
+  // Modifie un événement existant : on le retire de toutes ses dates actuelles puis on le
+  // réinsère avec les champs mis à jour (y compris, potentiellement, une nouvelle plage de dates).
+  // recurrenceId est conservé tel quel : modifier une occurrence d'une série répétée ne touche que
+  // cette occurrence, pas le reste de la série (qui reste modifiable/supprimable comme avant).
+  function updateEventEverywhere(id, updatedFields){
+    const original = findEventById(id);
+    if(!original) return;
+    Object.keys(events).forEach(key=>{
+      events[key] = events[key].filter(e=>String(e.id)!==String(id));
+      if(events[key].length===0) delete events[key];
+    });
+    const merged = {...original, ...updatedFields};
+    const range = getDateRange(merged.startDate, merged.endDate);
+    range.forEach(d=>{
+      if(!events[d]) events[d] = [];
+      events[d].push(merged);
     });
     saveEvents();
   }
@@ -2577,14 +2680,172 @@
     }
   }
 
+  function timeToMinutes(t){
+    if(!t) return null;
+    const [h,mi] = t.split(':').map(Number);
+    if(Number.isNaN(h) || Number.isNaN(mi)) return null;
+    return h*60+mi;
+  }
+
+  // Répartit les événements chronométrés d'un même jour en "couloirs" côte à côte quand ils se
+  // chevauchent dans le temps (algorithme glouton : un événement va dans le premier couloir libre
+  // à son heure de début, sinon un nouveau couloir est ouvert), pour qu'ils restent tous lisibles
+  // plutôt que de s'empiler les uns sur les autres.
+  function layoutDayEvents(dayEvents){
+    const withTimes = dayEvents.map(ev=>{
+      const start = timeToMinutes(ev.time);
+      let end = ev.endTime ? timeToMinutes(ev.endTime) : null;
+      if(end === null || end <= start) end = start + 60;
+      return {ev, start, end};
+    }).sort((a,b)=> a.start - b.start);
+    const laneEnds = [];
+    withTimes.forEach(item=>{
+      let lane = laneEnds.findIndex(end => end <= item.start);
+      if(lane === -1){ lane = laneEnds.length; laneEnds.push(item.end); }
+      else { laneEnds[lane] = item.end; }
+      item.lane = lane;
+    });
+    const laneCount = laneEnds.length || 1;
+    return withTimes.map(item => ({...item, laneCount}));
+  }
+
+  // ---------- VUE SEMAINE ----------
+  // Vue complémentaire à la vue Mois : une grille horaire (0h-24h, défilable) sur 7 jours, pour
+  // voir où se placent précisément les rendez-vous/créneaux dans la journée. Les périodes "avec
+  // mon fils" et les événements sans heure restent affichés en "journée entière" au-dessus de la
+  // grille, comme dans la plupart des agendas.
+  function startOfWeek(d){
+    const date = new Date(d);
+    let offset = date.getDay() - 1;
+    if(offset < 0) offset = 6;
+    date.setDate(date.getDate() - offset);
+    date.setHours(0,0,0,0);
+    return date;
+  }
+
+  function renderWeekView(){
+    const weekStart = startOfWeek(viewDate);
+    const weekDays = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(weekStart);
+      d.setDate(d.getDate()+i);
+      weekDays.push({date:d, key: fmtKey(d.getFullYear(), d.getMonth(), d.getDate())});
+    }
+    const today = new Date();
+    const todayKey = fmtKey(today.getFullYear(), today.getMonth(), today.getDate());
+    const weekEnd = weekDays[6].date;
+    const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
+    const label = sameMonth
+      ? `${weekStart.getDate()} – ${weekEnd.getDate()} ${MONTHS[weekEnd.getMonth()]} ${weekEnd.getFullYear()}`
+      : `${weekStart.getDate()} ${MONTHS[weekStart.getMonth()]} – ${weekEnd.getDate()} ${MONTHS[weekEnd.getMonth()]} ${weekEnd.getFullYear()}`;
+    document.getElementById('calMonthLabel').textContent = label;
+
+    const HOUR_H = 48;
+    let headerHtml = `<div class="week-hour-gutter-label"></div>`;
+    let alldayHtml = `<div class="week-hour-gutter-label">Journée</div>`;
+    let hoursColHtml = '';
+    for(let h=0; h<24; h++){
+      hoursColHtml += `<div class="week-hour-label" style="top:${h*HOUR_H}px;">${String(h).padStart(2,'0')}:00</div>`;
+    }
+    let dayColsHtml = '';
+
+    weekDays.forEach(({date, key})=>{
+      const isToday = key === todayKey;
+      const isPast = key < todayKey;
+      headerHtml += `<div class="week-day-head${isToday?' today':''}" data-key="${key}">
+        <span class="week-day-name">${WEEKDAYS_SHORT[date.getDay()===0?6:date.getDay()-1]}</span>
+        <span class="week-day-num">${date.getDate()}</span>
+      </div>`;
+
+      const evs = sortEvents(events[key] || []);
+      const gardeEvs = evs.filter(ev => eventType(ev) === 'garde');
+      const untimedEvs = evs.filter(ev => eventType(ev) !== 'garde' && !ev.time);
+      const timedEvs = evs.filter(ev => eventType(ev) !== 'garde' && ev.time);
+
+      const isMonday = date.getDay() === 1;
+      const isSunday = date.getDay() === 0;
+      alldayHtml += `<div class="week-allday-cell" data-key="${key}">` +
+        gardeEvs.map(ev=>{
+          const leftRound = ev.startDate === key || isMonday;
+          const rightRound = ev.endDate === key || isSunday;
+          const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
+          return `<div class="week-garde-bar" style="border-radius:${radius}">${leftRound ? escapeHtml(ev.title || 'Mon fils') : ''}</div>`;
+        }).join('') +
+        untimedEvs.map(ev=>{
+          const isOff = eventType(ev) === 'off';
+          const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
+          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}">${escapeHtml(ev.title)}</div>`;
+        }).join('') +
+      `</div>`;
+
+      const laidOut = layoutDayEvents(timedEvs);
+      const eventsHtml = laidOut.map(({ev, start, end, lane, laneCount})=>{
+        const top = (start/60) * HOUR_H;
+        const height = Math.max(((end-start)/60) * HOUR_H, 16);
+        const width = 100/laneCount;
+        const left = lane * width;
+        const isOff = eventType(ev) === 'off';
+        const cls = 'week-event' + (isOff ? ' ev-off-preview' : '');
+        const timeLabel = ev.endTime ? `${escapeHtml(ev.time)}–${escapeHtml(ev.endTime)}` : escapeHtml(ev.time);
+        return `<div class="${cls}" style="top:${top}px; height:${height}px; left:${left}%; width:calc(${width}% - 3px); --ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}" data-key="${key}">
+          <span class="wt">${timeLabel}</span>${escapeHtml(ev.title || '')}
+        </div>`;
+      }).join('');
+
+      dayColsHtml += `<div class="week-day-col${isToday?' today':''}${isPast?' past':''}" data-key="${key}">${eventsHtml}</div>`;
+    });
+
+    const grid = document.getElementById('calWeekGrid');
+    grid.innerHTML = `
+      <div class="week-header week-cols">${headerHtml}</div>
+      <div class="week-allday week-cols">${alldayHtml}</div>
+      <div class="week-body-scroll" id="weekBodyScroll">
+        <div class="week-body">
+          <div class="week-hours-col">${hoursColHtml}</div>
+          ${dayColsHtml}
+        </div>
+      </div>
+    `;
+    grid.querySelectorAll('.week-day-head, .week-allday-cell, .week-day-col').forEach(el=>{
+      el.addEventListener('click', (e)=>{
+        // Un clic sur un événement précis ouvre quand même le modal du jour (où il peut être
+        // modifié/supprimé) : pas besoin d'une interaction séparée pour l'édition depuis la grille.
+        openDayModal(el.dataset.key);
+      });
+    });
+    // Ouvre la vue avec le début de matinée déjà visible plutôt que sur minuit.
+    const scrollEl = document.getElementById('weekBodyScroll');
+    if(scrollEl) scrollEl.scrollTop = 7 * HOUR_H;
+  }
+
+  function renderCalendarView(){
+    if(calViewMode === 'week') renderWeekView();
+    else renderCalendar();
+  }
+
+  document.querySelectorAll('#calViewToggle .scene-subview-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      calViewMode = btn.dataset.calview;
+      document.querySelectorAll('#calViewToggle .scene-subview-btn').forEach(b=>b.classList.toggle('active', b.dataset.calview === calViewMode));
+      document.getElementById('calWeekdayRow').style.display = calViewMode === 'week' ? 'none' : '';
+      document.getElementById('calGrid').style.display = calViewMode === 'week' ? 'none' : '';
+      document.getElementById('calWeekGrid').style.display = calViewMode === 'week' ? '' : 'none';
+      renderCalendarView();
+    });
+  });
+
   document.getElementById('prevMonth').addEventListener('click', ()=>{
-    viewDate.setMonth(viewDate.getMonth()-1); renderCalendar();
+    if(calViewMode === 'week') viewDate.setDate(viewDate.getDate()-7);
+    else { viewDate.setDate(1); viewDate.setMonth(viewDate.getMonth()-1); }
+    renderCalendarView();
   });
   document.getElementById('nextMonth').addEventListener('click', ()=>{
-    viewDate.setMonth(viewDate.getMonth()+1); renderCalendar();
+    if(calViewMode === 'week') viewDate.setDate(viewDate.getDate()+7);
+    else { viewDate.setDate(1); viewDate.setMonth(viewDate.getMonth()+1); }
+    renderCalendarView();
   });
   document.getElementById('todayBtn').addEventListener('click', ()=>{
-    viewDate = new Date(); viewDate.setDate(1); renderCalendar();
+    viewDate = new Date(); renderCalendarView();
   });
 
   // ---------- DAY MODAL ----------
@@ -2600,12 +2861,19 @@
   const evNoteLabelEl = document.getElementById('evNoteLabel');
   const evNoteInputEl = document.getElementById('evNote');
   const evSubmitBtnEl = document.getElementById('evSubmitBtn');
+  const evTimeRowEl = document.getElementById('evTimeRow');
+  const evStartTimeEl = document.getElementById('evStartTime');
+  const evEndTimeEl = document.getElementById('evEndTime');
+  const evCancelEditBtnEl = document.getElementById('evCancelEditBtn');
+  const addEventFormEl = document.getElementById('addEventForm');
   // Répétition "une semaine sur deux" : seulement proposée pour les périodes "avec mon fils",
   // pour lesquelles ce rythme d'alternance est courant et fastidieux à recréer à la main.
   const evRepeatRowEl = document.getElementById('evRepeatRow');
   const evRepeatCheckboxEl = document.getElementById('evRepeatCheckbox');
   const evRepeatUntilWrapEl = document.getElementById('evRepeatUntilWrap');
   const evRepeatUntilEl = document.getElementById('evRepeatUntil');
+  // Id de l'événement en cours de modification (null = le formulaire sert à en ajouter un nouveau).
+  let editingEventId = null;
 
   function currentEvType(){
     const checked = evTypeChoiceEl.querySelector('input[name="evType"]:checked');
@@ -2616,19 +2884,23 @@
     evTypeChoiceEl.querySelectorAll('.ev-type-option').forEach(opt=>{
       opt.classList.toggle('active', opt.querySelector('input').value === type);
     });
+    // Une "période avec mon fils" s'organise en jours (voir le champ "jusqu'au" et la répétition),
+    // pas en heures précises : le bloc heure de début/fin ne s'affiche donc que pour les autres
+    // types, ceux qui se posent vraiment à une heure donnée dans la vue Semaine.
+    evTimeRowEl.style.display = type === 'garde' ? 'none' : '';
     if(type === 'garde'){
       evTitleLabelEl.textContent = 'Titre (optionnel)';
       evTitleInputEl.placeholder = 'Ex : Chez son père, vacances...';
       evNoteLabelEl.style.display = 'none';
       evNoteInputEl.style.display = 'none';
-      evSubmitBtnEl.textContent = '+ Ajouter la période';
-      evRepeatRowEl.style.display = '';
+      evSubmitBtnEl.textContent = editingEventId ? 'Enregistrer les modifications' : '+ Ajouter la période';
+      evRepeatRowEl.style.display = editingEventId ? 'none' : '';
     } else if(type === 'travail'){
       evTitleLabelEl.textContent = 'Titre du créneau';
       evTitleInputEl.placeholder = 'Ex : Écriture, relecture...';
       evNoteLabelEl.style.display = '';
       evNoteInputEl.style.display = '';
-      evSubmitBtnEl.textContent = '+ Ajouter le créneau';
+      evSubmitBtnEl.textContent = editingEventId ? 'Enregistrer les modifications' : '+ Ajouter le créneau';
       evRepeatRowEl.style.display = 'none';
       evRepeatCheckboxEl.checked = false;
       evRepeatUntilWrapEl.style.display = 'none';
@@ -2639,7 +2911,7 @@
       evTitleInputEl.placeholder = 'Ex : Pause, déconnexion, rien de prévu...';
       evNoteLabelEl.style.display = '';
       evNoteInputEl.style.display = '';
-      evSubmitBtnEl.textContent = '+ Ajouter le temps off';
+      evSubmitBtnEl.textContent = editingEventId ? 'Enregistrer les modifications' : '+ Ajouter le temps off';
       evRepeatRowEl.style.display = 'none';
       evRepeatCheckboxEl.checked = false;
       evRepeatUntilWrapEl.style.display = 'none';
@@ -2648,7 +2920,7 @@
       evTitleInputEl.placeholder = 'Ex : RDV éditeur';
       evNoteLabelEl.style.display = '';
       evNoteInputEl.style.display = '';
-      evSubmitBtnEl.textContent = '+ Ajouter le rendez-vous';
+      evSubmitBtnEl.textContent = editingEventId ? 'Enregistrer les modifications' : '+ Ajouter le rendez-vous';
       evRepeatRowEl.style.display = 'none';
       evRepeatCheckboxEl.checked = false;
       evRepeatUntilWrapEl.style.display = 'none';
@@ -2674,12 +2946,47 @@
   });
 
   function resetEvForm(){
+    editingEventId = null;
+    addEventFormEl.classList.remove('editing');
+    evCancelEditBtnEl.style.display = 'none';
     evTypeChoiceEl.querySelector('input[value="rdv"]').checked = true;
     evRepeatCheckboxEl.checked = false;
     evRepeatUntilEl.value = '';
+    evTitleInputEl.value = '';
+    evNoteInputEl.value = '';
+    evStartTimeEl.value = '';
+    evEndTimeEl.value = '';
+    document.getElementById('evEndDate').value = '';
+    if(currentKey) document.getElementById('evEndDate').min = currentKey;
     updateEvFormForType('rdv');
   }
   resetEvForm();
+
+  // Pré-remplit le formulaire avec les données d'un événement existant, pour le modifier au lieu
+  // d'en recréer un nouveau. Ne touche pas à sa date de début (elle n'est pas éditable ici) ; la
+  // date de fin et l'heure, elles, restent modifiables comme pour un ajout.
+  function startEditEvent(id){
+    const ev = findEventById(id);
+    if(!ev) return;
+    editingEventId = id;
+    const type = eventType(ev);
+    evTypeChoiceEl.querySelector(`input[value="${type}"]`).checked = true;
+    evTitleInputEl.value = ev.title || '';
+    evNoteInputEl.value = ev.note || '';
+    evStartTimeEl.value = ev.time || '';
+    evEndTimeEl.value = ev.endTime || '';
+    const endDateInput = document.getElementById('evEndDate');
+    endDateInput.min = ev.startDate;
+    endDateInput.value = ev.endDate !== ev.startDate ? ev.endDate : '';
+    updateEvFormForType(type);
+    addEventFormEl.classList.add('editing');
+    evCancelEditBtnEl.style.display = '';
+    addEventFormEl.scrollIntoView({block:'nearest', behavior:'smooth'});
+  }
+
+  evCancelEditBtnEl.addEventListener('click', ()=>{
+    resetEvForm();
+  });
 
   // Génère les intervalles [début,fin] d'une alternance "une semaine sur deux" : la durée du
   // premier bloc (startDate→endDate) fixe la longueur du cycle (bloc + pause de même longueur),
@@ -2739,20 +3046,30 @@
           ${ev.note ? `<div class="n">${escapeHtml(ev.note)}</div>` : ''}
           ${ev.recurrenceId ? `<div class="n">↻ Se répète une semaine sur deux · <button type="button" class="link-btn del-series" data-recurrence-id="${ev.recurrenceId}">supprimer toute la série</button></div>` : ''}
         </div>
-        <button class="del" data-id="${ev.id}" title="Supprimer seulement cette occurrence">✕</button>
+        <div class="item-actions">
+          <button class="edit" data-id="${ev.id}" title="Modifier">✎</button>
+          <button class="del" data-id="${ev.id}" title="Supprimer seulement cette occurrence">✕</button>
+        </div>
       </div>
     `;
     }).join('');
+    container.querySelectorAll('.edit').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        startEditEvent(btn.dataset.id);
+      });
+    });
     container.querySelectorAll('.del').forEach(btn=>{
       btn.addEventListener('click', ()=>{
+        if(editingEventId === btn.dataset.id) resetEvForm();
         deleteEventEverywhere(btn.dataset.id);
-        renderEventList(); renderCalendar();
+        renderEventList(); renderCalendarView();
       });
     });
     container.querySelectorAll('.del-series').forEach(btn=>{
       btn.addEventListener('click', ()=>{
+        resetEvForm();
         deleteRecurrenceEverywhere(btn.dataset.recurrenceId);
-        renderEventList(); renderCalendar();
+        renderEventList(); renderCalendarView();
       });
     });
   }
@@ -2770,6 +3087,23 @@
     } else if(!title){
       return;
     }
+
+    // Modification d'un événement existant : on met juste à jour ses champs, sans toucher
+    // au reste d'une éventuelle série répétée (voir updateEventEverywhere).
+    if(editingEventId){
+      const original = findEventById(editingEventId);
+      if(!original){ resetEvForm(); return; }
+      const startDate = original.startDate;
+      const endDate = (endDateVal && endDateVal >= startDate) ? endDateVal : startDate;
+      updateEventEverywhere(editingEventId, {
+        type, title, note, startDate, endDate,
+        time: evStartTimeEl.value || '', endTime: evEndTimeEl.value || ''
+      });
+      resetEvForm();
+      renderEventList(); renderCalendarView();
+      return;
+    }
+
     const startDate = currentKey;
     const endDate = (endDateVal && endDateVal >= startDate) ? endDateVal : startDate;
 
@@ -2786,15 +3120,14 @@
       const range = getDateRange(occStart, occEnd);
       range.forEach(d=>{
         if(!events[d]) events[d] = [];
-        const ev = {id, time:'', title, note, startDate: occStart, endDate: occEnd, type};
+        const ev = {id, time: evStartTimeEl.value || '', endTime: evEndTimeEl.value || '', title, note, startDate: occStart, endDate: occEnd, type};
         if(recurrenceId) ev.recurrenceId = recurrenceId;
         events[d].push(ev);
       });
     });
     saveEvents();
-    document.getElementById('evTitle').value=''; document.getElementById('evNote').value=''; document.getElementById('evEndDate').value='';
     resetEvForm();
-    renderEventList(); renderCalendar();
+    renderEventList(); renderCalendarView();
   });
 
   document.getElementById('closeModal').addEventListener('click', ()=> overlay.classList.remove('active'));
