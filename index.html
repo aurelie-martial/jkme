@@ -253,6 +253,9 @@
   .ev-type-off.active{
     background:rgba(123,138,128,0.12); border:1px dashed var(--ev-off); color:var(--ev-off);
   }
+  /* Choix du moment de la journée pour un créneau de travail (Matin/Midi/Après-midi/Soir),
+     même style que le choix de type ci-dessus, coloré comme "Créneau de travail". */
+  .ev-period-option.active{background:var(--ev-travail); border-color:var(--ev-travail); color:#fff;}
   /* Répétition "une semaine sur deux" (période avec mon fils uniquement) : évite de recréer
      chaque occurrence à la main quand l'alternance est fixe. */
   .modal form label.ev-repeat-row{
@@ -278,12 +281,13 @@
   .week-hour-gutter-label{font-size:0.6rem; font-weight:600; color:var(--ink-soft); text-align:right; padding-right:6px; align-self:center;}
   .week-body-scroll{max-height:480px; overflow-y:auto; border-top:1px solid var(--line);}
   .week-body{display:grid; grid-template-columns:52px repeat(7,1fr); position:relative;}
-  .week-hours-col{position:relative; height:calc(var(--week-hour-h) * 24);}
+  /* 14 heures affichées (8h-22h, voir WEEK_VIEW_START_HOUR/END_HOUR en JS), pas 24. */
+  .week-hours-col{position:relative; height:calc(var(--week-hour-h) * 14);}
   .week-hour-label{
     position:absolute; right:6px; transform:translateY(-50%); font-size:0.62rem; font-weight:600; color:var(--ink-soft);
   }
   .week-day-col{
-    position:relative; height:calc(var(--week-hour-h) * 24); border-left:1px solid var(--line);
+    position:relative; height:calc(var(--week-hour-h) * 14); border-left:1px solid var(--line);
     background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h));
     cursor:pointer;
   }
@@ -292,13 +296,16 @@
   .week-event{
     position:absolute; overflow:hidden; border-radius:4px; padding:2px 5px; font-size:0.66rem; line-height:1.25;
     background:rgba(255,255,255,0.9); border-left:2px solid var(--ev-color, var(--ev-rdv)); box-shadow:var(--shadow-sm);
-    cursor:pointer; color:var(--ink);
+    cursor:grab; color:var(--ink); touch-action:none;
   }
   .week-event .wt{font-weight:700; display:block;}
   .week-event.ev-off-preview{
     border-left:none; border:1px dashed var(--ev-off); font-style:italic; color:var(--ev-off); background:rgba(255,255,255,0.9);
     background-image: repeating-linear-gradient(135deg, rgba(123,138,128,0.12) 0, rgba(123,138,128,0.12) 1px, transparent 1px, transparent 6px);
   }
+  /* Pendant un glisser-déposer (voir enableWeekEventDrag) : l'événement suit le pointeur en
+     position:fixed, avec un contour plus marqué pour bien signaler qu'il est "en l'air". */
+  .week-event-dragging{cursor:grabbing; z-index:500; box-shadow:0 8px 20px rgba(51,65,85,0.28); opacity:0.95;}
   /* Trait "mon fils" dans la ligne "journée entière" de la semaine, même logique que dans la vue Mois. */
   .week-garde-bar{height:16px; border-radius:4px; background:var(--ev-garde); cursor:pointer; display:flex; align-items:center; padding:0 5px; font-size:0.62rem; font-weight:600; color:#fff; overflow:hidden; white-space:nowrap;}
 
@@ -683,6 +690,33 @@
   }
   .ig-delete-post-btn:hover{background:var(--rose); color:#fff; border-color:var(--rose);}
   .ig-pill-actions{display:flex; align-items:center; gap:3px; flex:0 0 auto;}
+
+  /* Le téléphone et le bloc de réflexion (brouillons de bio) côte à côte ; repasse en colonne
+     quand la place manque (voir la media query plus bas), le bloc de réflexion passant alors
+     sous le téléphone plutôt qu'à côté. */
+  .ig-editor-row{display:flex; gap:22px; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
+  .ig-reflection-panel{
+    flex:1 1 260px; max-width:340px; min-width:220px; align-self:stretch;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow-sm); padding:16px;
+  }
+  .ig-reflection-header{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; flex-wrap:wrap;}
+  .ig-reflection-header h4{margin:0; font-size:0.92rem; font-weight:700; color:var(--ink);}
+  .ig-bio-draft-list{display:flex; flex-direction:column; gap:12px;}
+  .ig-bio-draft-empty{font-size:0.8rem; color:var(--ink-soft); font-style:italic;}
+  .ig-bio-draft-card{border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--gris);}
+  .ig-bio-draft-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; gap:8px;}
+  .ig-bio-draft-label{font-size:0.68rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em;}
+  .ig-bio-draft-del{border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:0.85rem; padding:2px 4px; line-height:1;}
+  .ig-bio-draft-del:hover{color:var(--rose);}
+  /* Même comportement d'ajustement automatique que la vraie bio (voir autoResizeTextarea), pour
+     que ces brouillons se lisent aussi facilement qu'elle une fois remplis. */
+  .ig-bio-draft-textarea{
+    width:100%; resize:none; overflow:hidden; min-height:1.4em; background:#fff; color:#262626;
+    border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-family:inherit;
+    font-size:0.82rem; line-height:1.4;
+  }
+  .ig-bio-draft-textarea:focus{outline:none; border-color:var(--lavande);}
 
   /* Repli de la colonne de notes du Bloc-notes (desktop uniquement) : la colonne se réduit à une
      fine bande ne montrant plus que le bouton pour la redéployer, ce qui laisse plus de place à
@@ -1140,6 +1174,7 @@
         </div>
 
         <div class="scene-editor-area">
+        <div class="ig-editor-row">
           <div class="ig-phone" id="igPhone">
             <div class="ig-phone-topbar">
               <span class="ig-phone-topbar-lock">🔒</span>
@@ -1196,6 +1231,18 @@
               <button type="button" class="ig-delete-post-btn" id="igDeletePostBtn">✕ Supprimer ce post</button>
             </div>
           </div>
+
+          <!-- Bloc de réflexion, à droite du téléphone : plusieurs brouillons de bio empilés (même
+               principe que la bio du profil ci-dessus) pour comparer des formulations avant de
+               choisir, sans que ça touche à la vraie bio tant que rien n'est recopié dedans. -->
+          <div class="ig-reflection-panel" id="igReflectionPanel">
+            <div class="ig-reflection-header">
+              <h4>Brouillons de bio</h4>
+              <button type="button" class="btn-add-subtab" id="addIgBioDraftBtn">+ Ajouter une bio</button>
+            </div>
+            <div class="ig-bio-draft-list" id="igBioDraftList"></div>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -1327,6 +1374,15 @@
         <div>
           <label>Heure de fin (optionnel)</label>
           <input type="time" id="evEndTime">
+        </div>
+      </div>
+      <div id="evPeriodRow" style="display:none;">
+        <label>Moment de la journée</label>
+        <div class="ev-type-choice" id="evPeriodChoice">
+          <label class="ev-type-option ev-period-option"><input type="radio" name="evPeriod" value="matin" checked><span>Matin</span></label>
+          <label class="ev-type-option ev-period-option"><input type="radio" name="evPeriod" value="midi"><span>Midi</span></label>
+          <label class="ev-type-option ev-period-option"><input type="radio" name="evPeriod" value="apresmidi"><span>Après-midi</span></label>
+          <label class="ev-type-option ev-period-option"><input type="radio" name="evPeriod" value="soir"><span>Soir</span></label>
         </div>
       </div>
       <label>Jusqu'au (optionnel, pour un événement sur plusieurs jours)</label>
@@ -1526,6 +1582,11 @@
   // poster réellement. Purement visuel : aucune vraie connexion à Instagram.
   let igProfile = defaultIgProfile();
   let igPosts = [];
+  // Brouillons de bio : des blocs de texte indépendants (même comportement que la vraie bio, voir
+  // renderIgBioDrafts), affichés à droite du téléphone, pour comparer plusieurs formulations avant
+  // de choisir laquelle recopier dans la vraie bio. N'a aucun effet sur igProfile.bio tant que rien
+  // n'y est recopié à la main.
+  let igBioDrafts = [];
 
   const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); renderStorageFooter(); };
   const saveTasks = () => { syncCloud(); };
@@ -1542,6 +1603,7 @@
   const savePinnedNotes = () => { syncCloud(); };
   const saveIgProfile = () => { syncCloud(); };
   const saveIgPosts = () => { syncCloud(); };
+  const saveIgBioDrafts = () => { syncCloud(); };
 
   function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
 
@@ -2619,6 +2681,16 @@
   const EVENT_TYPES = ['travail', 'garde', 'off'];
   function eventType(ev){ return EVENT_TYPES.includes(ev.type) ? ev.type : 'rdv'; }
 
+  // Un "créneau de travail" se règle par moment de la journée plutôt que par heure précise (plus
+  // rapide à remplir, et suffisant pour ce que ça sert ici) : chaque moment correspond à une plage
+  // horaire fixe, qui sert ensuite de vraie heure de début/fin partout ailleurs dans le code (tri,
+  // positionnement dans la vue Semaine, détection de chevauchement...) — seul l'affichage montre le
+  // nom du moment plutôt que l'heure. Un créneau de travail créé avant l'ajout de cette notion (donc
+  // sans "period") garde son heure telle quelle.
+  const WORK_PERIODS = ['matin', 'midi', 'apresmidi', 'soir'];
+  const WORK_PERIOD_LABELS = { matin: 'Matin', midi: 'Midi', apresmidi: 'Après-midi', soir: 'Soir' };
+  const WORK_PERIOD_RANGES = { matin: ['08:00','12:00'], midi: ['12:00','14:00'], apresmidi: ['14:00','18:00'], soir: ['18:00','22:00'] };
+
   function renderCalendar(){
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
     document.getElementById('calMonthLabel').textContent = `${MONTHS[m]} ${y}`;
@@ -2675,10 +2747,14 @@
         }).join('') +
         otherEvs.slice(0, maxPreview).map(ev => {
           const multi = ev.startDate !== ev.endDate;
-          const isOff = eventType(ev) === 'off';
-          const label = ev.time ? `${escapeHtml(ev.time)} · ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
+          const type = eventType(ev);
+          const isOff = type === 'off';
+          // Un créneau de travail affiche son moment de la journée plutôt que l'heure exacte
+          // (voir WORK_PERIOD_RANGES) : "Matin · Écriture" plutôt que "08:00 · Écriture".
+          const timeText = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period]) ? WORK_PERIOD_LABELS[ev.period] : ev.time;
+          const label = timeText ? `${escapeHtml(timeText)} · ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
           const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
-          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}">${multi ? '↔ ' : ''}${label}</div>`;
+          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[type]}">${multi ? '↔ ' : ''}${label}</div>`;
         }).join('') +
         (otherEvs.length > maxPreview ? `<div class="ev-more">+${otherEvs.length - maxPreview} autre${otherEvs.length - maxPreview > 1 ? 's' : ''}</div>` : '');
       cell.addEventListener('click', ()=>openDayModal(key));
@@ -2692,6 +2768,30 @@
     if(Number.isNaN(h) || Number.isNaN(mi)) return null;
     return h*60+mi;
   }
+
+  function minutesToTime(m){
+    m = Math.max(0, Math.round(m));
+    const h = Math.floor(m/60) % 24;
+    const mi = m % 60;
+    return String(h).padStart(2,'0') + ':' + String(mi).padStart(2,'0');
+  }
+
+  // Plage horaire affichée dans la vue Semaine : 8h-22h seulement (pas 0h-24h), les heures de nuit
+  // n'ayant pas d'utilité ici. Réutilisé à la fois pour dessiner la grille et pour positionner/
+  // déplacer les événements dedans (voir renderWeekView et enableWeekEventDrag).
+  const WEEK_VIEW_START_HOUR = 8;
+  const WEEK_VIEW_END_HOUR = 22;
+  const WEEK_HOUR_H = 48;
+
+  // Après un glisser-déposer d'événement (voir enableWeekEventDrag), on ne veut pas que le clic
+  // qui s'ensuit rouvre le modal du jour. Mais un mouseup loin du mousedown initial (cas normal
+  // d'un glisser) ne déclenche en général AUCUN clic natif dans la plupart des navigateurs — donc
+  // compter sur un clic à intercepter serait fragile et pourrait finir par avaler un clic sans
+  // rapport, plus tard, si aucun clic n'arrive jamais pour "consommer" l'écouteur. On utilise à la
+  // place un simple drapeau, vérifié directement dans le gestionnaire de clic des colonnes, et
+  // remis à zéro soit par ce gestionnaire (si un clic arrive bien), soit par un timeout de secours
+  // (sinon), pour ne jamais rester bloqué à "true".
+  let suppressWeekDayClick = false;
 
   // Répartit les événements chronométrés d'un même jour en "couloirs" côte à côte quand ils se
   // chevauchent dans le temps (algorithme glouton : un événement va dans le premier couloir libre
@@ -2746,12 +2846,14 @@
       : `${weekStart.getDate()} ${MONTHS[weekStart.getMonth()]} – ${weekEnd.getDate()} ${MONTHS[weekEnd.getMonth()]} ${weekEnd.getFullYear()}`;
     document.getElementById('calMonthLabel').textContent = label;
 
-    const HOUR_H = 48;
+    const HOUR_H = WEEK_HOUR_H;
+    const visibleStart = WEEK_VIEW_START_HOUR * 60;
+    const visibleEnd = WEEK_VIEW_END_HOUR * 60;
     let headerHtml = `<div class="week-hour-gutter-label"></div>`;
     let alldayHtml = `<div class="week-hour-gutter-label">Journée</div>`;
     let hoursColHtml = '';
-    for(let h=0; h<24; h++){
-      hoursColHtml += `<div class="week-hour-label" style="top:${h*HOUR_H}px;">${String(h).padStart(2,'0')}:00</div>`;
+    for(let h=WEEK_VIEW_START_HOUR; h<WEEK_VIEW_END_HOUR; h++){
+      hoursColHtml += `<div class="week-hour-label" style="top:${(h-WEEK_VIEW_START_HOUR)*HOUR_H}px;">${String(h).padStart(2,'0')}:00</div>`;
     }
     let dayColsHtml = '';
 
@@ -2786,14 +2888,23 @@
 
       const laidOut = layoutDayEvents(timedEvs);
       const eventsHtml = laidOut.map(({ev, start, end, lane, laneCount})=>{
-        const top = (start/60) * HOUR_H;
-        const height = Math.max(((end-start)/60) * HOUR_H, 16);
+        // La grille ne montre que 8h-22h : un événement hors de cette plage (rare, ex. saisi à la
+        // main tôt le matin) est simplement rogné à ses bords plutôt que caché, pour rester visible.
+        const clampedStart = Math.max(start, visibleStart);
+        const clampedEnd = Math.min(end, visibleEnd);
+        const top = ((clampedStart - visibleStart)/60) * HOUR_H;
+        const height = Math.max(((clampedEnd-clampedStart)/60) * HOUR_H, 16);
         const width = 100/laneCount;
         const left = lane * width;
-        const isOff = eventType(ev) === 'off';
+        const type = eventType(ev);
+        const isOff = type === 'off';
         const cls = 'week-event' + (isOff ? ' ev-off-preview' : '');
-        const timeLabel = ev.endTime ? `${escapeHtml(ev.time)}–${escapeHtml(ev.endTime)}` : escapeHtml(ev.time);
-        return `<div class="${cls}" style="top:${top}px; height:${height}px; left:${left}%; width:calc(${width}% - 3px); --ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}" data-key="${key}">
+        // Un créneau de travail affiche son moment de la journée (Matin/Midi/...) plutôt que
+        // l'heure exacte, qui n'est qu'une plage fixe dérivée de ce moment (voir WORK_PERIOD_RANGES).
+        const timeLabel = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period])
+          ? WORK_PERIOD_LABELS[ev.period]
+          : (ev.endTime ? `${escapeHtml(ev.time)}–${escapeHtml(ev.endTime)}` : escapeHtml(ev.time));
+        return `<div class="${cls}" style="top:${top}px; height:${height}px; left:${left}%; width:calc(${width}% - 3px); --ev-color:${EVENT_TYPE_COLORS[type]}" data-key="${key}" data-id="${ev.id}" data-start="${start}" data-end="${end}">
           <span class="wt">${timeLabel}</span>${escapeHtml(ev.title || '')}
         </div>`;
       }).join('');
@@ -2814,14 +2925,106 @@
     `;
     grid.querySelectorAll('.week-day-head, .week-allday-cell, .week-day-col').forEach(el=>{
       el.addEventListener('click', (e)=>{
+        // Juste après un glisser-déposer d'événement, on ignore ce clic (voir suppressWeekDayClick
+        // et enableWeekEventDrag) : sinon il rouvrirait le modal du jour juste après le dépôt.
+        if(suppressWeekDayClick){ suppressWeekDayClick = false; return; }
         // Un clic sur un événement précis ouvre quand même le modal du jour (où il peut être
         // modifié/supprimé) : pas besoin d'une interaction séparée pour l'édition depuis la grille.
         openDayModal(el.dataset.key);
       });
     });
-    // Ouvre la vue avec le début de matinée déjà visible plutôt que sur minuit.
-    const scrollEl = document.getElementById('weekBodyScroll');
-    if(scrollEl) scrollEl.scrollTop = 7 * HOUR_H;
+    enableWeekEventDrag(grid);
+  }
+
+  // Glisser-déposer d'un événement chronométré dans la grille horaire de la vue Semaine : on
+  // attrape un .week-event, on le fait suivre le pointeur (position:fixed, donc affranchi du
+  // défilement/débordement de ses parents), et au relâchement on détermine la colonne jour et
+  // l'heure sous le pointeur pour mettre à jour l'événement (même durée, nouveau jour/heure). Un
+  // simple clic (sans déplacement) n'est pas affecté : le modal du jour s'ouvre comme avant.
+  function enableWeekEventDrag(container){
+    container.querySelectorAll('.week-event').forEach(el=>{
+      el.addEventListener('pointerdown', (e)=>{
+        if(e.button !== 0) return;
+        e.preventDefault();
+        const startX = e.clientX, startY = e.clientY;
+        const rect = el.getBoundingClientRect();
+        const grabOffsetX = startX - rect.left;
+        const grabOffsetY = startY - rect.top;
+        const origWidth = rect.width, origHeight = rect.height;
+        const id = el.dataset.id;
+        const durationMin = Math.max(15, Number(el.dataset.end) - Number(el.dataset.start));
+        let dragging = false;
+
+        function onMove(ev){
+          const dx = ev.clientX - startX, dy = ev.clientY - startY;
+          if(!dragging){
+            if(Math.hypot(dx,dy) < 4) return;
+            dragging = true;
+            el.classList.add('week-event-dragging');
+            el.style.position = 'fixed';
+            el.style.width = origWidth + 'px';
+            el.style.height = origHeight + 'px';
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+          }
+          el.style.left = (ev.clientX - grabOffsetX) + 'px';
+          el.style.top = (ev.clientY - grabOffsetY) + 'px';
+        }
+
+        function onUp(ev){
+          document.removeEventListener('pointermove', onMove);
+          document.removeEventListener('pointerup', onUp);
+          document.removeEventListener('pointercancel', onCancel);
+          if(dragging){
+            const boxCenterX = ev.clientX - grabOffsetX + origWidth/2;
+            const boxTop = ev.clientY - grabOffsetY;
+            const dayCols = Array.from(document.querySelectorAll('#calWeekGrid .week-day-col'));
+            const targetCol = dayCols.find(col=>{
+              const r = col.getBoundingClientRect();
+              return boxCenterX >= r.left && boxCenterX < r.right;
+            });
+            if(targetCol){
+              const r = targetCol.getBoundingClientRect();
+              const visibleStart = WEEK_VIEW_START_HOUR * 60;
+              const visibleEnd = WEEK_VIEW_END_HOUR * 60;
+              let newStart = ((boxTop - r.top) / WEEK_HOUR_H) * 60 + visibleStart;
+              newStart = Math.round(newStart / 15) * 15;
+              const maxStart = Math.max(visibleStart, visibleEnd - durationMin);
+              newStart = Math.min(Math.max(newStart, visibleStart), maxStart);
+              const newEnd = newStart + durationMin;
+              const newKey = targetCol.dataset.key;
+              const original = findEventById(id);
+              if(original){
+                const patch = { startDate: newKey, endDate: newKey, time: minutesToTime(newStart), endTime: minutesToTime(newEnd) };
+                // Un créneau de travail déplacé à la main ne correspond plus forcément à un moment
+                // de la journée entier : on efface "period" pour qu'il s'affiche par son heure
+                // exacte désormais (comme un créneau créé avant l'ajout de cette notion).
+                if(eventType(original) === 'travail') patch.period = '';
+                updateEventEverywhere(id, patch);
+              }
+            }
+            renderCalendarView();
+            // Empêche le clic qui pourrait suivre ce relâchement (fin de glisser) de rouvrir le
+            // modal du jour (voir suppressWeekDayClick ci-dessus). Filet de sécurité : si ce clic
+            // n'arrive jamais (cas courant d'un vrai glisser à la souris sur une bonne distance),
+            // le drapeau est remis à zéro peu après, pour ne jamais bloquer un clic ultérieur sans
+            // rapport avec ce glisser.
+            suppressWeekDayClick = true;
+            setTimeout(()=>{ suppressWeekDayClick = false; }, 0);
+          }
+        }
+        function onCancel(){
+          document.removeEventListener('pointermove', onMove);
+          document.removeEventListener('pointerup', onUp);
+          document.removeEventListener('pointercancel', onCancel);
+          if(dragging) renderCalendarView();
+        }
+
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onCancel);
+      });
+    });
   }
 
   function renderCalendarView(){
@@ -2872,6 +3075,8 @@
   const evEndTimeEl = document.getElementById('evEndTime');
   const evCancelEditBtnEl = document.getElementById('evCancelEditBtn');
   const addEventFormEl = document.getElementById('addEventForm');
+  const evPeriodRowEl = document.getElementById('evPeriodRow');
+  const evPeriodChoiceEl = document.getElementById('evPeriodChoice');
   // Répétition "une semaine sur deux" : seulement proposée pour les périodes "avec mon fils",
   // pour lesquelles ce rythme d'alternance est courant et fastidieux à recréer à la main.
   const evRepeatRowEl = document.getElementById('evRepeatRow');
@@ -2886,14 +3091,21 @@
     return checked ? checked.value : 'rdv';
   }
 
+  function currentEvPeriod(){
+    const checked = evPeriodChoiceEl.querySelector('input[name="evPeriod"]:checked');
+    return checked ? checked.value : '';
+  }
+
   function updateEvFormForType(type){
     evTypeChoiceEl.querySelectorAll('.ev-type-option').forEach(opt=>{
       opt.classList.toggle('active', opt.querySelector('input').value === type);
     });
     // Une "période avec mon fils" s'organise en jours (voir le champ "jusqu'au" et la répétition),
-    // pas en heures précises : le bloc heure de début/fin ne s'affiche donc que pour les autres
-    // types, ceux qui se posent vraiment à une heure donnée dans la vue Semaine.
-    evTimeRowEl.style.display = type === 'garde' ? 'none' : '';
+    // pas en heures précises, et un créneau de travail se règle par moment de la journée (voir
+    // evPeriodRowEl juste en dessous) : le bloc heure de début/fin ne s'affiche donc que pour les
+    // types qui se posent vraiment à une heure précise donnée dans la vue Semaine.
+    evTimeRowEl.style.display = (type === 'garde' || type === 'travail') ? 'none' : '';
+    evPeriodRowEl.style.display = type === 'travail' ? '' : 'none';
     if(type === 'garde'){
       evTitleLabelEl.textContent = 'Titre (optionnel)';
       evTitleInputEl.placeholder = 'Ex : Chez son père, vacances...';
@@ -2936,6 +3148,17 @@
     inp.addEventListener('change', ()=> updateEvFormForType(inp.value));
   });
 
+  function updateEvPeriodActive(){
+    const period = currentEvPeriod();
+    evPeriodChoiceEl.querySelectorAll('.ev-period-option').forEach(opt=>{
+      opt.classList.toggle('active', opt.querySelector('input').value === period);
+    });
+  }
+  evPeriodChoiceEl.querySelectorAll('input[name="evPeriod"]').forEach(inp=>{
+    inp.addEventListener('change', updateEvPeriodActive);
+  });
+  updateEvPeriodActive();
+
   evRepeatCheckboxEl.addEventListener('change', ()=>{
     evRepeatUntilWrapEl.style.display = evRepeatCheckboxEl.checked ? '' : 'none';
     // Pré-remplit une échéance par défaut (un an après le début) pour éviter qu'une case cochée
@@ -2956,6 +3179,8 @@
     addEventFormEl.classList.remove('editing');
     evCancelEditBtnEl.style.display = 'none';
     evTypeChoiceEl.querySelector('input[value="rdv"]').checked = true;
+    evPeriodChoiceEl.querySelector('input[value="matin"]').checked = true;
+    updateEvPeriodActive();
     evRepeatCheckboxEl.checked = false;
     evRepeatUntilEl.value = '';
     evTitleInputEl.value = '';
@@ -2981,6 +3206,10 @@
     evNoteInputEl.value = ev.note || '';
     evStartTimeEl.value = ev.time || '';
     evEndTimeEl.value = ev.endTime || '';
+    if(type === 'travail'){
+      evPeriodChoiceEl.querySelector(`input[value="${ev.period || 'matin'}"]`).checked = true;
+      updateEvPeriodActive();
+    }
     const endDateInput = document.getElementById('evEndDate');
     endDateInput.min = ev.startDate;
     endDateInput.value = ev.endDate !== ev.startDate ? ev.endDate : '';
@@ -3043,9 +3272,12 @@
     container.innerHTML = list.map(ev => {
       const multi = ev.startDate !== ev.endDate;
       const type = eventType(ev);
+      // Un créneau de travail affiche son moment de la journée (Matin/Midi/...) plutôt que l'heure
+      // exacte, qui n'en est qu'une plage fixe dérivée (voir WORK_PERIOD_RANGES).
+      const timeText = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period]) ? WORK_PERIOD_LABELS[ev.period] : ev.time;
       return `
       <div class="ev-item" style="border-left:3px solid ${EVENT_TYPE_COLORS[type]}">
-        <span class="time">${ev.time ? escapeHtml(ev.time) : 'Journée'}</span>
+        <span class="time">${timeText ? escapeHtml(timeText) : 'Journée'}</span>
         <div class="info">
           <div class="t">${escapeHtml(ev.title || (type==='garde' ? 'Mon fils' : (type==='off' ? 'Temps off' : ''))) } <span class="n">· ${EVENT_TYPE_LABELS[type]}</span></div>
           ${multi ? `<div class="n">Du ${formatShort(ev.startDate)} au ${formatShort(ev.endDate)}</div>` : ''}
@@ -3094,6 +3326,20 @@
       return;
     }
 
+    // Un créneau de travail se règle par moment de la journée (Matin/Midi/Après-midi/Soir), dont
+    // découle une vraie plage horaire fixe (voir WORK_PERIOD_RANGES) : ça sert de véritable heure
+    // partout ailleurs (tri, positionnement dans la vue Semaine...), seul l'affichage montre le nom
+    // du moment plutôt que l'heure. Les autres types gardent la saisie d'heure libre habituelle.
+    let time = '', endTime = '', period = '';
+    if(type === 'travail'){
+      period = currentEvPeriod();
+      const range = WORK_PERIOD_RANGES[period];
+      if(range){ [time, endTime] = range; }
+    } else {
+      time = evStartTimeEl.value || '';
+      endTime = evEndTimeEl.value || '';
+    }
+
     // Modification d'un événement existant : on met juste à jour ses champs, sans toucher
     // au reste d'une éventuelle série répétée (voir updateEventEverywhere).
     if(editingEventId){
@@ -3101,10 +3347,7 @@
       if(!original){ resetEvForm(); return; }
       const startDate = original.startDate;
       const endDate = (endDateVal && endDateVal >= startDate) ? endDateVal : startDate;
-      updateEventEverywhere(editingEventId, {
-        type, title, note, startDate, endDate,
-        time: evStartTimeEl.value || '', endTime: evEndTimeEl.value || ''
-      });
+      updateEventEverywhere(editingEventId, { type, title, note, startDate, endDate, time, endTime, period });
       resetEvForm();
       renderEventList(); renderCalendarView();
       return;
@@ -3126,7 +3369,8 @@
       const range = getDateRange(occStart, occEnd);
       range.forEach(d=>{
         if(!events[d]) events[d] = [];
-        const ev = {id, time: evStartTimeEl.value || '', endTime: evEndTimeEl.value || '', title, note, startDate: occStart, endDate: occEnd, type};
+        const ev = {id, time, endTime, title, note, startDate: occStart, endDate: occEnd, type};
+        if(period) ev.period = period;
         if(recurrenceId) ev.recurrenceId = recurrenceId;
         events[d].push(ev);
       });
@@ -4405,6 +4649,8 @@
   const igPostCardUsername = document.getElementById('igPostCardUsername');
   const igPostDateLabel = document.getElementById('igPostDateLabel');
   const igTopbarUsername = document.getElementById('igTopbarUsername');
+  const igBioDraftListEl = document.getElementById('igBioDraftList');
+  const addIgBioDraftBtnEl = document.getElementById('addIgBioDraftBtn');
 
   let currentIgPostId = null;
   let igDetailVisible = false;
@@ -4433,6 +4679,7 @@
   function refreshIgActiveTextareas(){
     autoResizeTextarea(igBioInput);
     if(igDetailVisible) autoResizeTextarea(igPostCaptionInput);
+    igBioDraftListEl.querySelectorAll('.ig-bio-draft-textarea').forEach(autoResizeTextarea);
   }
 
   // Pseudo affiché dans l'en-tête du post, la légende et la barre du haut : identique partout,
@@ -4468,6 +4715,45 @@
       igAvatarPlaceholder.style.display = '';
     }
     renderIgAccountBadges();
+    renderIgBioDrafts();
+  }
+
+  // Bloc de réflexion : liste de brouillons de bio indépendants (voir igBioDrafts), affichés à
+  // droite du téléphone. Même comportement que la vraie bio (ajustement automatique de hauteur),
+  // mais sans aucun lien avec igProfile.bio.
+  function renderIgBioDrafts(){
+    if(igBioDrafts.length === 0){
+      igBioDraftListEl.innerHTML = `<div class="ig-bio-draft-empty">Aucun brouillon pour l'instant.</div>`;
+      return;
+    }
+    igBioDraftListEl.innerHTML = igBioDrafts.map((d, i) => `
+      <div class="ig-bio-draft-card" data-draft-id="${d.id}">
+        <div class="ig-bio-draft-header">
+          <span class="ig-bio-draft-label">Option ${i + 1}</span>
+          <button type="button" class="ig-bio-draft-del" data-del-id="${d.id}" title="Supprimer ce brouillon">✕</button>
+        </div>
+        <textarea class="ig-bio-draft-textarea" data-draft-input="${d.id}" placeholder="Brouillon de bio…" rows="1"></textarea>
+      </div>
+    `).join('');
+    igBioDraftListEl.querySelectorAll('.ig-bio-draft-textarea').forEach(ta=>{
+      const id = ta.dataset.draftInput;
+      const d = igBioDrafts.find(x=>String(x.id)===String(id));
+      if(!d) return;
+      ta.value = d.text || '';
+      autoResizeTextarea(ta);
+      ta.addEventListener('input', ()=>{
+        d.text = ta.value;
+        autoResizeTextarea(ta);
+        saveIgBioDrafts();
+      });
+    });
+    igBioDraftListEl.querySelectorAll('.ig-bio-draft-del').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        igBioDrafts = igBioDrafts.filter(x=>String(x.id)!==String(btn.dataset.delId));
+        saveIgBioDrafts();
+        renderIgBioDrafts();
+      });
+    });
   }
 
   function renderIgGrid(){
@@ -4651,6 +4937,15 @@
     renderIgPostPills();
     renderIgProfile();
     selectIgPost(p.id);
+  });
+
+  addIgBioDraftBtnEl.addEventListener('click', ()=>{
+    const d = {id: Date.now()+Math.random(), text: ''};
+    igBioDrafts.push(d);
+    saveIgBioDrafts();
+    renderIgBioDrafts();
+    const ta = igBioDraftListEl.querySelector(`[data-draft-input="${d.id}"]`);
+    if(ta) ta.focus();
   });
 
 
@@ -5251,7 +5546,7 @@
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
-    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, igProfile, igPosts
+    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, igProfile, igPosts, igBioDrafts
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
@@ -5273,6 +5568,7 @@
     pinnedNotes = (state.pinnedNotes && typeof state.pinnedNotes === 'object') ? state.pinnedNotes : {};
     igProfile =(state.igProfile && typeof state.igProfile === 'object') ? {...defaultIgProfile(), ...state.igProfile} : defaultIgProfile();
     igPosts = Array.isArray(state.igPosts) ? state.igPosts : [];
+    igBioDrafts = Array.isArray(state.igBioDrafts) ? state.igBioDrafts : [];
   };
 
   // Filet de sécurité pour la migration : les versions précédentes de l'appli écrivaient encore
