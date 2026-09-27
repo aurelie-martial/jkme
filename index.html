@@ -2314,7 +2314,7 @@
     {id: 'plan', label: "Todo"},
     {id: 'scenes', label: 'Posts / Scènes'},
     {id: 'blocnotes', label: 'Bloc-notes'},
-    {id: 'cal', label: 'Calendrier'},
+    {id: 'cal', label: 'Agenda'},
     {id: 'livre', label: 'Livre'}
   ];
 
@@ -2746,14 +2746,33 @@
   function eventType(ev){ return EVENT_TYPES.includes(ev.type) ? ev.type : 'rdv'; }
 
   // Un "créneau de travail" se règle par moment de la journée plutôt que par heure précise (plus
-  // rapide à remplir, et suffisant pour ce que ça sert ici) : chaque moment correspond à une plage
-  // horaire fixe, qui sert ensuite de vraie heure de début/fin partout ailleurs dans le code (tri,
-  // positionnement dans la vue Semaine, détection de chevauchement...) — seul l'affichage montre le
-  // nom du moment plutôt que l'heure. Un créneau de travail créé avant l'ajout de cette notion (donc
-  // sans "period") garde son heure telle quelle.
+  // rapide à remplir, et suffisant pour ce que ça sert ici) : chaque moment démarre à une heure de
+  // base (WORK_PERIOD_BASE_HOUR) pour un premier créneau d'1h, et sert ensuite de vraie heure de
+  // début/fin partout ailleurs dans le code (tri, positionnement dans la vue Semaine, détection de
+  // chevauchement...) — seul l'affichage montre le nom du moment plutôt que l'heure. Un deuxième
+  // créneau du même moment, le même jour, s'enchaîne automatiquement une heure plus tard (voir
+  // nextWorkSlotTime), sans jamais se superposer aux créneaux déjà posés sur ce moment. Un créneau
+  // de travail créé avant l'ajout de cette notion (donc sans "period") garde son heure telle quelle.
   const WORK_PERIODS = ['matin', 'midi', 'apresmidi', 'soir'];
   const WORK_PERIOD_LABELS = { matin: 'Matin', midi: 'Midi', apresmidi: 'Après-midi', soir: 'Soir' };
-  const WORK_PERIOD_RANGES = { matin: ['08:00','12:00'], midi: ['12:00','14:00'], apresmidi: ['14:00','18:00'], soir: ['18:00','22:00'] };
+  const WORK_PERIOD_BASE_HOUR = { matin: 9, midi: 12, apresmidi: 14, soir: 18 };
+
+  // Calcule le prochain créneau d'1h disponible pour un moment donné de la journée, le jour dayKey :
+  // le premier créneau de ce moment démarre à son heure de base, chaque créneau suivant du même
+  // moment ce même jour s'enchaîne d'une heure (9h, 10h, 11h... pour "Matin"). excludeEventId sert à
+  // ne pas se compter soi-même lors de la modification d'un créneau existant.
+  function nextWorkSlotTime(period, dayKey, excludeEventId){
+    const base = WORK_PERIOD_BASE_HOUR[period];
+    if(base == null || !dayKey) return null;
+    const takenHours = new Set(
+      (events[dayKey] || [])
+        .filter(ev => eventType(ev) === 'travail' && ev.period === period && ev.id !== excludeEventId && ev.time)
+        .map(ev => Math.floor(timeToMinutes(ev.time) / 60))
+    );
+    let h = base;
+    while(takenHours.has(h)) h++;
+    return [minutesToTime(h*60), minutesToTime((h+1)*60)];
+  }
 
   function renderCalendar(){
     const y = viewDate.getFullYear(), m = viewDate.getMonth();
@@ -2814,7 +2833,7 @@
           const type = eventType(ev);
           const isOff = type === 'off';
           // Un créneau de travail affiche son moment de la journée plutôt que l'heure exacte
-          // (voir WORK_PERIOD_RANGES) : "Matin · Écriture" plutôt que "08:00 · Écriture".
+          // (voir nextWorkSlotTime) : "Matin · Écriture" plutôt que "09:00 · Écriture".
           const timeText = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period]) ? WORK_PERIOD_LABELS[ev.period] : ev.time;
           const label = timeText ? `${escapeHtml(timeText)} · ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
           const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
@@ -2964,7 +2983,7 @@
         const isOff = type === 'off';
         const cls = 'week-event' + (isOff ? ' ev-off-preview' : '');
         // Un créneau de travail affiche son moment de la journée (Matin/Midi/...) plutôt que
-        // l'heure exacte, qui n'est qu'une plage fixe dérivée de ce moment (voir WORK_PERIOD_RANGES).
+        // l'heure exacte, qui n'est qu'une heure de début/fin dérivée de ce moment (voir nextWorkSlotTime).
         const timeLabel = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period])
           ? WORK_PERIOD_LABELS[ev.period]
           : (ev.endTime ? `${escapeHtml(ev.time)}–${escapeHtml(ev.endTime)}` : escapeHtml(ev.time));
@@ -2987,14 +3006,28 @@
         </div>
       </div>
     `;
-    grid.querySelectorAll('.week-day-head, .week-allday-cell, .week-day-col').forEach(el=>{
+    grid.querySelectorAll('.week-day-head, .week-allday-cell').forEach(el=>{
       el.addEventListener('click', (e)=>{
         // Juste après un glisser-déposer d'événement, on ignore ce clic (voir suppressWeekDayClick
         // et enableWeekEventDrag) : sinon il rouvrirait le modal du jour juste après le dépôt.
         if(suppressWeekDayClick){ suppressWeekDayClick = false; return; }
+        openDayModal(el.dataset.key);
+      });
+    });
+    grid.querySelectorAll('.week-day-col').forEach(el=>{
+      el.addEventListener('click', (e)=>{
+        if(suppressWeekDayClick){ suppressWeekDayClick = false; return; }
         // Un clic sur un événement précis ouvre quand même le modal du jour (où il peut être
         // modifié/supprimé) : pas besoin d'une interaction séparée pour l'édition depuis la grille.
-        openDayModal(el.dataset.key);
+        // Heure du point cliqué dans la colonne (même calcul que le glisser-déposer ci-dessous,
+        // arrondi au quart d'heure) : pré-remplit l'heure de début (et une fin par défaut d'une
+        // heure plus tard) du formulaire, pour ne pas avoir à ressaisir à la main un créneau déjà
+        // visé du doigt dans la grille.
+        const r = el.getBoundingClientRect();
+        let clickedStart = ((e.clientY - r.top) / HOUR_H) * 60 + visibleStart;
+        clickedStart = Math.round(clickedStart / 15) * 15;
+        clickedStart = Math.min(Math.max(clickedStart, visibleStart), visibleEnd - 15);
+        openDayModal(el.dataset.key, minutesToTime(clickedStart));
       });
     });
     enableWeekEventDrag(grid);
@@ -3314,7 +3347,12 @@
     return ranges;
   }
 
-  function openDayModal(key){
+  // prefillStartTime (optionnel, "HH:MM") : vient d'un clic sur une case horaire précise de la vue
+  // Semaine (voir renderWeekView) plutôt que sur l'en-tête du jour ou la ligne "Journée" — dans ce
+  // cas, on pré-remplit l'heure de début et une heure de fin par défaut (une heure plus tard) au
+  // lieu de laisser le formulaire vide, puisque le bon créneau a déjà été visé dans la grille. Sans
+  // effet pour un créneau de travail (qui se règle par moment de la journée, pas par heure précise).
+  function openDayModal(key, prefillStartTime){
     currentKey = key;
     const [y,m,d] = key.split('-').map(Number);
     const dateObj = new Date(y, m-1, d);
@@ -3322,6 +3360,11 @@
     document.getElementById('modalDateLabel').textContent = label.charAt(0).toUpperCase()+label.slice(1);
     document.getElementById('evEndDate').min = key;
     resetEvForm();
+    if(prefillStartTime){
+      evStartTimeEl.value = prefillStartTime;
+      const endMin = Math.min(timeToMinutes(prefillStartTime) + 60, WEEK_VIEW_END_HOUR * 60);
+      evEndTimeEl.value = minutesToTime(endMin);
+    }
     renderEventList();
     overlay.classList.add('active');
   }
@@ -3337,7 +3380,7 @@
       const multi = ev.startDate !== ev.endDate;
       const type = eventType(ev);
       // Un créneau de travail affiche son moment de la journée (Matin/Midi/...) plutôt que l'heure
-      // exacte, qui n'en est qu'une plage fixe dérivée (voir WORK_PERIOD_RANGES).
+      // exacte, qui n'en est qu'une heure de début/fin dérivée (voir nextWorkSlotTime).
       const timeText = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period]) ? WORK_PERIOD_LABELS[ev.period] : ev.time;
       return `
       <div class="ev-item" style="border-left:3px solid ${EVENT_TYPE_COLORS[type]}">
@@ -3391,14 +3434,18 @@
     }
 
     // Un créneau de travail se règle par moment de la journée (Matin/Midi/Après-midi/Soir), dont
-    // découle une vraie plage horaire fixe (voir WORK_PERIOD_RANGES) : ça sert de véritable heure
+    // découle une vraie heure de début/fin (voir nextWorkSlotTime) : ça sert de véritable heure
     // partout ailleurs (tri, positionnement dans la vue Semaine...), seul l'affichage montre le nom
     // du moment plutôt que l'heure. Les autres types gardent la saisie d'heure libre habituelle.
+    // Le jour de référence pour ce calcul est celui de l'événement modifié s'il y en a un (il peut
+    // différer de currentKey si le modal a été ouvert autrement entre-temps), sinon celui du modal.
+    const editingOriginal = editingEventId ? findEventById(editingEventId) : null;
+    const dayKeyForPeriod = editingOriginal ? editingOriginal.startDate : currentKey;
     let time = '', endTime = '', period = '';
     if(type === 'travail'){
       period = currentEvPeriod();
-      const range = WORK_PERIOD_RANGES[period];
-      if(range){ [time, endTime] = range; }
+      const slot = nextWorkSlotTime(period, dayKeyForPeriod, editingEventId);
+      if(slot){ [time, endTime] = slot; }
     } else {
       time = evStartTimeEl.value || '';
       endTime = evEndTimeEl.value || '';
@@ -3407,9 +3454,8 @@
     // Modification d'un événement existant : on met juste à jour ses champs, sans toucher
     // au reste d'une éventuelle série répétée (voir updateEventEverywhere).
     if(editingEventId){
-      const original = findEventById(editingEventId);
-      if(!original){ resetEvForm(); return; }
-      const startDate = original.startDate;
+      if(!editingOriginal){ resetEvForm(); return; }
+      const startDate = editingOriginal.startDate;
       const endDate = (endDateVal && endDateVal >= startDate) ? endDateVal : startDate;
       updateEventEverywhere(editingEventId, { type, title, note, startDate, endDate, time, endTime, period });
       resetEvForm();
@@ -4684,7 +4730,7 @@
   // Pas persistée : l'onglet rouvre toujours sur "Posts" au chargement, comme currentBlocView.
   let sceneSubView = 'posts';
   // Ciblé par #sceneSubviewToggle (et non .scene-subview-btn tout court, qui correspond aussi aux
-  // boutons Mois/Semaine du Calendrier) : un sélecteur non ciblé attachait ce gestionnaire à ces
+  // boutons Mois/Semaine de l'Agenda) : un sélecteur non ciblé attachait ce gestionnaire à ces
   // boutons-là aussi, ce qui perturbait leur propre état actif dès qu'on cliquait sur "Semaine".
   document.querySelectorAll('#sceneSubviewToggle .scene-subview-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
