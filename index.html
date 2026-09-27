@@ -1601,7 +1601,21 @@
   // n'y est recopié à la main.
   let igBioDrafts = [];
 
-  const syncCloud = () => { if(window.__rg_scheduleSync) window.__rg_scheduleSync(); renderStorageFooter(); };
+  // renderStorageFooter() (voir sa définition) recalcule le poids total des images en relisant le
+  // contenu de TOUTES les scènes, notes, post-it et sous-onglets personnalisés de l'appli — un
+  // parcours coûteux sur une appli déjà bien remplie. syncCloud() étant appelé à chaque frappe dans
+  // n'importe quel bloc de texte enrichi (Global, Mécanisme, Scène, post-it...), le refaire en direct
+  // sur chaque caractère tapé pouvait ralentir la frappe au point de perdre des caractères — et donc
+  // donner l'impression que le curseur "sautait" ou disparaissait, surtout dans les gros blocs comme
+  // Global. On décale donc ce recalcul un court instant après la dernière modification plutôt que de
+  // le refaire en direct à chaque frappe ; seul ce pied de page (purement informatif) est concerné,
+  // la sauvegarde réelle (__rg_scheduleSync, vers Firestore) garde son propre délai, inchangé.
+  let storageFooterDebounceTimer = null;
+  const syncCloud = () => {
+    if(window.__rg_scheduleSync) window.__rg_scheduleSync();
+    clearTimeout(storageFooterDebounceTimer);
+    storageFooterDebounceTimer = setTimeout(renderStorageFooter, 400);
+  };
   const saveTasks = () => { syncCloud(); };
   const saveEvents = () => { syncCloud(); };
   const saveCategories = () => { syncCloud(); };
@@ -1833,10 +1847,21 @@
       if(block && block.nodeType !== 1) block = block.parentNode;
       if(!block || block.tagName === 'LI') return;
 
+      // Court-circuit bon marché avant de reconstruire le texte du bloc : dans un gros bloc (le
+      // Global peut en accumuler beaucoup), lire .textContent puis le passer dans une regex à
+      // CHAQUE espace tapé finit par coûter cher et ralentir la frappe. Le contenu du bloc ne peut
+      // de toute façon valoir exactement "- " que s'il n'a qu'un seul enfant, un nœud texte de
+      // quelques caractères tout au plus : on vérifie ça d'abord (accès O(1), pas de sérialisation)
+      // et on s'arrête là dans l'immense majorité des cas (un bloc qui contient déjà du texte).
+      const scopeEl = block === containerEl ? containerEl : block;
+      if(scopeEl.childNodes.length > 1) return;
+      const onlyChild = scopeEl.childNodes[0];
+      if(onlyChild && onlyChild.nodeType === 3 && onlyChild.length > 4) return;
+
       // Un espace tapé en toute fin de bloc est souvent inséré par le navigateur comme une espace
       // insécable (&nbsp;, U+00A0) plutôt qu'une espace normale, pour éviter qu'il ne s'affiche
       // pas ; on normalise avant de comparer.
-      const rawText = block === containerEl ? containerEl.textContent : block.textContent;
+      const rawText = scopeEl.textContent;
       const text = (rawText || '').replace(/ /g, ' ');
       if(text !== '- ') return;
 
