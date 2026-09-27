@@ -1321,7 +1321,7 @@
 
     <div class="scene-subview-panel" id="livreSubviewBook">
       <div class="book-viewer">
-        <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf#view=FitH&pagemode=thumbs" allow="autoplay"></iframe>
+        <iframe id="bookIframe" class="book-iframe" src="jusqua-meteindre.pdf" allow="autoplay"></iframe>
       </div>
       <a href="jusqua-meteindre.pdf" target="_blank" rel="noopener" class="book-fallback-link" id="bookFallbackLink">
         ⧉ Le PDF ne s'affiche pas correctement ? Ouvre-le dans un nouvel onglet
@@ -5711,18 +5711,18 @@
   }
   window.__rg_renderAll = renderAll;
 
-  // Sur mobile, la plupart des navigateurs (Safari iOS en tête) ne savent pas afficher un PDF
-  // directement dans une iframe. On bascule alors sur la visionneuse PDF.js : elle dessine le
-  // PDF elle-même (dans un <canvas>), donc elle fonctionne partout sans dépendre du moteur de
-  // rendu PDF natif du navigateur.
-  (function setupMobileBookViewer(){
+  // Le moteur de rendu PDF natif du navigateur est trop variable d'un appareil à l'autre : sur
+  // mobile (Safari iOS en tête) il ne sait souvent pas afficher un PDF dans une iframe, et même sur
+  // desktop il pouvait ignorer les réglages demandés et retomber sur un zoom "page entière" (tout
+  // petit, façon "dézoomé", et sans confort de défilement continu). On bascule donc toujours sur la
+  // visionneuse PDF.js : elle dessine le PDF elle-même (dans un <canvas>), avec un rendu identique
+  // partout, et #zoom=page-width l'ajuste à la largeur (lecture confortable, défilement continu
+  // d'une page à l'autre) plutôt que ce zoom "page entière" par défaut.
+  (function setupBookViewer(){
     const bookIframe = document.getElementById('bookIframe');
     if(!bookIframe) return;
-    const isMobile = window.matchMedia('(max-width: 640px)').matches
-      || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if(!isMobile) return;
     const pdfUrl = new URL(bookIframe.getAttribute('src').split('#')[0], window.location.href).href;
-    bookIframe.src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(pdfUrl);
+    bookIframe.src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(pdfUrl) + '#zoom=page-width';
   })();
   window.__rg_getState = () => ({
     tasks, events, categories, partis, scenes,
