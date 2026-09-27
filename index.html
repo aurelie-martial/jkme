@@ -556,6 +556,14 @@
   }
   .scene-pill-pin:hover{opacity:0.85;}
   .scene-pill-pin.active{opacity:1; color:var(--peche); transform:scale(1.08);}
+
+  /* + Ajouter une note dans ce dossier : toujours visible (même logique que l'épingle ci-dessus). */
+  .scene-pill-add-note{
+    flex:0 0 auto; width:20px; height:20px; border:1px solid var(--line); border-radius:6px;
+    background:var(--panel); color:var(--ink-soft); cursor:pointer; font-size:0.85rem; line-height:1;
+    padding:0; font-weight:700; transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .scene-pill-add-note:hover{background:var(--menthe); color:#fff; border-color:var(--menthe);}
   .scene-pills-section-label{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:0.66rem; letter-spacing:0.05em;
     text-transform:uppercase; color:var(--ink-soft); margin:12px 2px 4px;
@@ -1097,14 +1105,14 @@
         </div>
       </div>
       <div class="scene-subview-toggle" id="calViewToggle">
-        <button type="button" class="scene-subview-btn active" data-calview="month">Mois</button>
-        <button type="button" class="scene-subview-btn" data-calview="week">Semaine</button>
+        <button type="button" class="scene-subview-btn" data-calview="month">Mois</button>
+        <button type="button" class="scene-subview-btn active" data-calview="week">Semaine</button>
       </div>
-      <div class="weekday-row" id="calWeekdayRow">
+      <div class="weekday-row" id="calWeekdayRow" style="display:none;">
         <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
       </div>
-      <div class="calendar-grid" id="calGrid"></div>
-      <div class="week-view" id="calWeekGrid" style="display:none;"></div>
+      <div class="calendar-grid" id="calGrid" style="display:none;"></div>
+      <div class="week-view" id="calWeekGrid"></div>
     </div>
   </div>
 
@@ -1567,6 +1575,11 @@
   // (Global / Parti pris / Mécanisme / sous-onglets perso + séparateurs).
   let sceneOrder = null;
   let blocNotesOrder = null;
+
+  // Dossier visé par le prochain "Ajouter une note" (via le "+" d'un dossier plutôt que le bouton
+  // général de la colonne) : la note créée est insérée directement dans ce dossier au lieu d'être
+  // ajoutée en fin de liste. Remis à null après chaque création (voir addSubTabForm).
+  let pendingNoteFolderId = null;
 
   // Couleurs de contour personnalisées des sous-onglets, indexées par une clé stable
   // ("scene:<id>", "global", "parti", "mecanisme", "custom:<id>").
@@ -2572,8 +2585,11 @@
   let viewDate = new Date();
   // 'month' ou 'week' : quelle grille afficher. Les deux vues partagent viewDate comme date de
   // référence (le mois qui la contient pour la vue Mois, la semaine qui la contient pour la vue
-  // Semaine) plutôt que deux états séparés, pour rester simple.
-  let calViewMode = 'month';
+  // Semaine) plutôt que deux états séparés, pour rester simple. Semaine par défaut à l'ouverture
+  // (voir aussi le HTML de calViewToggle/calWeekdayRow/calGrid/calWeekGrid, qui reflète ce choix
+  // dès le départ, et renderAll() qui appelle renderCalendarView() plutôt que renderCalendar()
+  // directement pour respecter ce mode par défaut).
+  let calViewMode = 'week';
 
   function fmtKey(y,m,d){
     return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -4136,6 +4152,10 @@
               <span class="scene-folder-icon">📁</span>
               <span class="scene-folder-label">${escapeHtml(entry.label)}</span>
             </button>
+            <!-- Toujours visible (comme l'épingle des notes/onglets spéciaux ailleurs), pas seulement en
+                 mode "Organiser" : ajouter une note dans un dossier est un geste courant, pas un réglage
+                 d'organisation ponctuel. -->
+            <button type="button" class="scene-pill-add-note" data-add-note-folder="${entry.id}" title="Ajouter une note dans ce dossier">+</button>
             <div class="scene-pill-actions">
               <button type="button" class="scene-pill-pin ${pinned?'active':''}" data-pin-key="${folderKey}" title="${pinned?'Désépingler ce dossier':'Épingler ce dossier (remonte en tête de liste)'}">${pinned?'★':'☆'}</button>
               <input type="color" class="scene-pill-color" data-color-key="${folderKey}" value="${pillColors[folderKey] || '#94a3b8'}" title="Couleur des notes de ce dossier">
@@ -4291,6 +4311,18 @@
         else if(idx === 'parti') selectParti();
         else if(idx === 'mecanisme') selectMecanismeSub();
         else if(idx.startsWith('custom:')) selectCustomSubTab(idx.slice(7));
+      });
+    });
+
+    // "+" sur l'en-tête d'un dossier : ouvre le même modal que "+ Ajouter une note" (en-tête de
+    // colonne), mais mémorise le dossier visé (pendingNoteFolderId) pour que la note créée soit
+    // insérée directement dedans plutôt qu'en fin de liste (voir addSubTabForm plus bas).
+    blocNotesPillsEl.querySelectorAll('.scene-pill-add-note').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        pendingNoteFolderId = btn.dataset.addNoteFolder;
+        document.getElementById('newSubTabNameInput').value = '';
+        subTabOverlay.classList.add('active');
       });
     });
 
@@ -4603,10 +4635,13 @@
   // ---------- BASCULE SCÈNES / POSTS ----------
   // Pas persistée : l'onglet rouvre toujours sur "Posts" au chargement, comme currentBlocView.
   let sceneSubView = 'posts';
-  document.querySelectorAll('.scene-subview-btn').forEach(btn=>{
+  // Ciblé par #sceneSubviewToggle (et non .scene-subview-btn tout court, qui correspond aussi aux
+  // boutons Mois/Semaine du Calendrier) : un sélecteur non ciblé attachait ce gestionnaire à ces
+  // boutons-là aussi, ce qui perturbait leur propre état actif dès qu'on cliquait sur "Semaine".
+  document.querySelectorAll('#sceneSubviewToggle .scene-subview-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       sceneSubView = btn.dataset.subview;
-      document.querySelectorAll('.scene-subview-btn').forEach(b=>b.classList.toggle('active', b.dataset.subview === sceneSubView));
+      document.querySelectorAll('#sceneSubviewToggle .scene-subview-btn').forEach(b=>b.classList.toggle('active', b.dataset.subview === sceneSubView));
       document.getElementById('sceneSubviewScenes').style.display = sceneSubView === 'scenes' ? '' : 'none';
       document.getElementById('sceneSubviewPosts').style.display = sceneSubView === 'posts' ? '' : 'none';
       if(sceneSubView === 'posts'){
@@ -5222,11 +5257,14 @@
   // Modal d'ajout de sous-onglet
   const subTabOverlay = document.getElementById('subTabOverlay');
   document.getElementById('addSubTabBtn').addEventListener('click', ()=>{
+    // Bouton général de la colonne (pas le "+" d'un dossier précis) : la note ira en fin de liste,
+    // comme avant (voir pendingNoteFolderId).
+    pendingNoteFolderId = null;
     document.getElementById('newSubTabNameInput').value = '';
     subTabOverlay.classList.add('active');
   });
-  document.getElementById('closeSubTabModal').addEventListener('click', ()=> subTabOverlay.classList.remove('active'));
-  subTabOverlay.addEventListener('click', e=>{ if(e.target===subTabOverlay) subTabOverlay.classList.remove('active'); });
+  document.getElementById('closeSubTabModal').addEventListener('click', ()=>{ pendingNoteFolderId = null; subTabOverlay.classList.remove('active'); });
+  subTabOverlay.addEventListener('click', e=>{ if(e.target===subTabOverlay){ pendingNoteFolderId = null; subTabOverlay.classList.remove('active'); } });
 
   document.getElementById('addSubTabForm').addEventListener('submit', e=>{
     e.preventDefault();
@@ -5236,6 +5274,21 @@
     const id = 'custom_' + Date.now();
     customSceneTabs.push({id, label: name, format});
     saveCustomSceneTabs();
+    // Note créée via le "+" d'un dossier précis : on l'insère directement à la fin de ses notes
+    // existantes (juste avant le dossier suivant, s'il y en a un) plutôt que de la laisser tout en
+    // bas de la liste complète, où reconcileBlocNotesOrder() l'aurait sinon ajoutée par défaut.
+    if(pendingNoteFolderId != null){
+      if(!Array.isArray(blocNotesOrder)) reconcileBlocNotesOrder();
+      const folderIndex = blocNotesOrder.findIndex(en=>en.type==='divider' && String(en.id)===String(pendingNoteFolderId));
+      if(folderIndex !== -1){
+        let insertAt = folderIndex + 1;
+        while(insertAt < blocNotesOrder.length && blocNotesOrder[insertAt].type !== 'divider') insertAt++;
+        blocNotesOrder.splice(insertAt, 0, {type:'custom', id});
+        blocNotesOrder[folderIndex].collapsed = false;
+        saveBlocNotesOrder();
+      }
+      pendingNoteFolderId = null;
+    }
     subTabOverlay.classList.remove('active');
     selectCustomSubTab(id);
   });
@@ -5500,7 +5553,9 @@
     initMecanismeEditor();
     renderCategorySelect();
     renderTasks();
-    renderCalendar();
+    // renderCalendarView() (et non renderCalendar() directement) pour respecter calViewMode, qui
+    // peut valoir 'week' (vue par défaut à l'ouverture, voir sa déclaration).
+    renderCalendarView();
     renderPartis();
     renderStorageFooter();
     renderIgProfile();
