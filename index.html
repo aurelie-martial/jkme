@@ -2826,7 +2826,7 @@
           const leftRound = ev.startDate === key || isMonday;
           const rightRound = ev.endDate === key || isSunday;
           const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
-          return `<div class="ev-garde-bar" style="border-radius:${radius}" title="${escapeHtml(ev.title || 'Mon fils')}"></div>`;
+          return `<div class="ev-garde-bar" style="border-radius:${radius}" title="${escapeHtml(ev.title || 'Mon fils')}" data-id="${ev.id}"></div>`;
         }).join('') +
         otherEvs.slice(0, maxPreview).map(ev => {
           const multi = ev.startDate !== ev.endDate;
@@ -2837,10 +2837,17 @@
           const timeText = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period]) ? WORK_PERIOD_LABELS[ev.period] : ev.time;
           const label = timeText ? `${escapeHtml(timeText)} · ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
           const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
-          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[type]}">${multi ? '↔ ' : ''}${label}</div>`;
+          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[type]}" data-id="${ev.id}">${multi ? '↔ ' : ''}${label}</div>`;
         }).join('') +
         (otherEvs.length > maxPreview ? `<div class="ev-more">+${otherEvs.length - maxPreview} autre${otherEvs.length - maxPreview > 1 ? 's' : ''}</div>` : '');
-      cell.addEventListener('click', ()=>openDayModal(key));
+      // Un clic sur un événement précis (barre "Mon fils" ou aperçu) bascule directement en
+      // modification, sans passer par le récap de la journée (voir openEventForEdit) ; un clic
+      // ailleurs dans la case (jour vide, "+N autres"...) ouvre le récap comme avant.
+      cell.addEventListener('click', (e)=>{
+        const evEl = e.target.closest('[data-id]');
+        if(evEl){ openEventForEdit(key, evEl.dataset.id); return; }
+        openDayModal(key);
+      });
       grid.appendChild(cell);
     }
   }
@@ -2960,12 +2967,12 @@
           const leftRound = ev.startDate === key || isMonday;
           const rightRound = ev.endDate === key || isSunday;
           const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
-          return `<div class="week-garde-bar" style="border-radius:${radius}">${leftRound ? escapeHtml(ev.title || 'Mon fils') : ''}</div>`;
+          return `<div class="week-garde-bar" style="border-radius:${radius}" data-id="${ev.id}">${leftRound ? escapeHtml(ev.title || 'Mon fils') : ''}</div>`;
         }).join('') +
         untimedEvs.map(ev=>{
           const isOff = eventType(ev) === 'off';
           const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
-          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}">${escapeHtml(ev.title)}</div>`;
+          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}" data-id="${ev.id}">${escapeHtml(ev.title)}</div>`;
         }).join('') +
       `</div>`;
 
@@ -3011,14 +3018,21 @@
         // Juste après un glisser-déposer d'événement, on ignore ce clic (voir suppressWeekDayClick
         // et enableWeekEventDrag) : sinon il rouvrirait le modal du jour juste après le dépôt.
         if(suppressWeekDayClick){ suppressWeekDayClick = false; return; }
+        // Un clic sur un événement précis (barre "Mon fils" ou aperçu sans heure) bascule directement
+        // en modification, sans passer par le récap de la journée (voir openEventForEdit).
+        const evEl = e.target.closest('[data-id]');
+        if(evEl){ openEventForEdit(el.dataset.key, evEl.dataset.id); return; }
         openDayModal(el.dataset.key);
       });
     });
     grid.querySelectorAll('.week-day-col').forEach(el=>{
       el.addEventListener('click', (e)=>{
         if(suppressWeekDayClick){ suppressWeekDayClick = false; return; }
-        // Un clic sur un événement précis ouvre quand même le modal du jour (où il peut être
-        // modifié/supprimé) : pas besoin d'une interaction séparée pour l'édition depuis la grille.
+        // Un clic sur un événement précis bascule directement en modification, sans passer par le
+        // récap de la journée (voir openEventForEdit) : plus rapide que devoir d'abord repérer le
+        // bon rdv dans la liste puis cliquer sur son crayon.
+        const eventEl = e.target.closest('.week-event');
+        if(eventEl){ openEventForEdit(el.dataset.key, eventEl.dataset.id); return; }
         // Heure du point cliqué dans la colonne (même calcul que le glisser-déposer ci-dessous,
         // arrondi au quart d'heure) : pré-remplit l'heure de début (et une fin par défaut d'une
         // heure plus tard) du formulaire, pour ne pas avoir à ressaisir à la main un créneau déjà
@@ -3037,7 +3051,8 @@
   // attrape un .week-event, on le fait suivre le pointeur (position:fixed, donc affranchi du
   // défilement/débordement de ses parents), et au relâchement on détermine la colonne jour et
   // l'heure sous le pointeur pour mettre à jour l'événement (même durée, nouveau jour/heure). Un
-  // simple clic (sans déplacement) n'est pas affecté : le modal du jour s'ouvre comme avant.
+  // simple clic (sans déplacement) n'est pas affecté : il bascule directement en modification de
+  // l'événement cliqué, comme avant (voir le clic sur .week-day-col plus haut).
   function enableWeekEventDrag(container){
     container.querySelectorAll('.week-event').forEach(el=>{
       el.addEventListener('pointerdown', (e)=>{
@@ -3367,6 +3382,15 @@
     }
     renderEventList();
     overlay.classList.add('active');
+  }
+
+  // Ouvre le modal du jour puis bascule aussitôt en modification de l'événement cliqué (id) : pas
+  // besoin de passer par le récap de la journée puis son bouton crayon pour modifier un rdv déjà
+  // repéré directement dans la grille (vue Semaine) ou l'aperçu (vue Mois) — voir les clics sur
+  // .week-event/.week-garde-bar/.ev-preview/.ev-garde-bar plus bas et dans renderCalendar.
+  function openEventForEdit(key, id){
+    openDayModal(key);
+    startEditEvent(id);
   }
 
   function renderEventList(){
