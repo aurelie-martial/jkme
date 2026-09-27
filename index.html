@@ -717,14 +717,25 @@
   .ig-bio-draft-label{font-size:0.68rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em;}
   .ig-bio-draft-del{border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:0.85rem; padding:2px 4px; line-height:1;}
   .ig-bio-draft-del:hover{color:var(--rose);}
+  /* Reprend l'en-tête du profil (nom affiché, @ puis descriptif) en miniature, sur fond blanc comme
+     le vrai téléphone, pour que chaque option se lise comme un aperçu fidèle plutôt qu'un simple
+     champ de texte. */
+  .ig-bio-draft-fields{
+    background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+  }
+  .ig-draft-displayname-input, .ig-draft-username-input, .ig-draft-bio-input{
+    display:block; width:100%; border:none; background:none; font-family:inherit; color:#262626; padding:2px 0;
+  }
+  .ig-draft-displayname-input{font-weight:700; font-size:0.85rem;}
+  .ig-draft-username-input{
+    font-weight:400; font-size:0.8rem; color:var(--ink-soft); padding-bottom:6px;
+    border-bottom:1px solid var(--line); margin-bottom:5px;
+  }
   /* Même comportement d'ajustement automatique que la vraie bio (voir autoResizeTextarea), pour
      que ces brouillons se lisent aussi facilement qu'elle une fois remplis. */
-  .ig-bio-draft-textarea{
-    width:100%; resize:none; overflow:hidden; min-height:1.4em; background:#fff; color:#262626;
-    border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-family:inherit;
-    font-size:0.82rem; line-height:1.4;
-  }
-  .ig-bio-draft-textarea:focus{outline:none; border-color:var(--lavande);}
+  .ig-draft-bio-input{resize:none; overflow:hidden; min-height:1.4em; font-size:0.82rem; line-height:1.4;}
+  .ig-draft-displayname-input:focus, .ig-draft-username-input:focus, .ig-draft-bio-input:focus{outline:none;}
+  .ig-draft-displayname-input::placeholder, .ig-draft-username-input::placeholder, .ig-draft-bio-input::placeholder{color:var(--ink-soft);}
 
   /* Repli de la colonne de notes du Bloc-notes (desktop uniquement) : la colonne se réduit à une
      fine bande ne montrant plus que le bouton pour la redéployer, ce qui laisse plus de place à
@@ -1240,13 +1251,14 @@
             </div>
           </div>
 
-          <!-- Bloc de réflexion, à droite du téléphone : plusieurs brouillons de bio empilés (même
-               principe que la bio du profil ci-dessus) pour comparer des formulations avant de
-               choisir, sans que ça touche à la vraie bio tant que rien n'est recopié dedans. -->
+          <!-- Bloc de réflexion, à droite du téléphone : plusieurs brouillons de profil empilés,
+               reprenant chacun les trois champs de l'en-tête (nom du compte, @ et descriptif) pour
+               comparer des combinaisons complètes avant de choisir, sans que ça touche au vrai
+               profil tant que rien n'est recopié dedans. -->
           <div class="ig-reflection-panel" id="igReflectionPanel">
             <div class="ig-reflection-header">
-              <h4>Brouillons de bio</h4>
-              <button type="button" class="btn-add-subtab" id="addIgBioDraftBtn">+ Ajouter une bio</button>
+              <h4>Brouillons de profil</h4>
+              <button type="button" class="btn-add-subtab" id="addIgBioDraftBtn">+ Ajouter une option</button>
             </div>
             <div class="ig-bio-draft-list" id="igBioDraftList"></div>
           </div>
@@ -1595,10 +1607,10 @@
   // poster réellement. Purement visuel : aucune vraie connexion à Instagram.
   let igProfile = defaultIgProfile();
   let igPosts = [];
-  // Brouillons de bio : des blocs de texte indépendants (même comportement que la vraie bio, voir
-  // renderIgBioDrafts), affichés à droite du téléphone, pour comparer plusieurs formulations avant
-  // de choisir laquelle recopier dans la vraie bio. N'a aucun effet sur igProfile.bio tant que rien
-  // n'y est recopié à la main.
+  // Brouillons de profil : chaque brouillon reprend les trois champs de l'en-tête (nom du compte,
+  // @ et descriptif/bio, voir renderIgBioDrafts) pour pouvoir comparer des combinaisons complètes
+  // entre eux, affichés à droite du téléphone. N'a aucun effet sur igProfile tant que rien n'est
+  // recopié à la main dans le vrai profil.
   let igBioDrafts = [];
 
   // renderStorageFooter() (voir sa définition) recalcule le poids total des images en relisant le
@@ -4739,7 +4751,7 @@
   function refreshIgActiveTextareas(){
     autoResizeTextarea(igBioInput);
     if(igDetailVisible) autoResizeTextarea(igPostCaptionInput);
-    igBioDraftListEl.querySelectorAll('.ig-bio-draft-textarea').forEach(autoResizeTextarea);
+    igBioDraftListEl.querySelectorAll('.ig-draft-bio-input').forEach(autoResizeTextarea);
   }
 
   // Pseudo affiché dans l'en-tête du post, la légende et la barre du haut : identique partout,
@@ -4778,9 +4790,10 @@
     renderIgBioDrafts();
   }
 
-  // Bloc de réflexion : liste de brouillons de bio indépendants (voir igBioDrafts), affichés à
-  // droite du téléphone. Même comportement que la vraie bio (ajustement automatique de hauteur),
-  // mais sans aucun lien avec igProfile.bio.
+  // Bloc de réflexion : liste de brouillons de profil indépendants (voir igBioDrafts), affichés à
+  // droite du téléphone. Chaque brouillon reprend les trois champs de l'en-tête (nom affiché, @ et
+  // bio) avec le même comportement que les vrais champs (ajustement automatique de hauteur de la
+  // bio), mais sans aucun lien avec igProfile tant que rien n'est recopié à la main dedans.
   function renderIgBioDrafts(){
     if(igBioDrafts.length === 0){
       igBioDraftListEl.innerHTML = `<div class="ig-bio-draft-empty">Aucun brouillon pour l'instant.</div>`;
@@ -4790,20 +4803,25 @@
       <div class="ig-bio-draft-card" data-draft-id="${d.id}">
         <div class="ig-bio-draft-header">
           <span class="ig-bio-draft-label">Option ${i + 1}</span>
-          <button type="button" class="ig-bio-draft-del" data-del-id="${d.id}" title="Supprimer ce brouillon">✕</button>
+          <button type="button" class="ig-bio-draft-del" data-del-id="${d.id}" title="Supprimer cette option">✕</button>
         </div>
-        <textarea class="ig-bio-draft-textarea" data-draft-input="${d.id}" placeholder="Brouillon de bio…" rows="1"></textarea>
+        <div class="ig-bio-draft-fields">
+          <input type="text" class="ig-draft-displayname-input" data-draft-input="${d.id}" data-draft-field="displayName" placeholder="Nom affiché">
+          <input type="text" class="ig-draft-username-input" data-draft-input="${d.id}" data-draft-field="username" placeholder="pseudo_instagram">
+          <textarea class="ig-draft-bio-input" data-draft-input="${d.id}" data-draft-field="bio" maxlength="150" placeholder="Bio (150 caractères max)" rows="1"></textarea>
+        </div>
       </div>
     `).join('');
-    igBioDraftListEl.querySelectorAll('.ig-bio-draft-textarea').forEach(ta=>{
-      const id = ta.dataset.draftInput;
+    igBioDraftListEl.querySelectorAll('[data-draft-input]').forEach(fieldEl=>{
+      const id = fieldEl.dataset.draftInput;
+      const field = fieldEl.dataset.draftField;
       const d = igBioDrafts.find(x=>String(x.id)===String(id));
       if(!d) return;
-      ta.value = d.text || '';
-      autoResizeTextarea(ta);
-      ta.addEventListener('input', ()=>{
-        d.text = ta.value;
-        autoResizeTextarea(ta);
+      fieldEl.value = d[field] || '';
+      if(field === 'bio') autoResizeTextarea(fieldEl);
+      fieldEl.addEventListener('input', ()=>{
+        d[field] = field === 'username' ? fieldEl.value.replace(/\s/g, '') : fieldEl.value;
+        if(field === 'bio') autoResizeTextarea(fieldEl);
         saveIgBioDrafts();
       });
     });
@@ -5000,12 +5018,12 @@
   });
 
   addIgBioDraftBtnEl.addEventListener('click', ()=>{
-    const d = {id: Date.now()+Math.random(), text: ''};
+    const d = {id: Date.now()+Math.random(), displayName: '', username: '', bio: ''};
     igBioDrafts.push(d);
     saveIgBioDrafts();
     renderIgBioDrafts();
-    const ta = igBioDraftListEl.querySelector(`[data-draft-input="${d.id}"]`);
-    if(ta) ta.focus();
+    const first = igBioDraftListEl.querySelector(`[data-draft-input="${d.id}"][data-draft-field="displayName"]`);
+    if(first) first.focus();
   });
 
 
@@ -5648,7 +5666,14 @@
     pinnedNotes = (state.pinnedNotes && typeof state.pinnedNotes === 'object') ? state.pinnedNotes : {};
     igProfile =(state.igProfile && typeof state.igProfile === 'object') ? {...defaultIgProfile(), ...state.igProfile} : defaultIgProfile();
     igPosts = Array.isArray(state.igPosts) ? state.igPosts : [];
-    igBioDrafts = Array.isArray(state.igBioDrafts) ? state.igBioDrafts : [];
+    // Migration : les brouillons créés avant l'ajout des champs nom/@ n'avaient qu'un texte de bio
+    // ({id, text}) ; on le récupère dans le nouveau champ bio plutôt que de le perdre.
+    igBioDrafts = Array.isArray(state.igBioDrafts) ? state.igBioDrafts.map(d => ({
+      id: d.id,
+      displayName: d.displayName || '',
+      username: d.username || '',
+      bio: d.bio != null ? d.bio : (d.text || '')
+    })) : [];
   };
 
   // Filet de sécurité pour la migration : les versions précédentes de l'appli écrivaient encore
