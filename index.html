@@ -5789,6 +5789,12 @@
     bookFlipStarted = true;
     loadBookFlipbook();
   }
+  // Pont vers le <script type="module"> plus bas (logique de connexion/Firestore) : un module a sa
+  // propre portée, il ne voit pas les fonctions/variables de ce script classique — voir aussi
+  // window.__rg_renderAll et les autres ponts __rg_* déjà utilisés pour la même raison. Sert à
+  // initBookOnlyMode pour les comptes "lecture du Livre uniquement".
+  window.__rg_ensureBookFlipReady = ensureBookFlipReady;
+  window.__rg_setActiveTabId = function(id){ activeTabId = id; };
 
   // page-flip (mode size:'stretch') recalcule ses dimensions sur l'événement window 'resize', pas
   // sur un simple changement de display du conteneur : sans ce petit coup de pouce, revenir sur le
@@ -6182,6 +6188,38 @@
   // sous un identifiant fixe plutôt que l'UID de connexion), pour voir et modifier le même contenu.
   const SHARED_DOC_ID = 'jkme-shared';
 
+  // Comptes "lecture du Livre uniquement" : contrairement à ALLOWED_EMAILS ci-dessus, ces comptes
+  // n'accèdent à rien d'autre qu'au feuilletage du Livre (voir initBookOnlyMode) — surtout pas à
+  // l'espace partagé (agenda personnel, notes, etc.), d'où la branche séparée juste en dessous qui
+  // évite complètement toute lecture Firestore pour ces comptes-là.
+  const BOOK_ONLY_EMAILS = ['mmaama2809@gmail.com'];
+
+  // Interface simplifiée pour les comptes "lecture du Livre uniquement" (voir BOOK_ONLY_EMAILS) :
+  // masque tout sauf le Livre lui-même — barre d'onglets, sous-onglet Scènes (l'espace d'écriture
+  // de Lily, pas le livre fini), indicateur de synchronisation et pied de sauvegarde, puisque rien
+  // de tout ça n'a de sens pour un compte qui ne lit jamais le document partagé — puis lance le
+  // feuilletage directement (ensureBookFlipReady ne dépend d'aucune donnée Firestore, juste du PDF).
+  function initBookOnlyMode(){
+    // window.__rg_setActiveTabId / __rg_ensureBookFlipReady : ce module ne voit pas activeTabId ni
+    // ensureBookFlipReady, déclarés dans le <script> classique plus haut (portées séparées) — voir
+    // les ponts définis juste après ensureBookFlipReady.
+    if(window.__rg_setActiveTabId) window.__rg_setActiveTabId('livre');
+    document.querySelectorAll('.tabs-container, .storage-footer, .backup-footer, #syncStatus').forEach(el=>{
+      if(el) el.style.display = 'none';
+    });
+    document.querySelectorAll('.tab-content').forEach(c=> c.classList.remove('active'));
+    const livreContent = document.getElementById('content-livre');
+    if(livreContent) livreContent.classList.add('active');
+    const livreToggle = document.getElementById('livreSubviewToggle');
+    if(livreToggle) livreToggle.style.display = 'none';
+    const scenesPanel = document.getElementById('livreSubviewScenes');
+    if(scenesPanel) scenesPanel.style.display = 'none';
+    const bookPanel = document.getElementById('livreSubviewBook');
+    if(bookPanel) bookPanel.style.display = '';
+    if(window.__rg_ensureBookFlipReady) window.__rg_ensureBookFlipReady();
+  }
+  window.__rg_initBookOnlyMode = initBookOnlyMode; // pour les tests (voir window.__rg_renderAll)
+
   onAuthStateChanged(auth, async (user)=>{
     if(!user){
       userDocRef = null;
@@ -6191,9 +6229,23 @@
       return;
     }
 
+    const email = (user.email || '').toLowerCase();
+
+    // Compte "lecture du Livre uniquement" : on s'arrête ici, avant toute lecture Firestore du
+    // document partagé (voir initBookOnlyMode plus bas) — c'est ce qui garantit qu'un compte de ce
+    // type ne voit jamais l'agenda, les notes ou quoi que ce soit d'autre que le Livre, même en
+    // ouvrant les outils de développement du navigateur.
+    if(BOOK_ONLY_EMAILS.includes(email)){
+      loginError.textContent = '';
+      loginScreen.classList.add('hidden');
+      appRoot.classList.remove('hidden');
+      initBookOnlyMode();
+      return;
+    }
+
     // Refuse tout compte Google qui n'est pas dans la liste autorisée : déconnexion immédiate,
     // avant même d'afficher le contenu de l'app (même garde-fou que sur LilyTracker).
-    if(!ALLOWED_EMAILS.includes((user.email || '').toLowerCase())){
+    if(!ALLOWED_EMAILS.includes(email)){
       console.warn('Connexion refusée : compte Google non autorisé (' + user.email + ').');
       loginError.textContent = "Ce compte Google n'est pas autorisé à accéder à cette application.";
       signOut(auth);
