@@ -6247,7 +6247,7 @@
       // page-flip utilise en interne (calculées une fois, voir size:'stretch' ci-dessus), donc pas
       // de conflit avec le tournage de page ou son propre redimensionnement. Remis à 100% à chaque
       // changement de page, pour ne pas se retrouver zoomée sur la page suivante sans le vouloir. ----
-      const ZOOM_MIN = 1, ZOOM_MAX = 2.5, ZOOM_STEP = 0.25;
+      const ZOOM_MIN = 1, ZOOM_MAX = 4, ZOOM_STEP = 0.25;
       let bookFlipZoom = 1;
       function setBookFlipZoom(z){
         bookFlipZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100));
@@ -6367,7 +6367,16 @@
         }
       });
 
-      pageFlip.on('flip', ()=>{ updateIndicator(); setBookFlipZoom(1); });
+      // Le zoom n'est plus remis à 100% à chaque tournage de page (voir setBookFlipZoom plus haut) :
+      // ça obligeait à re-zoomer à la main sur CHAQUE page pour arriver à lire le texte, un vrai
+      // calvaire sur un livre de 105 pages, surtout sur mobile où la page tient dans très peu de
+      // place à 100%. Seule la position de défilement est réinitialisée en haut à gauche, pour que
+      // la nouvelle page démarre toujours au même endroit plutôt que sur un bout au hasard hérité de
+      // la page précédente.
+      pageFlip.on('flip', ()=>{
+        updateIndicator();
+        if(zoomViewportEl){ zoomViewportEl.scrollLeft = 0; zoomViewportEl.scrollTop = 0; }
+      });
       pageFlip.on('init', ()=>{
         if(pageIndicatorEl) pageIndicatorEl.style.display = '';
         updateIndicator();
