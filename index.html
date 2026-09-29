@@ -1009,7 +1009,16 @@
   .book-flip-zoom-viewport{
     position:relative; flex:1; min-width:0; align-self:stretch; overflow:auto; text-align:center;
   }
-  .book-flip-container{display:inline-block; max-width:100%; transition:transform .2s ease; transform-origin:center top;}
+  /* position:absolute (plutôt que display:inline-block) : le conteneur est maintenant forcé à un
+     rendu interne toujours grand (voir minWidth/maxWidth du PageFlip plus bas, sur-échantillonnage
+     pour la netteté), puis réduit visuellement via transform:scale(). Un transform ne change pas
+     l'empreinte de l'élément dans le flux normal (seulement son rendu visuel), donc en display:block
+     il continuerait à réserver tout son espace NON réduit dans le parent, gonflant la hauteur de
+     .book-flip-zoom-viewport bien au-delà de la taille visible réelle. En le sortant du flux (position:
+     absolute + left:50%, compensé par translateX(-50%) dans applyBookFlipTransform), il n'influence
+     plus la taille du parent — voir updateBookFlipFitScale qui fixe explicitement la hauteur du
+     viewport à la place. */
+  .book-flip-container{position:absolute; top:0; left:50%; transition:transform .2s ease; transform-origin:center top;}
   /* Voir commentaire au niveau du HTML : agrandit la cible de tap pour tourner la page sur mobile,
      sans toucher au comportement desktop (pointer-events:none par défaut, activé uniquement dans la
      media query mobile plus bas). */
@@ -6139,7 +6148,13 @@
   // temps) laisserait le feuilletage avec les dimensions d'un conteneur alors invisible.
   function nudgeBookFlipResize(){
     if(!bookFlipInstance) return;
-    setTimeout(()=> window.dispatchEvent(new Event('resize')), 60);
+    setTimeout(()=>{
+      window.dispatchEvent(new Event('resize'));
+      // Laisse page-flip réagir à cet événement resize avant de recalculer notre propre facteur de
+      // sur-échantillonnage (voir updateBookFlipFitScale, exposé ici via window.__rg_* car cette
+      // fonction-ci vit hors de loadBookFlipbook — mêmes ponts __rg_* qu'ailleurs dans ce fichier).
+      setTimeout(()=>{ if(window.__rg_bookFlipUpdateFitScale) window.__rg_bookFlipUpdateFitScale(); }, 80);
+    }, 60);
   }
 
   async function loadBookFlipbook(){
@@ -6220,13 +6235,24 @@
       if(stageEl) stageEl.style.display = '';
       if(toolbarEl) toolbarEl.style.display = '';
 
+      // minWidth/minHeight égaux à maxWidth/maxHeight (au lieu de 260×360 avant) : page-flip dessine
+      // son propre <canvas> interne à la taille CSS de son conteneur, sans jamais tenir compte de la
+      // densité de pixels de l'écran (aucune notion de devicePixelRatio dans la bibliothèque) — sur
+      // mobile, où ce conteneur ne mesurait qu'environ 360px de large, le texte des bulles restait
+      // flou même après la hausse de résolution des images sources et même en zoomant dessus, puisque
+      // le zoom ne fait qu'agrandir un rendu déjà limité à 360px. En forçant page-flip à toujours
+      // dessiner à sa taille MAXIMALE (1000×1400, aussi proche que possible de la résolution native
+      // des scans, voir plus haut), puis en réduisant le résultat visuellement à la bonne taille via
+      // CSS (voir bookFlipFitScale et applyBookFlipTransform ci-dessous, composé avec le zoom
+      // interactif existant), l'affichage profite d'un vrai rendu en haute résolution ("sur-échantillonné")
+      // même sur un petit écran, plutôt que d'agrandir un rendu déjà basse résolution.
       const pageFlip = new St.PageFlip(containerEl, {
         width: baseWidth,
         height: baseHeight,
         size: 'stretch',
-        minWidth: 260,
+        minWidth: 1000,
         maxWidth: 1000,
-        minHeight: 360,
+        minHeight: 1400,
         maxHeight: 1400,
         showCover: true,
         maxShadowOpacity: 0.5,
@@ -6242,16 +6268,47 @@
         if(nextBtn) nextBtn.disabled = current >= total - 1;
       }
 
-      // ---- Zoom (transform:scale sur bookFlipContainer, voir book-flip-zoom-viewport plus haut
-      // pour le défilement une fois agrandi) : purement visuel, ne touche pas aux dimensions que
-      // page-flip utilise en interne (calculées une fois, voir size:'stretch' ci-dessus), donc pas
-      // de conflit avec le tournage de page ou son propre redimensionnement. Remis à 100% à chaque
-      // changement de page, pour ne pas se retrouver zoomée sur la page suivante sans le vouloir. ----
+      // ---- Sur-échantillonnage : voir le commentaire sur minWidth/minHeight ci-dessus. Le rendu
+      // interne de page-flip est maintenant toujours fixé à 1000×1400 (haute résolution), donc trop
+      // grand pour tenir dans l'espace visuel réellement disponible (surtout sur mobile) — on le
+      // réduit ici à la bonne taille via CSS, recalculé à chaque fois que cet espace peut avoir
+      // changé (chargement initial, plein écran, rotation/redimensionnement). Jamais agrandi au-delà
+      // de sa résolution native (Math.min(1, …)) : inutile, ça ne ferait qu'ajouter du flou. ----
+      let bookFlipFitScale = 1;
+      function updateBookFlipFitScale(){
+        if(!zoomViewportEl || !containerEl) return;
+        const available = zoomViewportEl.clientWidth;
+        const renderedW = containerEl.offsetWidth;
+        const renderedH = containerEl.offsetHeight;
+        bookFlipFitScale = (available > 0 && renderedW > 0) ? Math.min(1, available / renderedW) : 1;
+        // bookFlipContainer est en position:absolute (voir CSS .book-flip-container) : il ne
+        // participe plus au calcul de hauteur de .book-flip-zoom-viewport. On la fixe donc ici à la
+        // main, à la taille visuelle réelle une fois réduite, pour retrouver le comportement
+        // « la hauteur suit la largeur selon le ratio de la page » qu'offrait avant le flux normal
+        // (display:inline-block). Sans effet en dessous du plancher min-height CSS existant (500px
+        // desktop / 75vh mobile) : le spec CSS prend le plus grand des deux (max(spécifié, min-height)).
+        if(renderedH > 0){ zoomViewportEl.style.height = Math.round(renderedH * bookFlipFitScale) + 'px'; }
+        applyBookFlipTransform();
+      }
+      // ---- Zoom (transform:scale sur bookFlipContainer, composé avec bookFlipFitScale ci-dessus ;
+      // voir book-flip-zoom-viewport plus haut pour le défilement une fois agrandi) : purement
+      // visuel, ne touche pas aux dimensions que page-flip utilise en interne (calculées une fois,
+      // voir size:'stretch' ci-dessus), donc pas de conflit avec le tournage de page ou son propre
+      // redimensionnement. Le niveau affiché (100%-400%) reste celui choisi par la personne, sans
+      // exposer le facteur de sur-échantillonnage qui reste un détail d'implémentation. ----
       const ZOOM_MIN = 1, ZOOM_MAX = 4, ZOOM_STEP = 0.25;
       let bookFlipZoom = 1;
+      function applyBookFlipTransform(){
+        const total = bookFlipFitScale * bookFlipZoom;
+        // translateX(-50%) toujours présent (et pas seulement quand total≠1) : avec left:50% en
+        // position:absolute, c'est ce qui recentre horizontalement le conteneur (remplace le
+        // centrage par text-align:center, qui ne fonctionnait que pour du contenu inline-block dans
+        // le flux normal).
+        containerEl.style.transform = `translateX(-50%) scale(${total})`;
+      }
       function setBookFlipZoom(z){
         bookFlipZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100));
-        containerEl.style.transform = bookFlipZoom === 1 ? '' : `scale(${bookFlipZoom})`;
+        applyBookFlipTransform();
         if(zoomLabelEl) zoomLabelEl.textContent = Math.round(bookFlipZoom * 100) + '%';
         if(zoomOutBtn) zoomOutBtn.disabled = bookFlipZoom <= ZOOM_MIN;
         if(zoomInBtn) zoomInBtn.disabled = bookFlipZoom >= ZOOM_MAX;
@@ -6380,8 +6437,22 @@
       pageFlip.on('init', ()=>{
         if(pageIndicatorEl) pageIndicatorEl.style.display = '';
         updateIndicator();
+        // Premier calcul du facteur de sur-échantillonnage, une fois que page-flip a fini de
+        // dimensionner son conteneur à 1000×1400 (voir plus haut) et qu'on peut donc le comparer à
+        // l'espace visuel réellement disponible.
+        updateBookFlipFitScale();
       });
       pageFlip.loadFromImages(images);
+
+      // Exposé pour nudgeBookFlipResize (portée globale, hors de cette fonction) : lui permet de
+      // redéclencher ce calcul après chaque redimensionnement du conteneur (plein écran, changement
+      // d'onglet, retour sur Livre), en plus de son propre nudge pour page-flip lui-même.
+      window.__rg_bookFlipUpdateFitScale = updateBookFlipFitScale;
+      // Redimensionnement réel de la fenêtre (rotation du téléphone, redimensionnement de la fenêtre
+      // desktop) : page-flip réagit déjà tout seul en interne pour son propre redimensionnement,
+      // mais notre calcul à nous (bookFlipFitScale) doit être refait après coup, une fois que son
+      // nouveau conteneur (toujours 1000×1400, mais l'espace visuel disponible a changé) est stable.
+      window.addEventListener('resize', ()=> setTimeout(updateBookFlipFitScale, 150));
 
       if(prevBtn) prevBtn.addEventListener('click', ()=> pageFlip.flipPrev());
       if(nextBtn) nextBtn.addEventListener('click', ()=> pageFlip.flipNext());
