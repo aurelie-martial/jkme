@@ -1481,6 +1481,62 @@
         <button type="button" class="link-btn" id="evCancelEditBtn" style="display:none;">Annuler la modification</button>
       </div>
     </form>
+    <!-- Les événements personnels (LilyTracker) partagent le même agenda mais ont leurs propres
+         champs (emoji, couleur, récurrence hebdo/bimensuelle/annuelle) : formulaire séparé plutôt
+         que de surcharger celui au-dessus, pensé pour travail/garde/off/rdv. Voir openPersoModal. -->
+    <button type="button" class="link-btn" id="openPersoModalBtn">+ Événement personnel (LilyTracker)</button>
+  </div>
+</div>
+
+<!-- MODAL EVENEMENT PERSO (partagé avec LilyTracker, voir sharedAgenda/lilytracker) -->
+<div class="overlay" id="persoOverlay">
+  <div class="modal">
+    <button class="close-x" id="closePersoModal">✕</button>
+    <h3 id="persoModalTitle">Événement personnel</h3>
+    <form id="addPersoForm">
+      <input type="hidden" id="persoEventId">
+      <div class="ev-time-row">
+        <div>
+          <label>Emoji</label>
+          <input type="text" id="persoEmoji" maxlength="4" placeholder="🎉">
+        </div>
+        <div>
+          <label>Couleur</label>
+          <input type="color" id="persoColor" value="#6366f1">
+        </div>
+      </div>
+      <label>Titre</label>
+      <input type="text" id="persoTitle" placeholder="Ex : Anniversaire de Lily..." required>
+      <div class="ev-time-row">
+        <div>
+          <label>Début</label>
+          <input type="date" id="persoStart" required>
+        </div>
+        <div>
+          <label>Fin</label>
+          <input type="date" id="persoEnd">
+        </div>
+      </div>
+      <label>Répétition</label>
+      <select id="persoRecurrence">
+        <option value="none">Aucune</option>
+        <option value="weekly">Toutes les semaines</option>
+        <option value="biweekly">Une semaine sur deux</option>
+        <option value="yearly">Tous les ans</option>
+      </select>
+      <div id="persoUntilWrap" style="display:none;">
+        <label>Répéter jusqu'au</label>
+        <input type="date" id="persoUntil">
+      </div>
+      <label class="ev-repeat-row">
+        <input type="checkbox" id="persoBanner">
+        <span>Afficher en bandeau</span>
+      </label>
+      <div class="ev-form-actions">
+        <button type="submit" class="btn btn-secondary" id="persoSubmitBtn">+ Ajouter</button>
+        <button type="button" class="link-btn" id="deletePersoBtn" style="display:none;">Supprimer</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -1638,6 +1694,12 @@
   // ne servent que le temps très bref avant que la synchro cloud n'ait chargé l'état réel de l'utilisatrice.
   let tasks = [];
   let events = {};
+  // Événements personnels partagés avec LilyTracker (voir sharedAgenda/lilytracker) : structure
+  // native de LilyTracker (id, emoji, color, title, start, end, recurrence, until, banner), jamais
+  // convertie dans le format events[dateKey] ci-dessus — combinedDayEvents() les fusionne juste à
+  // l'affichage. Modifiable directement depuis JKME (voir openPersoModal), mais la source de vérité
+  // reste ce même document Firestore, partagé et lu/écrit par les deux applis.
+  let foreignPersoEvents = [];
   let categories = DEFAULT_CATS.slice();
   let partis = [];
   let scenes = defaultScenes();
@@ -1695,7 +1757,11 @@
     storageFooterDebounceTimer = setTimeout(renderStorageFooter, 400);
   };
   const saveTasks = () => { syncCloud(); };
-  const saveEvents = () => { syncCloud(); };
+  // Les événements natifs JKME (travail/garde/off/rdv) ne vivent plus dans le grand document
+  // partagé (state.events) mais dans leur propre document Firestore, sharedAgenda/jkme — partagé en
+  // lecture/écriture avec LilyTracker (voir __rg_scheduleAgendaSync, défini dans le <script
+  // type="module"> plus bas, et l'explication complète juste avant onAuthStateChanged).
+  const saveEvents = () => { if(window.__rg_scheduleAgendaSync) window.__rg_scheduleAgendaSync(); };
   const saveCategories = () => { syncCloud(); };
   const savePartis = () => { syncCloud(); };
   const saveScenes = () => { syncCloud(); };
@@ -2733,6 +2799,53 @@
     return new Date(y,m-1,d).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
   }
 
+  // Détermine si un événement personnel partagé avec LilyTracker (voir foreignPersoEvents) tombe un
+  // jour donné (clé "AAAA-MM-JJ"). Port exact de eventOccursOnDate() de LilyTracker (son fichier
+  // index.html, repo aurelie-martial/track) : même algorithme des deux côtés, pour un affichage
+  // identique dans les deux applis à partir du même document Firestore partagé (sharedAgenda/lilytracker).
+  function foreignEventOccursOnKey(ev, key){
+    const toDate = (k)=>{ const [y,m,d] = k.split('-').map(Number); return new Date(y,m-1,d); };
+    const start = ev.start;
+    const end = ev.end || ev.start;
+    const recurrence = ev.recurring ? 'yearly' : (ev.recurrence || 'none');
+    if(recurrence === 'yearly'){
+      const s = toDate(start), d = toDate(key);
+      return d.getMonth() === s.getMonth() && d.getDate() === s.getDate();
+    }
+    if(recurrence === 'weekly' || recurrence === 'biweekly'){
+      if(key < start) return false;
+      if(ev.until && key > ev.until) return false;
+      const msPerDay = 86400000;
+      const cycle = recurrence === 'biweekly' ? 14 : 7;
+      const s = toDate(start);
+      const rawRangeLengthDays = Math.round((toDate(end) - s) / msPerDay);
+      const rangeLengthDays = Math.max(0, Math.min(rawRangeLengthDays, cycle - 1));
+      const daysSinceStart = Math.round((toDate(key) - s) / msPerDay);
+      const positionInCycle = daysSinceStart % cycle;
+      return positionInCycle >= 0 && positionInCycle <= rangeLengthDays;
+    }
+    return key >= start && key <= end;
+  }
+
+  function foreignEventsForKey(key){
+    return foreignPersoEvents.filter(ev => foreignEventOccursOnKey(ev, key));
+  }
+
+  // Fusionne les événements natifs de JKME (travail/garde/off/rdv, dans `events`) et les événements
+  // personnels partagés avec LilyTracker pour un jour donné, uniquement pour l'AFFICHAGE (agenda,
+  // vue mois, vue semaine, liste du modal jour). Les mutations (updateEventEverywhere, etc.)
+  // continuent de n'opérer que sur `events` : un événement perso se modifie via openPersoModal
+  // (voir plus bas), qui écrit directement dans foreignPersoEvents + sharedAgenda/lilytracker.
+  function combinedDayEvents(key){
+    const native = events[key] || [];
+    const foreign = foreignEventsForKey(key).map(ev => ({
+      id: ev.id, title: ev.title, time:'', endTime:'', type:'perso',
+      emoji: ev.emoji, color: ev.color, startDate: ev.start, endDate: ev.end || ev.start,
+      _foreign: true
+    }));
+    return native.concat(foreign);
+  }
+
   function migrateEvents(){
     let changed = false;
     Object.keys(events).forEach(key=>{
@@ -2872,7 +2985,7 @@
       }
       const key = fmtKey(cellY, cellM, cellDayNum);
       const cell = document.createElement('div');
-      const evs = sortEvents(events[key] || []);
+      const evs = sortEvents(combinedDayEvents(key));
       // Les périodes "avec mon fils" ne s'affichent pas comme les RDV/créneaux (texte dans une
       // pastille) mais comme un trait continu qui traverse les jours concernés : le temps ne
       // s'organise pas de la même façon, donc l'affichage doit le distinguer nettement.
@@ -2891,6 +3004,12 @@
         }).join('') +
         otherEvs.slice(0, maxPreview).map(ev => {
           const multi = ev.startDate !== ev.endDate;
+          // Un événement perso (partagé avec LilyTracker) porte sa propre couleur/emoji, pas un
+          // type JKME connu de EVENT_TYPE_COLORS — voir combinedDayEvents().
+          if(ev._foreign){
+            const label = ev.emoji ? `${ev.emoji} ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
+            return `<div class="ev-preview" style="--ev-color:${ev.color || '#6366f1'}" data-id="${ev.id}" data-foreign="1">${multi ? '↔ ' : ''}${label}</div>`;
+          }
           const type = eventType(ev);
           const isOff = type === 'off';
           // Un créneau de travail affiche son moment de la journée plutôt que l'heure exacte
@@ -2903,9 +3022,12 @@
         (otherEvs.length > maxPreview ? `<div class="ev-more">+${otherEvs.length - maxPreview} autre${otherEvs.length - maxPreview > 1 ? 's' : ''}</div>` : '');
       // Un clic sur un événement précis (barre "Mon fils" ou aperçu) bascule directement en
       // modification, sans passer par le récap de la journée (voir openEventForEdit) ; un clic
-      // ailleurs dans la case (jour vide, "+N autres"...) ouvre le récap comme avant.
+      // ailleurs dans la case (jour vide, "+N autres"...) ouvre le récap comme avant. Un événement
+      // perso (data-foreign) s'édite via openPersoModal plutôt que openEventForEdit (findEventById
+      // ne connaît que `events`, pas foreignPersoEvents).
       cell.addEventListener('click', (e)=>{
         const evEl = e.target.closest('[data-id]');
+        if(evEl && evEl.dataset.foreign === '1'){ openDayModal(key); openPersoModal(evEl.dataset.id); return; }
         if(evEl){ openEventForEdit(key, evEl.dataset.id); return; }
         openDayModal(key);
       });
@@ -3016,8 +3138,10 @@
         <span class="week-day-num">${date.getDate()}</span>
       </div>`;
 
-      const evs = sortEvents(events[key] || []);
+      const evs = sortEvents(combinedDayEvents(key));
       const gardeEvs = evs.filter(ev => eventType(ev) === 'garde');
+      // Un événement perso (foreign) n'a jamais d'heure (voir combinedDayEvents) : il rejoint donc
+      // naturellement la ligne "toute la journée", comme les bandeaux LilyTracker eux-mêmes.
       const untimedEvs = evs.filter(ev => eventType(ev) !== 'garde' && !ev.time);
       const timedEvs = evs.filter(ev => eventType(ev) !== 'garde' && ev.time);
 
@@ -3031,6 +3155,10 @@
           return `<div class="week-garde-bar" style="border-radius:${radius}" data-id="${ev.id}">${leftRound ? escapeHtml(ev.title || 'Mon fils') : ''}</div>`;
         }).join('') +
         untimedEvs.map(ev=>{
+          if(ev._foreign){
+            const label = ev.emoji ? `${ev.emoji} ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
+            return `<div class="ev-preview" style="--ev-color:${ev.color || '#6366f1'}" data-id="${ev.id}" data-foreign="1">${label}</div>`;
+          }
           const isOff = eventType(ev) === 'off';
           const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
           return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}" data-id="${ev.id}">${escapeHtml(ev.title)}</div>`;
@@ -3082,6 +3210,7 @@
         // Un clic sur un événement précis (barre "Mon fils" ou aperçu sans heure) bascule directement
         // en modification, sans passer par le récap de la journée (voir openEventForEdit).
         const evEl = e.target.closest('[data-id]');
+        if(evEl && evEl.dataset.foreign === '1'){ openDayModal(el.dataset.key); openPersoModal(evEl.dataset.id); return; }
         if(evEl){ openEventForEdit(el.dataset.key, evEl.dataset.id); return; }
         openDayModal(el.dataset.key);
       });
@@ -3234,6 +3363,104 @@
   let currentKey = null;
   const overlay = document.getElementById('dayOverlay');
   const EVENT_TYPE_LABELS = { rdv: 'RDV', travail: 'Créneau de travail', garde: 'Mon fils', off: 'Temps off' };
+
+  // ---------- ÉVÉNEMENTS PERSO PARTAGÉS AVEC LILYTRACKER (foreignPersoEvents) ----------
+  // Modal séparé (voir #persoOverlay dans le HTML) plutôt que de surcharger le formulaire principal
+  // ci-dessous (pensé pour travail/garde/off/rdv) : mêmes champs que le formulaire d'événement de
+  // LilyTracker (emoji, couleur, récurrence hebdo/bimensuelle/annuelle/aucune), pour rester
+  // strictement compatible avec ce qu'elle y affiche et y modifie de son côté.
+  const persoOverlayEl = document.getElementById('persoOverlay');
+  const persoEventIdEl = document.getElementById('persoEventId');
+  const persoEmojiEl = document.getElementById('persoEmoji');
+  const persoColorEl = document.getElementById('persoColor');
+  const persoTitleEl = document.getElementById('persoTitle');
+  const persoStartEl = document.getElementById('persoStart');
+  const persoEndEl = document.getElementById('persoEnd');
+  const persoRecurrenceEl = document.getElementById('persoRecurrence');
+  const persoUntilWrapEl = document.getElementById('persoUntilWrap');
+  const persoUntilEl = document.getElementById('persoUntil');
+  const persoBannerEl = document.getElementById('persoBanner');
+  const persoModalTitleEl = document.getElementById('persoModalTitle');
+  const persoSubmitBtnEl = document.getElementById('persoSubmitBtn');
+  const deletePersoBtnEl = document.getElementById('deletePersoBtn');
+
+  persoRecurrenceEl.addEventListener('change', ()=>{
+    const r = persoRecurrenceEl.value;
+    persoUntilWrapEl.style.display = (r === 'weekly' || r === 'biweekly') ? '' : 'none';
+  });
+
+  // id null => création ; sinon pré-remplit avec l'événement trouvé dans foreignPersoEvents (jamais
+  // dans `events`, qui ne connaît que les types natifs JKME — voir combinedDayEvents plus haut).
+  function openPersoModal(id){
+    const ev = id ? foreignPersoEvents.find(e => String(e.id) === String(id)) : null;
+    persoEventIdEl.value = ev ? ev.id : '';
+    persoEmojiEl.value = ev ? (ev.emoji || '') : '';
+    persoColorEl.value = ev ? (ev.color || '#6366f1') : '#6366f1';
+    persoTitleEl.value = ev ? (ev.title || '') : '';
+    persoStartEl.value = ev ? ev.start : (currentKey || '');
+    persoEndEl.value = (ev && ev.end && ev.end !== ev.start) ? ev.end : '';
+    const recurrence = ev ? (ev.recurring ? 'yearly' : (ev.recurrence || 'none')) : 'none';
+    persoRecurrenceEl.value = recurrence;
+    persoUntilWrapEl.style.display = (recurrence === 'weekly' || recurrence === 'biweekly') ? '' : 'none';
+    persoUntilEl.value = ev ? (ev.until || '') : '';
+    persoBannerEl.checked = ev ? !!ev.banner : false;
+    persoModalTitleEl.textContent = ev ? "Modifier l'événement personnel" : 'Nouvel événement personnel';
+    persoSubmitBtnEl.textContent = ev ? 'Enregistrer les modifications' : '+ Ajouter';
+    deletePersoBtnEl.style.display = ev ? '' : 'none';
+    overlay.classList.remove('active');
+    persoOverlayEl.classList.add('active');
+  }
+
+  // Le modal du jour (overlay/dayOverlay) reste "en dessous" : openPersoModal() le masque sans le
+  // fermer (voir plus haut) et on le redonne à voir en quittant le modal perso, que ce soit par
+  // annulation, sauvegarde ou suppression — pour ne jamais laisser les deux modals fermés d'un coup,
+  // ce qui surprendrait l'utilisatrice après avoir ajouté/modifié un événement perso.
+  function closePersoModal(){
+    persoOverlayEl.classList.remove('active');
+    overlay.classList.add('active');
+  }
+
+  document.getElementById('openPersoModalBtn').addEventListener('click', ()=> openPersoModal(null));
+  document.getElementById('closePersoModal').addEventListener('click', closePersoModal);
+  persoOverlayEl.addEventListener('click', e=>{ if(e.target===persoOverlayEl) closePersoModal(); });
+
+  document.getElementById('addPersoForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const idVal = persoEventIdEl.value;
+    const title = persoTitleEl.value.trim();
+    const start = persoStartEl.value;
+    let end = persoEndEl.value || start;
+    if(!title || !start) return;
+    if(end < start) end = start;
+    const recurrence = persoRecurrenceEl.value;
+    const until = (recurrence === 'weekly' || recurrence === 'biweekly') ? (persoUntilEl.value || '') : '';
+    if(recurrence === 'yearly') end = start;
+    const emoji = persoEmojiEl.value.trim() || '📌';
+    const color = persoColorEl.value;
+    const banner = persoBannerEl.checked;
+    if(idVal){
+      const ev = foreignPersoEvents.find(e => String(e.id) === String(idVal));
+      if(ev){
+        ev.emoji = emoji; ev.color = color; ev.title = title;
+        ev.start = start; ev.end = end; ev.recurrence = recurrence; ev.until = until; ev.banner = banner;
+        delete ev.recurring;
+      }
+    } else {
+      foreignPersoEvents.push({ id: Date.now(), emoji, color, title, start, end, recurrence, until, banner });
+    }
+    if(window.__rg_scheduleForeignAgendaSync) window.__rg_scheduleForeignAgendaSync();
+    closePersoModal();
+    renderEventList(); renderCalendarView();
+  });
+
+  deletePersoBtnEl.addEventListener('click', ()=>{
+    const idVal = persoEventIdEl.value;
+    if(!idVal) return;
+    foreignPersoEvents = foreignPersoEvents.filter(e => String(e.id) !== String(idVal));
+    if(window.__rg_scheduleForeignAgendaSync) window.__rg_scheduleForeignAgendaSync();
+    closePersoModal();
+    renderEventList(); renderCalendarView();
+  });
 
   // Formulaire d'ajout : le champ "Titre" et la note n'ont pas le même sens selon le type choisi
   // (une "période avec mon fils" n'a pas vraiment besoin de titre), donc le formulaire s'adapte.
@@ -3455,13 +3682,30 @@
   }
 
   function renderEventList(){
-    const list = sortEvents(events[currentKey] || []);
+    const list = sortEvents(combinedDayEvents(currentKey));
     const container = document.getElementById('modalEventList');
     if(list.length===0){
       container.innerHTML = `<div class="modal-empty">Aucun rendez-vous pour ce jour.</div>`;
       return;
     }
     container.innerHTML = list.map(ev => {
+      if(ev._foreign){
+        // Événement personnel partagé avec LilyTracker : s'édite/se supprime via openPersoModal
+        // (foreignPersoEvents), pas via startEditEvent/deleteEventEverywhere qui ne connaissent que
+        // `events`. Pas de note ni de série ici : ces champs n'existent pas côté LilyTracker.
+        return `
+        <div class="ev-item" style="border-left:3px solid ${ev.color || '#6366f1'}">
+          <span class="time">Journée</span>
+          <div class="info">
+            <div class="t">${ev.emoji ? escapeHtml(ev.emoji) + ' ' : ''}${escapeHtml(ev.title)} <span class="n">· Perso (LilyTracker)</span></div>
+            ${ev.startDate !== ev.endDate ? `<div class="n">Du ${formatShort(ev.startDate)} au ${formatShort(ev.endDate)}</div>` : ''}
+          </div>
+          <div class="item-actions">
+            <button class="edit-perso" data-id="${ev.id}" title="Modifier">✎</button>
+          </div>
+        </div>
+      `;
+      }
       const multi = ev.startDate !== ev.endDate;
       const type = eventType(ev);
       // Un créneau de travail affiche son moment de la journée (Matin/Midi/...) plutôt que l'heure
@@ -3486,6 +3730,11 @@
     container.querySelectorAll('.edit').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         startEditEvent(btn.dataset.id);
+      });
+    });
+    container.querySelectorAll('.edit-perso').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        openPersoModal(btn.dataset.id);
       });
     });
     container.querySelectorAll('.del').forEach(btn=>{
@@ -5796,6 +6045,15 @@
   window.__rg_ensureBookFlipReady = ensureBookFlipReady;
   window.__rg_setActiveTabId = function(id){ activeTabId = id; };
 
+  // Ponts pour l'agenda partagé avec LilyTracker (sharedAgenda/jkme et sharedAgenda/lilytracker,
+  // voir juste avant onAuthStateChanged dans le <script type="module">) : `events` et
+  // `foreignPersoEvents` sont déclarés dans ce script classique, le module ne peut ni les lire ni
+  // les modifier directement (même raison que les ponts ci-dessus).
+  window.__rg_getEvents = () => events;
+  window.__rg_setEvents = (val) => { events = (val && typeof val === 'object') ? val : {}; };
+  window.__rg_getForeignPersoEvents = () => foreignPersoEvents;
+  window.__rg_setForeignPersoEvents = (val) => { foreignPersoEvents = Array.isArray(val) ? val : []; };
+
   // page-flip (mode size:'stretch') recalcule ses dimensions sur l'événement window 'resize', pas
   // sur un simple changement de display du conteneur : sans ce petit coup de pouce, revenir sur le
   // sous-onglet Livre après être passé par un autre onglet/sous-onglet (donc display:none entre
@@ -5915,14 +6173,22 @@
   // localStorage) : les appels à ensureBookFlipReady() dans renderTabs()/la bascule Livre-Scènes ne
   // se déclenchent que sur un clic, donc ce cas doit être couvert séparément ici.
   if(activeTabId === 'livre') ensureBookFlipReady();
+  // `events` (travail/garde/off/rdv) n'est plus inclus ici : depuis le partage d'agenda avec
+  // LilyTracker, il vit dans son propre document Firestore (sharedAgenda/jkme, voir
+  // __rg_scheduleAgendaSync juste avant onAuthStateChanged) plutôt que dans ce grand document
+  // partagé — sinon LilyTracker devrait avoir accès à TOUT le contenu du livre pour ne synchroniser
+  // que l'agenda. Pareil pour foreignPersoEvents (sharedAgenda/lilytracker), jamais inclus ici.
   window.__rg_getState = () => ({
-    tasks, events, categories, partis, scenes,
+    tasks, categories, partis, scenes,
     notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
     sceneOrder, blocNotesOrder, pillColors, pinnedNotes, igProfile, igPosts, igBioDrafts
   });
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
-    events = state.events || {};
+    // state.events : ancien emplacement (avant le partage d'agenda) — gardé en mémoire ici
+    // uniquement pour la migration one-shot vers sharedAgenda/jkme (voir onAuthStateChanged), jamais
+    // réécrit depuis ce champ ensuite (__rg_getState ci-dessus ne l'expose plus).
+    window.__rg_legacyEventsForMigration = (state.events && typeof state.events === 'object') ? state.events : null;
     categories = state.categories || DEFAULT_CATS.slice();
     partis = state.partis || [];
     scenes = (Array.isArray(state.scenes) && state.scenes.length) ? state.scenes : defaultScenes();
@@ -6140,9 +6406,16 @@
       delete data.backedUpAt;
       applyingRemoteState = true;
       window.__rg_setState(data);
+      // data.events (voir runDailyBackup, qui l'ajoute explicitement) : à restaurer aussi dans
+      // sharedAgenda/jkme, sans quoi la sauvegarde restaurerait tout SAUF l'agenda partagé avec
+      // LilyTracker — events n'étant plus dans __rg_setState depuis le partage d'agenda.
+      const restoredEvents = (data.events && typeof data.events === 'object') ? data.events : {};
+      window.__rg_setEvents(restoredEvents);
       applyingRemoteState = false;
       window.__rg_renderAll();
+      delete data.events;
       await setDoc(userDocRef, { ...data, updatedAt: serverTimestamp() });
+      await setDoc(sharedAgendaJkmeRef, { days: restoredEvents, updatedAt: serverTimestamp() });
       setSyncStatus('idle');
       backupRestoreOverlay.classList.remove('active');
       alert('Sauvegarde restaurée avec succès.');
@@ -6220,6 +6493,66 @@
   }
   window.__rg_initBookOnlyMode = initBookOnlyMode; // pour les tests (voir window.__rg_renderAll)
 
+  // ---------- AGENDA PARTAGÉ AVEC LILYTRACKER (sharedAgenda/jkme, sharedAgenda/lilytracker) ----------
+  // Contrairement au reste des données JKME (un seul document partagé entre les 3 comptes du livre),
+  // l'agenda vit dans sa PROPRE collection Firestore, sharedAgenda, avec un document par appli
+  // (jkme / lilytracker) — demande du 29 septembre 2026 : synchroniser l'agenda avec LilyTracker
+  // sans donner à LilyTracker (ni à sa sœur, jen.martial@gmail.com) accès au reste du contenu du
+  // livre (notes, scènes, brouillons Instagram...), ni donner aux collaboratrices du livre accès au
+  // reste des données personnelles de LilyTracker (budget, santé...). Les règles de sécurité
+  // Firestore scopent l'accès à cette seule collection pour les comptes croisés. Chaque document
+  // garde le format natif de son appli d'origine : `days` reprend exactement la forme de `events`
+  // (JKME), `agendaEvents` reprend exactement la forme du tableau du même nom dans LilyTracker —
+  // combinedDayEvents()/foreignEventOccursOnKey() (script classique, juste après getDateRange)
+  // savent lire ce format directement, sans conversion.
+  const sharedAgendaJkmeRef = doc(db, 'sharedAgenda', 'jkme');
+  const sharedAgendaLilyRef = doc(db, 'sharedAgenda', 'lilytracker');
+
+  async function loadSharedAgenda(){
+    try{
+      const jkmeSnap = await getDocFromServer(sharedAgendaJkmeRef);
+      if(jkmeSnap.exists()){
+        window.__rg_setEvents(jkmeSnap.data().days || {});
+      } else if(window.__rg_legacyEventsForMigration && Object.keys(window.__rg_legacyEventsForMigration).length){
+        // Migration one-shot : cette appli avait déjà des événements dans l'ancien emplacement (voir
+        // window.__rg_setState) mais rien encore dans sharedAgenda/jkme — on les reprend une fois
+        // pour toutes plutôt que de repartir d'un agenda vide.
+        await setDoc(sharedAgendaJkmeRef, { days: window.__rg_legacyEventsForMigration, updatedAt: serverTimestamp() });
+        window.__rg_setEvents(window.__rg_legacyEventsForMigration);
+      } else {
+        window.__rg_setEvents({});
+      }
+    }catch(err){
+      console.error("Erreur de chargement de l'agenda partagé (JKME) :", err);
+    }
+    try{
+      const lilySnap = await getDocFromServer(sharedAgendaLilyRef);
+      window.__rg_setForeignPersoEvents(lilySnap.exists() ? (lilySnap.data().agendaEvents || []) : []);
+    }catch(err){
+      console.error("Erreur de chargement de l'agenda partagé (LilyTracker) :", err);
+    }
+  }
+
+  let agendaSyncTimer = null;
+  window.__rg_scheduleAgendaSync = function(){
+    if(applyingRemoteState) return;
+    clearTimeout(agendaSyncTimer);
+    agendaSyncTimer = setTimeout(async ()=>{
+      try{ await setDoc(sharedAgendaJkmeRef, { days: window.__rg_getEvents(), updatedAt: serverTimestamp() }); }
+      catch(err){ console.error('Erreur Firestore (agenda JKME) :', err); }
+    }, 700);
+  };
+
+  let foreignAgendaSyncTimer = null;
+  window.__rg_scheduleForeignAgendaSync = function(){
+    if(applyingRemoteState) return;
+    clearTimeout(foreignAgendaSyncTimer);
+    foreignAgendaSyncTimer = setTimeout(async ()=>{
+      try{ await setDoc(sharedAgendaLilyRef, { agendaEvents: window.__rg_getForeignPersoEvents(), updatedAt: serverTimestamp() }); }
+      catch(err){ console.error('Erreur Firestore (agenda LilyTracker, depuis JKME) :', err); }
+    }, 700);
+  };
+
   onAuthStateChanged(auth, async (user)=>{
     if(!user){
       userDocRef = null;
@@ -6269,10 +6602,13 @@
       if(snap.exists()){
         applyingRemoteState = true;
         window.__rg_setState(snap.data());
+        await loadSharedAgenda();
         applyingRemoteState = false;
         window.__rg_renderAll();
         setSyncStatus('idle');
-        runDailyBackup(SHARED_DOC_ID, snap.data());
+        // events n'est plus dans snap.data() (voir __rg_getState) : on le rajoute explicitement pour
+        // que la sauvegarde quotidienne continue de couvrir l'agenda, pas seulement le reste.
+        runDailyBackup(SHARED_DOC_ID, { ...snap.data(), events: window.__rg_getEvents() });
       } else if(legacyOwnSnap.exists()){
         // Rien sous l'identifiant partagé, mais ce compte a des données sous son ancien document
         // individuel (users/{uid}, d'avant le passage à un espace partagé) : on les reprend
@@ -6281,10 +6617,11 @@
         await setDoc(userDocRef, { ...legacyOwnData, updatedAt: serverTimestamp() });
         applyingRemoteState = true;
         window.__rg_setState(legacyOwnData);
+        await loadSharedAgenda();
         applyingRemoteState = false;
         window.__rg_renderAll();
         setSyncStatus('idle');
-        runDailyBackup(SHARED_DOC_ID, legacyOwnData);
+        runDailyBackup(SHARED_DOC_ID, { ...legacyOwnData, events: window.__rg_getEvents() });
       } else {
         // Aucun document cloud (ni partagé, ni ancien document individuel) : on regarde s'il reste
         // d'anciennes données locales (versions précédentes de l'appli) pour ne rien perdre. Dans
@@ -6307,6 +6644,7 @@
         const initialState = window.__rg_getState();
         await setDoc(userDocRef, { ...initialState, updatedAt: serverTimestamp() });
         if(legacyState && window.__rg_clearLegacyLocalStorage) window.__rg_clearLegacyLocalStorage();
+        await loadSharedAgenda();
         applyingRemoteState = false;
         window.__rg_renderAll();
         setSyncStatus('idle');
