@@ -1007,9 +1007,15 @@
      une fois le contenu plus grand que la zone visible, sans les décalages de défilement propres au
      centrage flex/grid dans ce cas. Voir setBookFlipZoom. */
   .book-flip-zoom-viewport{
-    flex:1; min-width:0; align-self:stretch; overflow:auto; text-align:center;
+    position:relative; flex:1; min-width:0; align-self:stretch; overflow:auto; text-align:center;
   }
   .book-flip-container{display:inline-block; max-width:100%; transition:transform .2s ease; transform-origin:center top;}
+  /* Voir commentaire au niveau du HTML : agrandit la cible de tap pour tourner la page sur mobile,
+     sans toucher au comportement desktop (pointer-events:none par défaut, activé uniquement dans la
+     media query mobile plus bas). */
+  .book-flip-tapzone{position:absolute; top:0; bottom:0; width:25%; z-index:2; pointer-events:none;}
+  .book-flip-tapzone-prev{left:0;}
+  .book-flip-tapzone-next{right:0;}
   .book-flip-nav{
     flex:0 0 auto; width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
     background:var(--panel); color:var(--ink); font-size:1.4rem; line-height:1; cursor:pointer;
@@ -1077,7 +1083,19 @@
     .tab-btn{flex:0 0 auto; padding:7px 7px; font-size:0.8rem; gap:2px; white-space:nowrap;}
     .scene-editor-content{min-height:300px;}
     .book-flip-loading, .book-flip-stage{min-height:75vh;}
-    .book-flip-nav{width:34px; height:34px; font-size:1.2rem;}
+    /* Les boutons ‹ › passent en survol du livre (position:absolute) plutôt qu'en éléments flex
+       occupant leur propre largeur : sur un petit écran, ça leur coûtait une bonne partie de la
+       largeur disponible et rétrécissait la page affichée d'autant. La zone de tap élargie
+       ci-dessous (book-flip-tapzone) prend le relais pour une cible de tap plus confortable. */
+    .book-flip-stage{position:relative; padding:24px 2px 6px;}
+    .book-flip-nav{
+      position:absolute; top:50%; transform:translateY(-50%); z-index:4;
+      width:30px; height:30px; font-size:1.1rem;
+      background:rgba(255,255,255,0.88); box-shadow:var(--shadow);
+    }
+    .book-flip-prev{left:2px;}
+    .book-flip-next{right:2px;}
+    .book-flip-tapzone{pointer-events:auto;}
     .book-flip-toolbar{top:6px; right:6px; gap:4px;}
     .book-flip-toolbar button{height:28px; min-width:28px; font-size:0.85rem;}
     .book-flip-zoom-label{font-size:0.62rem !important; min-width:34px;}
@@ -1414,6 +1432,12 @@
                zoomée, sans toucher aux boutons ‹ › qui doivent rester fixes de part et d'autre. -->
           <div class="book-flip-zoom-viewport" id="bookFlipZoomViewport">
             <div class="book-flip-container" id="bookFlipContainer"></div>
+            <!-- Zones de tap agrandies (mobile uniquement, voir media query plus haut) : le simple
+                 tap près du bord ne tourne pas la page dans page-flip (il faut un vrai glissé), donc
+                 ces zones invisibles offrent une cible bien plus grande que les petits boutons ‹ ›.
+                 Inertes sur desktop (pointer-events:none), pour ne pas gêner le double-clic zoom. -->
+            <div class="book-flip-tapzone book-flip-tapzone-prev" id="bookFlipTapPrev" aria-hidden="true"></div>
+            <div class="book-flip-tapzone book-flip-tapzone-next" id="bookFlipTapNext" aria-hidden="true"></div>
           </div>
           <button type="button" class="book-flip-nav book-flip-next" id="bookFlipNextBtn" title="Page suivante" aria-label="Page suivante">›</button>
         </div>
@@ -6133,6 +6157,8 @@
     const zoomInBtn = document.getElementById('bookFlipZoomInBtn');
     const zoomLabelEl = document.getElementById('bookFlipZoomLabel');
     const fullscreenBtn = document.getElementById('bookFlipFullscreenBtn');
+    const tapPrevEl = document.getElementById('bookFlipTapPrev');
+    const tapNextEl = document.getElementById('bookFlipTapNext');
     if(!viewerEl || !containerEl) return;
 
     function showError(msg){
@@ -6236,6 +6262,35 @@
           setBookFlipZoom(bookFlipZoom + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
         }, {passive:false});
       }
+      // Pincement à deux doigts (mobile) : le zoom natif est désactivé sur toute l'appli
+      // (user-scalable=no dans le <meta viewport>, voir <head>), donc on le réimplémente ici pour le
+      // feuilletage uniquement. Écouteurs en phase de capture, mais on ne "vole" l'événement
+      // (stopPropagation) qu'à deux doigts précis : à un seul doigt, il continue de circuler
+      // normalement vers page-flip (glissé pour tourner la page) et vers le défilement natif une
+      // fois zoomé — seul le pincement à deux doigts est intercepté ici.
+      let pinchStartDist = null, pinchStartZoom = 1;
+      function bookFlipTouchDist(touches){
+        return Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
+      }
+      if(zoomViewportEl){
+        zoomViewportEl.addEventListener('touchstart', (e)=>{
+          if(e.touches.length === 2){
+            pinchStartDist = bookFlipTouchDist(e.touches);
+            pinchStartZoom = bookFlipZoom;
+            e.stopPropagation();
+          }
+        }, {capture:true, passive:true});
+        zoomViewportEl.addEventListener('touchmove', (e)=>{
+          if(e.touches.length === 2 && pinchStartDist){
+            e.preventDefault();
+            e.stopPropagation();
+            setBookFlipZoom(pinchStartZoom * (bookFlipTouchDist(e.touches) / pinchStartDist));
+          }
+        }, {capture:true, passive:false});
+        zoomViewportEl.addEventListener('touchend', (e)=>{
+          if(e.touches.length < 2) pinchStartDist = null;
+        }, {capture:true, passive:true});
+      }
 
       // ---- Plein écran : API Fullscreen standard quand le navigateur la permet sur un élément
       // quelconque (desktop, Android) ; sinon repli en plein écran "simulé" via CSS (voir
@@ -6310,6 +6365,10 @@
 
       if(prevBtn) prevBtn.addEventListener('click', ()=> pageFlip.flipPrev());
       if(nextBtn) nextBtn.addEventListener('click', ()=> pageFlip.flipNext());
+      // Zones de tap élargies (voir book-flip-tapzone, inertes sur desktop) : un tap tourne la page,
+      // sauf si zoomée (on laisse alors le doigt servir à se déplacer dans la page agrandie).
+      if(tapPrevEl) tapPrevEl.addEventListener('click', ()=>{ if(bookFlipZoom === 1) pageFlip.flipPrev(); });
+      if(tapNextEl) tapNextEl.addEventListener('click', ()=>{ if(bookFlipZoom === 1) pageFlip.flipNext(); });
 
       // Flèches clavier ←/→ pour tourner les pages, seulement quand le sous-onglet Livre est
       // effectivement affiché et que le focus n'est pas dans un champ de saisie (pour ne pas gêner
