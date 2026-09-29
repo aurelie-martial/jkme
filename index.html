@@ -1000,9 +1000,16 @@
   @keyframes bookFlipSpin{ to{ transform:rotate(360deg); } }
   .book-flip-stage{
     flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:24px 10px 10px;
-    min-height:500px;
+    min-height:500px; min-width:0;
   }
-  .book-flip-container{max-width:100%;}
+  /* Défile (overflow:auto) une fois le contenu agrandi par le zoom, pour pouvoir se déplacer dans
+     la page — display:block + text-align:center (plutôt que flex) pour un centrage qui reste fiable
+     une fois le contenu plus grand que la zone visible, sans les décalages de défilement propres au
+     centrage flex/grid dans ce cas. Voir setBookFlipZoom. */
+  .book-flip-zoom-viewport{
+    flex:1; min-width:0; align-self:stretch; overflow:auto; text-align:center;
+  }
+  .book-flip-container{display:inline-block; max-width:100%; transition:transform .2s ease; transform-origin:center top;}
   .book-flip-nav{
     flex:0 0 auto; width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
     background:var(--panel); color:var(--ink); font-size:1.4rem; line-height:1; cursor:pointer;
@@ -1012,13 +1019,43 @@
   .book-flip-nav:disabled{opacity:.35; cursor:default;}
   .book-flip-nav:disabled:hover{border-color:var(--line); color:var(--ink);}
   .book-flip-pageindicator{
-    text-align:center; font-size:0.78rem; font-weight:600; color:var(--ink-soft); padding:0 0 16px;
+    text-align:center; font-size:0.78rem; font-weight:600; color:var(--ink-soft); padding:10px 0 6px;
+    flex:0 0 auto;
   }
   .book-fallback-link{
     display:block; text-align:center; margin-top:10px; font-size:0.78rem; font-weight:600;
     color:var(--ink-soft); text-decoration:none; padding:8px;
   }
   .book-fallback-link:hover{color:var(--lavande); text-decoration:underline;}
+
+  /* Barre plein écran + zoom, en overlay au-dessus du coin haut-droit du feuilletage (voir
+     .book-viewer{position:relative} plus haut). */
+  .book-flip-toolbar{
+    position:absolute; top:10px; right:10px; z-index:5; display:flex; align-items:center; gap:6px;
+  }
+  .book-flip-toolbar button{
+    flex:0 0 auto; height:32px; min-width:32px; padding:0 8px; border-radius:16px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink);
+    font-size:0.95rem; font-weight:700; line-height:1; cursor:pointer; box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:center; transition:all .15s ease;
+  }
+  .book-flip-toolbar button:hover{border-color:var(--lavande); color:var(--lavande);}
+  .book-flip-toolbar button:disabled{opacity:.35; cursor:default; border-color:var(--line); color:var(--ink);}
+  .book-flip-zoom-label{font-size:0.68rem !important; min-width:40px; cursor:pointer;}
+
+  /* Plein écran natif (API Fullscreen, voir toggleBookFullscreen) : l'élément mis en plein écran
+     doit lui-même prendre toute la fenêtre, sinon il garde sa taille d'origine au milieu d'un fond
+     noir. Préfixe -webkit- nécessaire pour Safari desktop. */
+  .book-viewer:fullscreen{width:100vw; height:100vh; min-height:100vh; border-radius:0;}
+  .book-viewer:-webkit-full-screen{width:100vw; height:100vh; min-height:100vh; border-radius:0;}
+  /* Plein écran "simulé" en repli, pour les navigateurs sans API Fullscreen sur un élément
+     quelconque (Safari iOS, notamment) : l'élément recouvre tout l'écran par-dessus le reste de
+     l'appli via position:fixed, seule option possible là où requestFullscreen() n'existe pas pour
+     un <div>. Voir toggleBookFullscreen. */
+  .book-viewer.book-flip-fauxfull{
+    position:fixed; inset:0; z-index:1000; width:100vw; height:100vh; min-height:100vh; border-radius:0;
+  }
+  body.book-flip-fauxfull-lock{overflow:hidden;}
 
   /* MOBILE */
   @media(max-width:640px){
@@ -1041,6 +1078,9 @@
     .scene-editor-content{min-height:300px;}
     .book-flip-loading, .book-flip-stage{min-height:75vh;}
     .book-flip-nav{width:34px; height:34px; font-size:1.2rem;}
+    .book-flip-toolbar{top:6px; right:6px; gap:4px;}
+    .book-flip-toolbar button{height:28px; min-width:28px; font-size:0.85rem;}
+    .book-flip-zoom-label{font-size:0.62rem !important; min-width:34px;}
     .scenes-layout{flex-direction:column;}
     .scene-sidebar{position:static; flex:0 0 auto; width:100%; flex-direction:column;}
     .scene-pills{display:none;}
@@ -1357,13 +1397,28 @@
           <div class="book-flip-spinner"></div>
           <div id="bookFlipLoadingLabel">Préparation du feuilletage…</div>
         </div>
+        <!-- Plein écran + zoom : dans la case (pas juste au-dessus), pour rester visible aussi en
+             plein écran natif (l'API Fullscreen masque tout ce qui est en dehors de l'élément mis en
+             plein écran, voir toggleBookFullscreen). Masquée avec le reste tant que le feuilletage
+             n'est pas prêt (voir bookFlipStage juste en dessous). -->
+        <div class="book-flip-toolbar" id="bookFlipToolbar" style="display:none;">
+          <button type="button" class="book-flip-zoom-out" id="bookFlipZoomOutBtn" title="Zoom arrière" aria-label="Zoom arrière">−</button>
+          <button type="button" class="book-flip-zoom-label" id="bookFlipZoomLabel" title="Réinitialiser le zoom">100%</button>
+          <button type="button" class="book-flip-zoom-in" id="bookFlipZoomInBtn" title="Zoom avant" aria-label="Zoom avant">+</button>
+          <button type="button" class="book-flip-fullscreen-btn" id="bookFlipFullscreenBtn" title="Plein écran" aria-label="Plein écran">⛶</button>
+        </div>
         <div class="book-flip-stage" id="bookFlipStage" style="display:none;">
           <button type="button" class="book-flip-nav book-flip-prev" id="bookFlipPrevBtn" title="Page précédente" aria-label="Page précédente">‹</button>
-          <div class="book-flip-container" id="bookFlipContainer"></div>
+          <!-- Le zoom (transform:scale, voir setBookFlipZoom) s'applique à bookFlipContainer ; cette
+               enveloppe défile (overflow:auto) pour permettre de se déplacer dans la page une fois
+               zoomée, sans toucher aux boutons ‹ › qui doivent rester fixes de part et d'autre. -->
+          <div class="book-flip-zoom-viewport" id="bookFlipZoomViewport">
+            <div class="book-flip-container" id="bookFlipContainer"></div>
+          </div>
           <button type="button" class="book-flip-nav book-flip-next" id="bookFlipNextBtn" title="Page suivante" aria-label="Page suivante">›</button>
         </div>
+        <div class="book-flip-pageindicator" id="bookFlipPageIndicator" style="display:none;"></div>
       </div>
-      <div class="book-flip-pageindicator" id="bookFlipPageIndicator" style="display:none;"></div>
       <a href="jusqua-meteindre.pdf" target="_blank" rel="noopener" class="book-fallback-link" id="bookFallbackLink">
         ⧉ Besoin du PDF classique (recherche de texte, impression) ? Ouvre-le dans un nouvel onglet
       </a>
@@ -6069,9 +6124,15 @@
     const loadingLabelEl = document.getElementById('bookFlipLoadingLabel');
     const stageEl = document.getElementById('bookFlipStage');
     const containerEl = document.getElementById('bookFlipContainer');
+    const zoomViewportEl = document.getElementById('bookFlipZoomViewport');
     const pageIndicatorEl = document.getElementById('bookFlipPageIndicator');
     const prevBtn = document.getElementById('bookFlipPrevBtn');
     const nextBtn = document.getElementById('bookFlipNextBtn');
+    const toolbarEl = document.getElementById('bookFlipToolbar');
+    const zoomOutBtn = document.getElementById('bookFlipZoomOutBtn');
+    const zoomInBtn = document.getElementById('bookFlipZoomInBtn');
+    const zoomLabelEl = document.getElementById('bookFlipZoomLabel');
+    const fullscreenBtn = document.getElementById('bookFlipFullscreenBtn');
     if(!viewerEl || !containerEl) return;
 
     function showError(msg){
@@ -6120,6 +6181,7 @@
       // masqué (display:none, donc largeur/hauteur nulles) donnerait un rendu mal dimensionné.
       if(loadingEl) loadingEl.style.display = 'none';
       if(stageEl) stageEl.style.display = '';
+      if(toolbarEl) toolbarEl.style.display = '';
 
       const pageFlip = new St.PageFlip(containerEl, {
         width: baseWidth,
@@ -6143,7 +6205,103 @@
         if(nextBtn) nextBtn.disabled = current >= total - 1;
       }
 
-      pageFlip.on('flip', updateIndicator);
+      // ---- Zoom (transform:scale sur bookFlipContainer, voir book-flip-zoom-viewport plus haut
+      // pour le défilement une fois agrandi) : purement visuel, ne touche pas aux dimensions que
+      // page-flip utilise en interne (calculées une fois, voir size:'stretch' ci-dessus), donc pas
+      // de conflit avec le tournage de page ou son propre redimensionnement. Remis à 100% à chaque
+      // changement de page, pour ne pas se retrouver zoomée sur la page suivante sans le vouloir. ----
+      const ZOOM_MIN = 1, ZOOM_MAX = 2.5, ZOOM_STEP = 0.25;
+      let bookFlipZoom = 1;
+      function setBookFlipZoom(z){
+        bookFlipZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100));
+        containerEl.style.transform = bookFlipZoom === 1 ? '' : `scale(${bookFlipZoom})`;
+        if(zoomLabelEl) zoomLabelEl.textContent = Math.round(bookFlipZoom * 100) + '%';
+        if(zoomOutBtn) zoomOutBtn.disabled = bookFlipZoom <= ZOOM_MIN;
+        if(zoomInBtn) zoomInBtn.disabled = bookFlipZoom >= ZOOM_MAX;
+        if(bookFlipZoom === 1 && zoomViewportEl){ zoomViewportEl.scrollLeft = 0; zoomViewportEl.scrollTop = 0; }
+      }
+      if(zoomOutBtn) zoomOutBtn.addEventListener('click', ()=> setBookFlipZoom(bookFlipZoom - ZOOM_STEP));
+      if(zoomInBtn) zoomInBtn.addEventListener('click', ()=> setBookFlipZoom(bookFlipZoom + ZOOM_STEP));
+      if(zoomLabelEl) zoomLabelEl.addEventListener('click', ()=> setBookFlipZoom(1));
+      // Double-clic sur la page : raccourci pour zoomer/dézoomer d'un coup, comme sur la plupart
+      // des liseuses/visionneuses d'images.
+      containerEl.addEventListener('dblclick', ()=> setBookFlipZoom(bookFlipZoom > 1 ? 1 : 1.75));
+      // Molette + Ctrl (ou Cmd sur Mac, remonté comme ctrlKey par les navigateurs pour le geste de
+      // pincement du trackpad) : convention habituelle des liseuses PDF, sans gêner un défilement
+      // classique de la page (molette seule).
+      if(zoomViewportEl){
+        zoomViewportEl.addEventListener('wheel', (e)=>{
+          if(!e.ctrlKey) return;
+          e.preventDefault();
+          setBookFlipZoom(bookFlipZoom + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
+        }, {passive:false});
+      }
+
+      // ---- Plein écran : API Fullscreen standard quand le navigateur la permet sur un élément
+      // quelconque (desktop, Android) ; sinon repli en plein écran "simulé" via CSS (voir
+      // .book-flip-fauxfull plus haut) — notamment iOS Safari, qui ne l'implémente que pour
+      // <video>. Le bouton bascule toujours entre les deux états, quel que soit le mécanisme utilisé
+      // en coulisses. ----
+      function isBookFullscreenActive(){
+        return document.fullscreenElement === viewerEl || document.webkitFullscreenElement === viewerEl
+          || viewerEl.classList.contains('book-flip-fauxfull');
+      }
+      function updateFullscreenBtnState(){
+        const active = isBookFullscreenActive();
+        if(fullscreenBtn){
+          fullscreenBtn.textContent = active ? '⤡' : '⛶';
+          fullscreenBtn.title = active ? 'Quitter le plein écran' : 'Plein écran';
+          fullscreenBtn.setAttribute('aria-label', fullscreenBtn.title);
+        }
+      }
+      // Repli CSS (voir .book-flip-fauxfull plus haut) : verrouille aussi le défilement du reste de
+      // la page derrière le feuilletage, comme le ferait un vrai plein écran.
+      function useBookFauxFullscreen(){
+        const nowFauxfull = viewerEl.classList.toggle('book-flip-fauxfull');
+        document.body.classList.toggle('book-flip-fauxfull-lock', nowFauxfull);
+        updateFullscreenBtnState();
+        nudgeBookFlipResize();
+      }
+      function toggleBookFullscreen(){
+        const canRequestFullscreen = (document.fullscreenEnabled || document.webkitFullscreenEnabled)
+          && (viewerEl.requestFullscreen || viewerEl.webkitRequestFullscreen);
+        if(!canRequestFullscreen){
+          useBookFauxFullscreen();
+          return;
+        }
+        if(!document.fullscreenElement && !document.webkitFullscreenElement){
+          const request = (viewerEl.requestFullscreen || viewerEl.webkitRequestFullscreen).call(viewerEl);
+          // Malgré une API a priori disponible, la demande peut être refusée dans certains contextes
+          // (ex. iframe sans permission) : on bascule alors sur le repli CSS plutôt que de laisser le
+          // bouton ne rien faire.
+          if(request && typeof request.catch === 'function') request.catch(()=> useBookFauxFullscreen());
+        }else if(document.exitFullscreen){
+          document.exitFullscreen().catch(()=>{});
+        }else if(document.webkitExitFullscreen){
+          document.webkitExitFullscreen();
+        }
+      }
+      if(fullscreenBtn) fullscreenBtn.addEventListener('click', toggleBookFullscreen);
+      ['fullscreenchange', 'webkitfullscreenchange'].forEach(evt => {
+        document.addEventListener(evt, ()=>{
+          updateFullscreenBtnState();
+          // Laisse page-flip recalculer ses dimensions (size:'stretch') pour la nouvelle taille du
+          // conteneur, à l'entrée comme à la sortie du plein écran natif.
+          nudgeBookFlipResize();
+        });
+      });
+      // Échap pour quitter le plein écran "simulé" : le plein écran natif gère déjà ça tout seul,
+      // seul le repli CSS (sans vraie API Fullscreen) en a besoin ici.
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape' && viewerEl.classList.contains('book-flip-fauxfull')){
+          viewerEl.classList.remove('book-flip-fauxfull');
+          document.body.classList.remove('book-flip-fauxfull-lock');
+          updateFullscreenBtnState();
+          nudgeBookFlipResize();
+        }
+      });
+
+      pageFlip.on('flip', ()=>{ updateIndicator(); setBookFlipZoom(1); });
       pageFlip.on('init', ()=>{
         if(pageIndicatorEl) pageIndicatorEl.style.display = '';
         updateIndicator();
