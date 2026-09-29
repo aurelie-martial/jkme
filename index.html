@@ -6176,7 +6176,15 @@
       const pdfUrl = viewerEl.dataset.pdfSrc;
       const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
       const numPages = pdf.numPages;
-      const targetWidth = 700; // résolution d'affichage à l'écran (pas d'impression : voir le lien PDF classique)
+      // Résolution d'affichage à l'écran (pas d'impression : voir le lien PDF classique). Alignée
+      // sur la résolution native des dessins scannés à l'intérieur du PDF (~144 PPI, vérifié via
+      // `pdfimages -list` : images sources d'environ 1190px de large pour une page de 595pt) plutôt
+      // que la valeur bien plus basse d'avant (700px, ~85 PPI) : ça ne coûte rien en réseau (le PDF
+      // est déjà entièrement téléchargé avant ce rendu), seulement un peu plus de CPU/mémoire au
+      // chargement, largement à la portée d'un téléphone récent pour 105 pages. Voir aussi le zoom
+      // (jusqu'à 250%) et le plein écran, qui rendaient d'autant plus visible le flou de l'ancienne
+      // résolution une fois la page agrandie.
+      const targetWidth = 1200;
       const images = [];
       let baseWidth = 500, baseHeight = 700;
 
@@ -6196,7 +6204,10 @@
         canvas.height = viewport.height;
         const ctx = canvas.getContext('2d');
         await page.render({canvasContext: ctx, viewport}).promise;
-        images.push(canvas.toDataURL('image/jpeg', 0.82));
+        // Qualité JPEG remontée de 0.82 à 0.9 : les dessins sources sont déjà en JPEG (voir
+        // pdfimages -list), donc une compression trop appuyée par-dessus une image déjà compressée
+        // ajoutait un flou/artefacts visibles en plus, surtout sur le texte des bulles.
+        images.push(canvas.toDataURL('image/jpeg', 0.9));
         page.cleanup();
         if(loadingLabelEl) loadingLabelEl.textContent = `Préparation du feuilletage… (${i} / ${numPages})`;
       }
