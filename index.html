@@ -268,7 +268,19 @@
   /* VUE SEMAINE : grille horaire, en plus de la vue Mois. Les 3 zones (en-tête des jours, ligne
      "journée entière", grille des heures) partagent le même gabarit de colonnes (une colonne pour
      les heures + 7 colonnes de jours) pour rester alignées verticalement. */
-  .week-view{display:flex; flex-direction:column; --week-hour-h: 48px;}
+  .week-view{
+    display:flex; flex-direction:column; --week-hour-h: 48px;
+    /* Fond discret pour distinguer la pause déjeuner (12h-14h) et la soirée (après 19h) du reste de
+       la grille, en un coup d'œil. Bornes exprimées en multiples de --week-hour-h depuis le début de
+       la grille (WEEK_VIEW_START_HOUR = 8h, voir JS) : 12h = +4h, 14h = +6h, 19h = +11h, 22h (fin de
+       grille, WEEK_VIEW_END_HOUR) = +14h. Appliqué via .week-day-col ci-dessous. */
+    --week-band-color: rgba(51,65,85,0.045);
+    --week-band-bg: linear-gradient(to bottom,
+      transparent 0, transparent calc(var(--week-hour-h) * 4),
+      var(--week-band-color) calc(var(--week-hour-h) * 4), var(--week-band-color) calc(var(--week-hour-h) * 6),
+      transparent calc(var(--week-hour-h) * 6), transparent calc(var(--week-hour-h) * 11),
+      var(--week-band-color) calc(var(--week-hour-h) * 11), var(--week-band-color) calc(var(--week-hour-h) * 14));
+  }
   .week-cols{display:grid; grid-template-columns:52px repeat(7,1fr); gap:0;}
   .week-header{border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:4px;}
   .week-day-head{text-align:center; padding:4px 2px; border-left:1px solid var(--line); cursor:pointer;}
@@ -293,11 +305,13 @@
   }
   .week-day-col{
     position:relative; height:calc(var(--week-hour-h) * 14); border-left:1px solid var(--line);
-    background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h));
+    /* var(--week-band-bg) en dernier (donc rendu en dessous) pour que les lignes d'heure restent
+       nettes par-dessus le fond discret des créneaux 12h-14h / après 19h, voir .week-view. */
+    background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h)), var(--week-band-bg);
     cursor:pointer;
   }
   .week-day-col.today{background-color:rgba(77,143,166,0.05);}
-  .week-day-col.past{background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h)), repeating-linear-gradient(135deg, rgba(51,65,85,0.05) 0, rgba(51,65,85,0.05) 1px, transparent 1px, transparent 7px);}
+  .week-day-col.past{background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h)), repeating-linear-gradient(135deg, rgba(51,65,85,0.05) 0, rgba(51,65,85,0.05) 1px, transparent 1px, transparent 7px), var(--week-band-bg);}
   .week-event{
     position:absolute; overflow:hidden; border-radius:4px; padding:2px 5px; font-size:0.66rem; line-height:1.25;
     background:rgba(255,255,255,0.9); border-left:2px solid var(--ev-color, var(--ev-rdv)); box-shadow:var(--shadow-sm);
