@@ -279,7 +279,12 @@
   .week-allday{min-height:22px; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:2px;}
   .week-allday-cell{border-left:1px solid var(--line); padding:2px 4px; display:flex; flex-direction:column; gap:2px; cursor:pointer;}
   .week-hour-gutter-label{font-size:0.6rem; font-weight:600; color:var(--ink-soft); text-align:right; padding-right:6px; align-self:center;}
-  .week-body-scroll{max-height:480px; overflow-y:auto; border-top:1px solid var(--line);}
+  /* Pas de scroll interne sur desktop (retiré le 30 septembre 2026) : les 14 heures (8h-22h)
+     tiennent entières dans la page, sans avoir à faire défiler une petite zone à l'intérieur de la
+     vue Semaine (celle-ci défile avec la page si besoin, comme le reste du contenu). Gardé en
+     dessous de 640px (voir @media(max-width:640px) plus haut dans le fichier, même seuil que le
+     reste des ajustements mobiles) où la grille horaire complète dépasserait trop la hauteur visible. */
+  .week-body-scroll{border-top:1px solid var(--line);}
   .week-body{display:grid; grid-template-columns:52px repeat(7,1fr); position:relative;}
   /* 14 heures affichées (8h-22h, voir WEEK_VIEW_START_HOUR/END_HOUR en JS), pas 24. */
   .week-hours-col{position:relative; height:calc(var(--week-hour-h) * 14);}
@@ -1117,6 +1122,10 @@
     .scene-sidebar-actions .btn-add-subtab{flex:1; text-align:center;}
     .blocnotes-sidebar-toggle-row{display:none;}
     #blocNotesSidebar.collapsed{flex-basis:auto;}
+    /* Vue Semaine de l'Agenda : contrairement à desktop (voir .week-body-scroll plus haut), la
+       grille horaire complète (14h, 8h-22h) dépasserait trop la hauteur visible sur mobile — on
+       garde donc ici le scroll interne d'origine, plafonné à 480px. */
+    .week-body-scroll{max-height:480px; overflow-y:auto;}
   }
 
   /* --- EXPORT PDF (bouton 🖨 dans les barres d'outils du Bloc-notes) --- */
