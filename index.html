@@ -287,9 +287,20 @@
   .week-day-head:hover{background:var(--gris);}
   .week-day-name{display:block; font-size:0.66rem; font-weight:600; text-transform:uppercase; color:var(--ink-soft); letter-spacing:0.06em;}
   .week-day-num{display:inline-block; font-size:0.92rem; font-weight:700; color:var(--ink); margin-top:2px; width:26px; height:26px; line-height:26px; border-radius:50%;}
+  /* Jour J affiché de façon plus assumée (30 septembre 2026) : avant, seul le chiffre du jour avait
+     un disque plein coloré (voir .week-day-num ci-dessus), et la colonne elle-même n'avait qu'une
+     teinte à peine visible (5% d'opacité) — on passait facilement à côté. Les trois zones empilées
+     de la colonne du jour J (en-tête, ligne "journée entière", grille des heures) partagent
+     maintenant un même cadre en accent (var(--jaune), la couleur "aujourd'hui" déjà utilisée pour
+     le disque du chiffre et pour .cal-cell.today en vue Mois) qui les relie visuellement en une
+     seule colonne mise en évidence de haut en bas, plus un fond légèrement plus prononcé (9% au
+     lieu de 5%) et le nom du jour (MER, JEU...) en gras coloré plutôt qu'en gris discret. */
+  .week-day-head.today{background:rgba(77,143,166,0.08); box-shadow:inset 2px 0 0 var(--jaune), inset -2px 0 0 var(--jaune), inset 0 2px 0 var(--jaune);}
+  .week-day-head.today .week-day-name{color:var(--jaune); font-weight:700;}
   .week-day-head.today .week-day-num{background:var(--jaune); color:#fff;}
   .week-allday{min-height:22px; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:2px;}
   .week-allday-cell{border-left:1px solid var(--line); padding:2px 4px; display:flex; flex-direction:column; gap:2px; cursor:pointer;}
+  .week-allday-cell.today{background:rgba(77,143,166,0.08); box-shadow:inset 2px 0 0 var(--jaune), inset -2px 0 0 var(--jaune);}
   .week-hour-gutter-label{font-size:0.6rem; font-weight:600; color:var(--ink-soft); text-align:right; padding-right:6px; align-self:center;}
   /* Pas de scroll interne sur desktop (retiré le 30 septembre 2026) : les 14 heures (8h-22h)
      tiennent entières dans la page, sans avoir à faire défiler une petite zone à l'intérieur de la
@@ -310,7 +321,7 @@
     background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h)), var(--week-band-bg);
     cursor:pointer;
   }
-  .week-day-col.today{background-color:rgba(77,143,166,0.05);}
+  .week-day-col.today{background-color:rgba(77,143,166,0.09); box-shadow:inset 2px 0 0 var(--jaune), inset -2px 0 0 var(--jaune), inset 0 -2px 0 var(--jaune);}
   .week-day-col.past{background-image: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--week-hour-h)), repeating-linear-gradient(135deg, rgba(51,65,85,0.05) 0, rgba(51,65,85,0.05) 1px, transparent 1px, transparent 7px), var(--week-band-bg);}
   .week-event{
     position:absolute; overflow:hidden; border-radius:4px; padding:2px 5px; font-size:0.66rem; line-height:1.25;
@@ -3258,7 +3269,7 @@
 
       const isMonday = date.getDay() === 1;
       const isSunday = date.getDay() === 0;
-      alldayHtml += `<div class="week-allday-cell" data-key="${key}">` +
+      alldayHtml += `<div class="week-allday-cell${isToday?' today':''}" data-key="${key}">` +
         gardeEvs.map(ev=>{
           const leftRound = ev.startDate === key || isMonday;
           const rightRound = ev.endDate === key || isSunday;
