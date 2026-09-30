@@ -1278,7 +1278,6 @@
             </div>
 
             <div id="igDetailView" style="display:none;">
-              <input type="text" class="scene-editor-title" id="igPostMenuNameInput" maxlength="40" placeholder="Nom dans le menu (optionnel, sinon la légende est utilisée)">
               <div class="ig-post-card-header">
                 <button type="button" class="ig-back-btn" id="igBackBtn" title="Retour à la grille">←</button>
                 <div class="ig-post-card-avatar" id="igPostCardAvatar"></div>
@@ -5192,7 +5191,6 @@
   const igPostImageBox = document.getElementById('igPostImageBox');
   const igPostImagePlaceholder = document.getElementById('igPostImagePlaceholder');
   const igPostImageInput = document.getElementById('igPostImageInput');
-  const igPostMenuNameInput = document.getElementById('igPostMenuNameInput');
   const igPostLikesInput = document.getElementById('igPostLikesInput');
   const igPostCaptionInput = document.getElementById('igPostCaptionInput');
   const igPostCaptionUsernameEl = document.getElementById('igPostCaptionUsername');
@@ -5340,12 +5338,30 @@
         <div class="scene-pill-row" data-order-key="${p.id}">
           <button type="button" class="scene-pill ${active?'active':''}" data-idx="${p.id}">${escapeHtml(label)}</button>
           <div class="ig-pill-actions">
+            <button type="button" class="scene-pill-rename" data-rename-key="${p.id}" title="Renommer ce post dans le menu">✎</button>
             <button type="button" class="scene-pill-del" data-del-key="${p.id}" title="Supprimer ce post">✕</button>
           </div>
         </div>`;
     }).join('');
     igPostPillsEl.querySelectorAll('.scene-pill').forEach(btn=>{
       btn.addEventListener('click', ()=> selectIgPost(btn.dataset.idx));
+    });
+    // Renomme un post directement depuis le menu de gauche (même principe que le Bloc-notes,
+    // voir .scene-pill-rename plus haut dans le fichier) : contrairement à un champ texte dans la
+    // vue détail du post, qui casse l'illusion visuelle du mockup Instagram (l'objectif de cette
+    // vue étant justement de simuler un vrai post), le renommage se fait ici via une simple boîte
+    // de dialogue, sans jamais toucher à la carte-mockup elle-même.
+    igPostPillsEl.querySelectorAll('.scene-pill-rename').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const p = igPosts.find(x=>String(x.id)===String(btn.dataset.renameKey));
+        if(!p) return;
+        const name = prompt('Nom de ce post dans le menu (laisser vide pour revenir à la légende tronquée)', p.menuName || '');
+        if(name === null) return;
+        p.menuName = name.trim();
+        saveIgPosts();
+        renderIgPostPills();
+      });
     });
     igPostPillsEl.querySelectorAll('.scene-pill-del').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -5371,7 +5387,6 @@
     const p = currentIgPost();
     if(!p) return;
     renderIgPostImage(p);
-    igPostMenuNameInput.value = p.menuName || '';
     igPostLikesInput.value = p.likes || 0;
     igPostCaptionInput.value = p.caption || '';
     autoResizeTextarea(igPostCaptionInput);
@@ -5456,12 +5471,6 @@
     }
   });
 
-  igPostMenuNameInput.addEventListener('input', ()=>{
-    const p = currentIgPost(); if(!p) return;
-    p.menuName = igPostMenuNameInput.value;
-    saveIgPosts();
-    renderIgPostPills();
-  });
   igPostLikesInput.addEventListener('input', ()=>{
     const p = currentIgPost(); if(!p) return;
     p.likes = parseInt(igPostLikesInput.value, 10) || 0;
