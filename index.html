@@ -1278,6 +1278,7 @@
             </div>
 
             <div id="igDetailView" style="display:none;">
+              <input type="text" class="scene-editor-title" id="igPostMenuNameInput" maxlength="40" placeholder="Nom dans le menu (optionnel, sinon la légende est utilisée)">
               <div class="ig-post-card-header">
                 <button type="button" class="ig-back-btn" id="igBackBtn" title="Retour à la grille">←</button>
                 <div class="ig-post-card-avatar" id="igPostCardAvatar"></div>
@@ -5191,6 +5192,7 @@
   const igPostImageBox = document.getElementById('igPostImageBox');
   const igPostImagePlaceholder = document.getElementById('igPostImagePlaceholder');
   const igPostImageInput = document.getElementById('igPostImageInput');
+  const igPostMenuNameInput = document.getElementById('igPostMenuNameInput');
   const igPostLikesInput = document.getElementById('igPostLikesInput');
   const igPostCaptionInput = document.getElementById('igPostCaptionInput');
   const igPostCaptionUsernameEl = document.getElementById('igPostCaptionUsername');
@@ -5332,7 +5334,7 @@
       return;
     }
     igPostPillsEl.innerHTML = igPosts.map(p=>{
-      const label = (p.caption || '').trim().slice(0, 40) || '(sans légende)';
+      const label = (p.menuName || '').trim() || (p.caption || '').trim().slice(0, 40) || '(sans légende)';
       const active = igDetailVisible && String(p.id) === String(currentIgPostId);
       return `
         <div class="scene-pill-row" data-order-key="${p.id}">
@@ -5369,6 +5371,7 @@
     const p = currentIgPost();
     if(!p) return;
     renderIgPostImage(p);
+    igPostMenuNameInput.value = p.menuName || '';
     igPostLikesInput.value = p.likes || 0;
     igPostCaptionInput.value = p.caption || '';
     autoResizeTextarea(igPostCaptionInput);
@@ -5453,6 +5456,12 @@
     }
   });
 
+  igPostMenuNameInput.addEventListener('input', ()=>{
+    const p = currentIgPost(); if(!p) return;
+    p.menuName = igPostMenuNameInput.value;
+    saveIgPosts();
+    renderIgPostPills();
+  });
   igPostLikesInput.addEventListener('input', ()=>{
     const p = currentIgPost(); if(!p) return;
     p.likes = parseInt(igPostLikesInput.value, 10) || 0;
