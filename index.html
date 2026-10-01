@@ -6665,6 +6665,7 @@
   let userDocRef = null;
   let currentUid = null;
   let syncTimer = null;
+  let syncPending = false;
   let applyingRemoteState = false;
 
   function setSyncStatus(state){
@@ -6674,21 +6675,42 @@
     else { syncStatusLabel.textContent = 'Synchronisé'; }
   }
 
+  async function performSync(){
+    clearTimeout(syncTimer);
+    syncTimer = null;
+    if(!userDocRef || applyingRemoteState) return;
+    syncPending = false;
+    setSyncStatus('saving');
+    try{
+      const state = window.__rg_getState();
+      await setDoc(userDocRef, { ...state, updatedAt: serverTimestamp() });
+      setSyncStatus('idle');
+    }catch(err){
+      console.error('Erreur Firestore :', err);
+      setSyncStatus('error');
+    }
+  }
+
   window.__rg_scheduleSync = function(){
     if(!userDocRef || applyingRemoteState) return;
     setSyncStatus('saving');
+    syncPending = true;
     clearTimeout(syncTimer);
-    syncTimer = setTimeout(async ()=>{
-      try{
-        const state = window.__rg_getState();
-        await setDoc(userDocRef, { ...state, updatedAt: serverTimestamp() });
-        setSyncStatus('idle');
-      }catch(err){
-        console.error('Erreur Firestore :', err);
-        setSyncStatus('error');
-      }
-    }, 700);
+    syncTimer = setTimeout(performSync, 700);
   };
+
+  // Filet de sécurité : si l'onglet est fermé, rechargé ou mis en arrière-plan avant que les 700ms
+  // ci-dessus n'aient eu le temps de s'écouler (ex : on supprime une note puis on referme tout de
+  // suite la page), la sauvegarde en attente ne partait jamais et la suppression (ou la dernière
+  // modification) était perdue — l'ancienne version revenait au prochain chargement, donnant
+  // l'impression qu'une note supprimée "réapparaissait". On force donc l'écriture dès que la page
+  // devient cachée plutôt que d'attendre le délai complet.
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'hidden' && syncPending) performSync();
+  });
+  window.addEventListener('pagehide', ()=>{
+    if(syncPending) performSync();
+  });
 
   googleSignInBtn.addEventListener('click', async ()=>{
     loginError.textContent = '';
