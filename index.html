@@ -377,6 +377,20 @@
   }
   .backup-restore-row .brr-restore:hover{color:#fff; background:var(--lavande); border-color:var(--lavande);}
 
+  .imgweight-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    border:1px solid var(--line); border-radius:8px; padding:9px 12px; margin-bottom:8px; background:var(--bg);
+  }
+  .imgweight-row .iw-info{flex:1; min-width:0;}
+  .imgweight-row .iw-label{font-weight:600; font-size:0.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .imgweight-row .iw-size{font-size:0.76rem; color:var(--ink-soft);}
+  .imgweight-row .iw-compress{
+    border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer;
+    font-weight:600; padding:5px 11px; color:var(--ink-soft); flex:0 0 auto; font-size:0.8rem;
+  }
+  .imgweight-row .iw-compress:hover:not(:disabled){color:#fff; background:var(--lavande); border-color:var(--lavande);}
+  .imgweight-row .iw-compress:disabled{opacity:0.5; cursor:default;}
+
   /* MODAL */
   .overlay{
     display:none; position:fixed; inset:0; background:rgba(42,39,51,0.4); z-index:50;
@@ -387,6 +401,7 @@
     background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
     width:100%; max-width:440px; max-height:85vh; overflow-y:auto; padding:24px;
   }
+  .modal.modal-wide{max-width:620px;}
   .modal h3{font-family:'Plus Jakarta Sans', sans-serif; margin:0 0 4px; font-weight:700; font-size:1.15rem;}
   .modal .close-x{
     float:right; border:1px solid var(--line); background:var(--panel); border-radius:8px; width:30px; height:30px;
@@ -1770,6 +1785,16 @@
     <h3>Restaurer une sauvegarde</h3>
     <p class="backup-restore-intro">Une copie de tes données est enregistrée automatiquement chaque jour (conservée 30 jours). Choisis une date pour revenir à cette version — tes données actuelles seront remplacées.</p>
     <div id="backupRestoreList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="imageWeightOverlay">
+  <div class="modal modal-wide">
+    <button class="close-x" id="closeImageWeightModal">✕</button>
+    <h3>Poids des images</h3>
+    <p class="backup-restore-intro" id="imageWeightSummary"></p>
+    <p class="modal-empty" id="imageWeightNote">Compresser une image met à jour la donnée tout de suite. Si cette image appartient à un onglet déjà ouvert derrière cette fenêtre, son affichage ne se rafraîchira que la prochaine fois que tu rouvres cet onglet.</p>
+    <div id="imageWeightList"></div>
   </div>
 </div>
 
@@ -5951,6 +5976,12 @@
       imgResizeHandle.removeEventListener('pointerup', onUp);
       try{ imgResizeHandle.releasePointerCapture(ev.pointerId); }catch(err){}
       markInteractionJustHappened();
+      try{
+        const shrunk = shrinkInlineImageToDisplayWidth(img);
+        if(shrunk) img.src = shrunk.newDataUrl;
+      }catch(err){
+        console.error('Erreur réduction image redimensionnée :', err);
+      }
       if(selectedImgOnChange) selectedImgOnChange();
     };
     imgResizeHandle.addEventListener('pointermove', onMove);
@@ -6091,11 +6122,104 @@
       total += inlineImagesBytes(data.content);
       if(Array.isArray(data.items)) data.items.forEach(it=> total += inlineImagesBytes(it.content));
     });
+    // Le simulateur Instagram (photo de profil + images de post) vit lui aussi dans le même
+    // document Firestore à 1 Mo (voir window.__rg_getState) : il manquait ici, ce qui faisait
+    // sous-estimer le vrai poids total affiché dans le pied de page ci-dessous.
+    if(igProfile) total += base64ImageBytes(igProfile.avatar);
+    (igPosts || []).forEach(p=> total += base64ImageBytes(p.image));
     return total;
   }
 
   function formatKB(bytes){
     return (bytes / 1024).toLocaleString('fr-FR', {minimumFractionDigits:1, maximumFractionDigits:1});
+  }
+
+  // ---------- RECOMPRESSION DES IMAGES DÉJÀ ENREGISTRÉES ----------
+  // compressImageSquare() / compressImageForEditor() ne s'appliquent qu'aux NOUVEAUX envois : une
+  // image déjà enregistrée (ex. envoyée à une époque où le budget était différent, ou avant même
+  // l'existence de ce bouton) reste telle quelle tant qu'on ne la remplace pas à la main. Les
+  // fonctions ci-dessous permettent de repasser une image déjà enregistrée — scène, bloc-note,
+  // avatar ou post Instagram — dans un budget donné, sans avoir à la rouvrir et la ré-envoyer.
+  // Les images déjà sous le budget ne sont pas retouchées (pas de perte de qualité inutile).
+  function loadImageFromDataUrl(dataUrl){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('image illisible'));
+      img.src = dataUrl;
+    });
+  }
+
+  async function recompressDataUrlIfNeeded(dataUrl, {targetKB, startSize, minSize, square=true}){
+    const currentKB = base64ImageBytes(dataUrl) / 1024;
+    if(currentKB <= targetKB) return {dataUrl, savedBytes: 0};
+    const img = await loadImageFromDataUrl(dataUrl);
+    let newDataUrl;
+    if(square){
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+      newDataUrl = compressToTarget((canvas, size) => {
+        canvas.width = size; canvas.height = size;
+        return { render: (ctx) => ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size) };
+      }, {targetKB, startSize, minSize});
+    } else {
+      // Pas de recadrage carré ici : on garde les proportions d'origine (même logique que
+      // compressImageForEditor, pour les images insérées dans un texte enrichi).
+      const aspect = img.height / img.width;
+      newDataUrl = compressToTarget((canvas, width) => {
+        const w = Math.min(width, img.width);
+        const h = Math.max(1, Math.round(w * aspect));
+        canvas.width = w; canvas.height = h;
+        return { render: (ctx) => ctx.drawImage(img, 0, 0, w, h) };
+      }, {targetKB, startSize, minSize});
+    }
+    const newKB = base64ImageBytes(newDataUrl) / 1024;
+    return newKB < currentKB
+      ? {dataUrl: newDataUrl, savedBytes: Math.round((currentKB - newKB) * 1024)}
+      : {dataUrl, savedBytes: 0};
+  }
+
+  // Quand une image insérée dans un bloc-notes est redimensionnée à la souris (poignée en bas à
+  // droite, voir enableImageEditing plus bas), seul l'affichage change (img.style.width) : les
+  // octets enregistrés restent ceux encodés à l'insertion, même si l'image est ensuite affichée
+  // beaucoup plus petite. Cette fonction ré-encode l'image à la résolution réellement affichée une
+  // fois le glisser terminé, pour ne pas garder du poids inutile pour un rendu plus petit que prévu.
+  // Elle ne redescend que la résolution (jamais ne l'agrandit), et seulement si le gain est net.
+  function shrinkInlineImageToDisplayWidth(imgEl){
+    const currentDataUrl = imgEl.getAttribute('src');
+    if(typeof currentDataUrl !== 'string' || !currentDataUrl.startsWith('data:image/')) return null;
+    if(!imgEl.naturalWidth) return null;
+    const displayWidth = imgEl.getBoundingClientRect().width;
+    const targetWidth = Math.max(160, Math.min(imgEl.naturalWidth, Math.round(displayWidth)));
+    // Pas la peine de ré-encoder pour un gain marginal (ni, bien sûr, d'agrandir).
+    if(targetWidth >= imgEl.naturalWidth * 0.92) return null;
+    const currentBytes = base64ImageBytes(currentDataUrl);
+    const aspect = imgEl.naturalHeight / imgEl.naturalWidth;
+    const newDataUrl = compressToTarget((canvas, width) => {
+      const w = Math.min(width, imgEl.naturalWidth);
+      const h = Math.max(1, Math.round(w * aspect));
+      canvas.width = w; canvas.height = h;
+      return { render: (ctx) => ctx.drawImage(imgEl, 0, 0, w, h) };
+    }, {targetKB:30, startSize: targetWidth, minSize:160});
+    const newBytes = base64ImageBytes(newDataUrl);
+    return newBytes < currentBytes
+      ? {newDataUrl, savedBytes: currentBytes - newBytes}
+      : null;
+  }
+
+  async function recompressExistingSceneImages(){
+    let totalSaved = 0;
+    for(const s of scenes){
+      if(!s.image) continue;
+      try{
+        const {dataUrl, savedBytes} = await recompressDataUrlIfNeeded(s.image, {targetKB:13, startSize:420, minSize:72, square:true});
+        if(savedBytes > 0){ s.image = dataUrl; totalSaved += savedBytes; }
+      }catch(err){
+        console.error('Recompression scène', s.id, ':', err);
+      }
+    }
+    renderSceneImage();
+    return totalSaved;
   }
 
   function renderStorageFooter(){
@@ -6107,8 +6231,247 @@
     const fillClass = pct >= 90 ? 'is-danger' : (pct >= 60 ? 'is-warning' : '');
     el.innerHTML = `Poids total des images : <strong>${formatKB(total)} Ko</strong>` +
       `<span class="storage-bar"><span class="storage-bar-fill ${fillClass}" style="width:${Math.min(100,pct)}%;"></span></span>` +
-      `<strong>${pctLabel} %</strong> de la limite (1 Mo)`;
+      `<strong>${pctLabel} %</strong> de la limite (1 Mo)` +
+      ` <button type="button" id="recompressScenesBtn" class="btn btn-secondary" style="margin-left:10px; font-size:0.72rem; padding:3px 10px;">Recompresser les scènes</button>`;
   }
+
+  // ---------- OVERLAY "POIDS DES IMAGES" ----------
+  // Repère chaque image embarquée dans le document (image carrée ou image insérée dans du texte
+  // enrichi) pour les lister de la plus lourde à la moins lourde, avec un bouton de recompression
+  // individuel sur chacune. On ne tente volontairement pas de rafraîchir l'affichage d'un onglet
+  // déjà ouvert derrière cette fenêtre (risque de casser l'édition en cours) : la donnée est
+  // sauvegardée tout de suite, l'affichage se met à jour la prochaine fois que l'onglet rouvre
+  // (voir #imageWeightNote dans le HTML).
+
+  function extractInlineImages(html){
+    if(typeof html !== 'string' || !html) return [];
+    const out = [];
+    const re = /<img[^>]+src=["'](data:image\/[^"']+)["']/gi;
+    let m;
+    while((m = re.exec(html))){ out.push(m[1]); }
+    return out;
+  }
+
+  function replaceInlineImageInContent(html, oldSrc, newSrc){
+    // oldSrc est une data URL exacte, prise telle quelle dans le HTML : un split/join suffit,
+    // pas besoin d'une regex (une data URL contient des caractères comme + ou / qui ont un sens
+    // spécial dans une regex).
+    return typeof html === 'string' ? html.split(oldSrc).join(newSrc) : html;
+  }
+
+  const IW_SQUARE_SCENE = {targetKB:13, startSize:420, minSize:72, square:true};
+  const IW_INLINE = {targetKB:30, startSize:760, minSize:160, square:false};
+  const IW_AVATAR = {targetKB:12, startSize:260, minSize:72, square:true};
+  const IW_IG_POST = {targetKB:10, startSize:300, minSize:72, square:true};
+
+  function collectImageEntries(){
+    const entries = [];
+
+    scenes.forEach(s=>{
+      if(s.image){
+        entries.push({
+          label: 'Scène — ' + (s.title || ('Scène ' + s.id)),
+          bytes: base64ImageBytes(s.image),
+          config: IW_SQUARE_SCENE,
+          getDataUrl: () => s.image,
+          setDataUrl: (v) => { s.image = v; },
+          onSaved: () => { saveScenes(); }
+        });
+      }
+      extractInlineImages(s.content).forEach(src=>{
+        entries.push({
+          label: 'Scène — ' + (s.title || ('Scène ' + s.id)) + ' (image dans le texte)',
+          bytes: base64ImageBytes(src),
+          config: IW_INLINE,
+          getDataUrl: () => src,
+          setDataUrl: (v) => { s.content = replaceInlineImageInContent(s.content, src, v); },
+          onSaved: () => { saveScenes(); }
+        });
+      });
+    });
+
+    extractInlineImages(notesData && notesData.content).forEach(src=>{
+      entries.push({
+        label: 'Global (image dans le texte)',
+        bytes: base64ImageBytes(src),
+        config: IW_INLINE,
+        getDataUrl: () => src,
+        setDataUrl: (v) => { notesData.content = replaceInlineImageInContent(notesData.content, src, v); },
+        onSaved: () => { saveNotes(); }
+      });
+    });
+
+    extractInlineImages(mecanismeData && mecanismeData.content).forEach(src=>{
+      entries.push({
+        label: 'Mécanisme (image dans le texte)',
+        bytes: base64ImageBytes(src),
+        config: IW_INLINE,
+        getDataUrl: () => src,
+        setDataUrl: (v) => { mecanismeData.content = replaceInlineImageInContent(mecanismeData.content, src, v); },
+        onSaved: () => { saveMecanisme(); }
+      });
+    });
+
+    partis.forEach(p=>{
+      extractInlineImages(p.content).forEach(src=>{
+        entries.push({
+          label: 'Parti pris — ' + (p.title || '') + ' (image dans le texte)',
+          bytes: base64ImageBytes(src),
+          config: IW_INLINE,
+          getDataUrl: () => src,
+          setDataUrl: (v) => { p.content = replaceInlineImageInContent(p.content, src, v); },
+          onSaved: () => { savePartis(); }
+        });
+      });
+    });
+
+    customSceneTabs.forEach(ct=>{
+      const data = customSceneTabsData[ct.id];
+      if(!data) return;
+      if(data.image){
+        entries.push({
+          label: (ct.label || 'Onglet') + ' (image)',
+          bytes: base64ImageBytes(data.image),
+          config: IW_SQUARE_SCENE,
+          getDataUrl: () => data.image,
+          setDataUrl: (v) => { data.image = v; },
+          onSaved: () => { saveCustomSceneTabs(); }
+        });
+      }
+      extractInlineImages(data.content).forEach(src=>{
+        entries.push({
+          label: (ct.label || 'Onglet') + ' (image dans le texte)',
+          bytes: base64ImageBytes(src),
+          config: IW_INLINE,
+          getDataUrl: () => src,
+          setDataUrl: (v) => { data.content = replaceInlineImageInContent(data.content, src, v); },
+          onSaved: () => { saveCustomSceneTabs(); }
+        });
+      });
+      if(Array.isArray(data.items)){
+        data.items.forEach(it=>{
+          extractInlineImages(it.content).forEach(src=>{
+            entries.push({
+              label: (ct.label || 'Onglet') + ' — ' + (it.title || 'note') + ' (image dans le texte)',
+              bytes: base64ImageBytes(src),
+              config: IW_INLINE,
+              getDataUrl: () => src,
+              setDataUrl: (v) => { it.content = replaceInlineImageInContent(it.content, src, v); },
+              onSaved: () => { saveCustomSceneTabs(); }
+            });
+          });
+        });
+      }
+    });
+
+    if(igProfile && igProfile.avatar){
+      entries.push({
+        label: 'Instagram — photo de profil',
+        bytes: base64ImageBytes(igProfile.avatar),
+        config: IW_AVATAR,
+        getDataUrl: () => igProfile.avatar,
+        setDataUrl: (v) => { igProfile.avatar = v; },
+        onSaved: () => { saveIgProfile(); }
+      });
+    }
+
+    (igPosts || []).forEach((p, i)=>{
+      if(!p.image) return;
+      entries.push({
+        label: 'Instagram — post ' + (i + 1),
+        bytes: base64ImageBytes(p.image),
+        config: IW_IG_POST,
+        getDataUrl: () => p.image,
+        setDataUrl: (v) => { p.image = v; },
+        onSaved: () => { saveIgPosts(); }
+      });
+    });
+
+    entries.sort((a, b) => b.bytes - a.bytes);
+    return entries;
+  }
+
+  let imageWeightEntries = [];
+
+  function renderImageWeightOverlay(){
+    const summaryEl = document.getElementById('imageWeightSummary');
+    const listEl = document.getElementById('imageWeightList');
+    if(!summaryEl || !listEl) return;
+    imageWeightEntries = collectImageEntries();
+    const total = computeTotalImageBytes();
+    const pct = (total / STORAGE_LIMIT_BYTES) * 100;
+    const pctLabel = pct < 10 ? pct.toFixed(1) : Math.round(pct);
+    summaryEl.textContent = imageWeightEntries.length
+      ? `${imageWeightEntries.length} image(s) trouvée(s), pour un total de ${formatKB(total)} Ko (${pctLabel} % de la limite de 1 Mo).`
+      : "Aucune image enregistrée pour l'instant.";
+
+    listEl.innerHTML = imageWeightEntries.map((entry, i) => {
+      const alreadyOptimized = (entry.bytes / 1024) <= entry.config.targetKB;
+      return `<div class="imgweight-row">
+        <div class="iw-info">
+          <div class="iw-label">${escapeHtml(entry.label)}</div>
+          <div class="iw-size">${formatKB(entry.bytes)} Ko${alreadyOptimized ? ' — déjà optimisée' : ''}</div>
+        </div>
+        <button type="button" class="iw-compress" data-idx="${i}" ${alreadyOptimized ? 'disabled' : ''}>Compresser</button>
+      </div>`;
+    }).join('');
+  }
+
+  const imageWeightOverlay = document.getElementById('imageWeightOverlay');
+  const closeImageWeightModal = document.getElementById('closeImageWeightModal');
+
+  document.getElementById('storageFooter').addEventListener('click', async (e)=>{
+    if(e.target && e.target.id === 'recompressScenesBtn'){
+      const btn = e.target;
+      btn.disabled = true;
+      btn.textContent = 'Recompression en cours…';
+      try{
+        const saved = await recompressExistingSceneImages();
+        saveScenes();
+        renderStorageFooter();
+        if(saved > 0) alert(`Scènes recompressées : environ ${formatKB(saved)} Ko libérés.`);
+        else alert('Rien à gagner : les images des scènes sont déjà sous le budget actuel (~13 Ko).');
+      }catch(err){
+        console.error('Erreur recompression scènes :', err);
+        alert("Une erreur est survenue pendant la recompression. Réessaie, ou dis-le à Claude.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Recompresser les scènes';
+      }
+      return;
+    }
+    renderImageWeightOverlay();
+    imageWeightOverlay.classList.add('active');
+  });
+
+  closeImageWeightModal.addEventListener('click', ()=> imageWeightOverlay.classList.remove('active'));
+  imageWeightOverlay.addEventListener('click', e=>{ if(e.target === imageWeightOverlay) imageWeightOverlay.classList.remove('active'); });
+
+  document.getElementById('imageWeightList').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('.iw-compress');
+    if(!btn || btn.disabled) return;
+    const idx = Number(btn.dataset.idx);
+    const entry = imageWeightEntries[idx];
+    if(!entry) return;
+    btn.disabled = true;
+    btn.textContent = '…';
+    try{
+      const {dataUrl, savedBytes} = await recompressDataUrlIfNeeded(entry.getDataUrl(), entry.config);
+      if(savedBytes > 0){
+        entry.setDataUrl(dataUrl);
+        entry.onSaved();
+        renderStorageFooter();
+        renderImageWeightOverlay();
+      } else {
+        btn.textContent = 'Déjà optimisée';
+      }
+    }catch(err){
+      console.error('Erreur recompression image :', err);
+      alert("Une erreur est survenue pendant la recompression de cette image. Réessaie, ou dis-le à Claude.");
+      btn.disabled = false;
+      btn.textContent = 'Compresser';
+    }
+  });
 
   function renderAll(){
     // L'onglet actif doit déjà être visible avant les rendus qui suivent : la bio et la légende
