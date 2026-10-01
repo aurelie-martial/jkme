@@ -1170,6 +1170,10 @@
 
   /* --- EXPORT PDF (bouton 🖨 dans les barres d'outils du Bloc-notes) --- */
   .toolbar-export-btn{ margin-left:auto; }
+  /* --- Bouton "Sauvegarder" manuel (force l'écriture Firestore tout de suite, sans attendre le
+     délai de 0,7s de la sauvegarde automatique) --- */
+  .toolbar-save-btn{ font-weight:700; }
+  .toolbar-save-btn.is-error{ background:#B54D4D; color:#fff; border-color:#B54D4D; }
   #printExportRoot{ display:none; }
   @media print{
     body *{ visibility:hidden; }
@@ -1412,6 +1416,7 @@
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~30 Ko)">🖼 Image</button>
             <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
             <button type="button" class="toolbar-export-btn" data-cmd="exportPdf" title="Exporter cette note en PDF">🖨 PDF</button>
+            <button type="button" class="toolbar-save-btn" data-cmd="manualSave" title="Forcer l'enregistrement tout de suite, sans attendre la sauvegarde automatique">💾 Sauvegarder</button>
           </div>
           <div class="scene-editor-content" id="notesArea" contenteditable="true" data-placeholder="Idées, pistes, notes en vrac sur ton roman graphique..."></div>
         </div>
@@ -1445,6 +1450,7 @@
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~30 Ko)">🖼 Image</button>
             <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
             <button type="button" class="toolbar-export-btn" data-cmd="exportPdf" title="Exporter cette note en PDF">🖨 PDF</button>
+            <button type="button" class="toolbar-save-btn" data-cmd="manualSave" title="Forcer l'enregistrement tout de suite, sans attendre la sauvegarde automatique">💾 Sauvegarder</button>
           </div>
           <div class="scene-editor-content" id="mecanismeContentInput" contenteditable="true" data-placeholder="Décris ici les mécanismes de la violence psychologique, les schémas comportementaux..."></div>
         </div>
@@ -1547,6 +1553,7 @@
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
+            <button type="button" class="toolbar-save-btn" style="margin-left:auto;" data-cmd="manualSave" title="Forcer l'enregistrement tout de suite, sans attendre la sauvegarde automatique">💾 Sauvegarder</button>
           </div>
           <div class="scene-editor-content" id="sceneContentInput" contenteditable="true" data-placeholder="Écris le contenu de cette scène ici : script, découpage, dialogues..."></div>
         </div>
@@ -2048,6 +2055,31 @@
 
   function pillCustomColorClass(key){
     return pillColors[key] ? 'has-custom-color' : '';
+  }
+
+  // Bouton "Sauvegarder" manuel (toolbars des notes + post-it) : force l'écriture Firestore tout
+  // de suite au lieu d'attendre le délai de 0,7s de la sauvegarde automatique (__rg_scheduleSync).
+  // Utile pour avoir une confirmation visuelle juste avant de fermer l'onglet ou de changer de note.
+  async function flushNoteSave(btn){
+    if(!btn || btn.disabled) return;
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.remove('is-error');
+    btn.innerHTML = btn.innerHTML.replace('💾', '…');
+    let ok = true;
+    try{
+      if(window.__rg_flushSync) ok = await window.__rg_flushSync();
+    }catch(err){
+      console.error('Erreur sauvegarde manuelle :', err);
+      ok = false;
+    }
+    btn.innerHTML = original.replace('💾', ok ? '✓' : '✕');
+    if(!ok) btn.classList.add('is-error');
+    setTimeout(()=>{
+      btn.innerHTML = original;
+      btn.classList.remove('is-error');
+      btn.disabled = false;
+    }, 1400);
   }
 
   function escapeHtml(s){
@@ -2660,6 +2692,7 @@
         exportHtmlToPdf(mecanismeTitleInput.value.trim() || 'Mécanisme', buildNoteExportHtml(mecanismeTitleInput.value.trim() || 'Mécanisme', mecanismeContentInput.innerHTML));
         return;
       }
+      if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
       mecanismeContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, mecanismeContentInput); }
@@ -4011,6 +4044,7 @@
         exportHtmlToPdf(globalTitleInput.value.trim() || 'Global', buildNoteExportHtml(globalTitleInput.value.trim() || 'Global', notesArea.innerHTML));
         return;
       }
+      if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
       notesArea.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, notesArea); }
@@ -4044,6 +4078,7 @@
       <div class="parti-card" data-order-key="${p.id}" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
         <div class="parti-actions">
           <button type="button" class="parti-drag-handle" title="Glisser pour déplacer">⠿</button>
+          <button type="button" data-act="save" title="Forcer l'enregistrement tout de suite">💾</button>
           <button type="button" data-act="edit" data-id="${p.id}">✎</button>
           <button type="button" data-act="del" data-id="${p.id}">✕</button>
         </div>
@@ -4059,6 +4094,7 @@
 
     grid.querySelectorAll('button[data-act]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
+        if(btn.dataset.act==='save'){ flushNoteSave(btn); return; }
         const id = btn.dataset.id;
         const p = partis.find(x=>String(x.id)===id);
         if(!p) return;
@@ -4503,6 +4539,7 @@
   document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
     btn.addEventListener('mousedown', (e)=> e.preventDefault());
     btn.addEventListener('click', ()=>{
+      if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
       sceneContentInput.focus();
       if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(sceneContentInput); }
       else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, sceneContentInput); }
@@ -5631,6 +5668,7 @@
     <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~30 Ko)">🖼 Image</button>
     <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
     <button type="button" class="toolbar-export-btn" data-cmd="exportPdf" title="Exporter cette note en PDF">🖨 PDF</button>
+    <button type="button" class="toolbar-save-btn" data-cmd="manualSave" title="Forcer l'enregistrement tout de suite, sans attendre la sauvegarde automatique">💾 Sauvegarder</button>
   `;
 
   function renderCustomSubTabContent(){
@@ -5698,6 +5736,7 @@
           exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML));
           return;
         }
+        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
@@ -5733,6 +5772,7 @@
           exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML, data.image));
           return;
         }
+        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
@@ -5792,6 +5832,7 @@
         <div class="parti-card" data-order-key="${n.id}" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
           <div class="parti-actions">
             <button type="button" class="parti-drag-handle" title="Glisser pour déplacer">⠿</button>
+            <button type="button" data-act="save" title="Forcer l'enregistrement tout de suite">💾</button>
             <button type="button" data-act="edit" data-id="${n.id}">✎</button>
             <button type="button" data-act="del" data-id="${n.id}">✕</button>
           </div>
@@ -5807,6 +5848,7 @@
 
       grid.querySelectorAll('button[data-act]').forEach(btn=>{
         btn.addEventListener('click', ()=>{
+          if(btn.dataset.act==='save'){ flushNoteSave(btn); return; }
           const id = btn.dataset.id;
           const n = data.items.find(x=>String(x.id)===id);
           if(!n) return;
@@ -7060,6 +7102,14 @@
     syncPending = true;
     clearTimeout(syncTimer);
     syncTimer = setTimeout(performSync, 700);
+  };
+
+  // Utilisé par le bouton "💾 Sauvegarder" manuel (voir flushNoteSave dans le <script> classique) :
+  // écrit tout de suite dans Firestore au lieu d'attendre le délai de 0,7s ci-dessus, et renvoie si
+  // l'écriture a réussi pour que le bouton puisse afficher une confirmation (✓) ou une erreur (✕).
+  window.__rg_flushSync = async function(){
+    await performSync();
+    return !syncStatus.classList.contains('error');
   };
 
   // Filet de sécurité : si l'onglet est fermé, rechargé ou mis en arrière-plan avant que les 700ms
