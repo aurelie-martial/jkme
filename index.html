@@ -352,6 +352,19 @@
   .storage-footer .storage-bar-fill.is-warning{background:var(--peche);}
   .storage-footer .storage-bar-fill.is-danger{background:var(--rose);}
 
+  /* Poids d'une note personnalisée (chacune a son propre document Firestore, sa propre limite de 1 Mo). */
+  .custom-tab-weight{
+    margin:4px 0 14px; font-size:0.72rem; font-weight:500; color:var(--ink-soft); text-align:right;
+  }
+  .custom-tab-weight:empty{display:none;}
+  .custom-tab-weight .storage-bar{
+    display:inline-block; width:90px; height:5px; border-radius:999px; background:var(--gris);
+    overflow:hidden; margin:0 6px; vertical-align:middle; position:relative; top:-1px;
+  }
+  .custom-tab-weight .storage-bar-fill{display:block; height:100%; border-radius:999px; background:var(--menthe); transition:width .3s ease;}
+  .custom-tab-weight .storage-bar-fill.is-warning{background:var(--peche);}
+  .custom-tab-weight .storage-bar-fill.is-danger{background:var(--rose);}
+
   /* BACKUP FOOTER (sauvegarde automatique quotidienne) */
   .backup-footer{
     margin-top:10px; text-align:center; font-size:0.76rem; font-weight:500; color:var(--ink-soft);
@@ -1905,10 +1918,13 @@
   // le refaire en direct à chaque frappe ; seul ce pied de page (purement informatif) est concerné,
   // la sauvegarde réelle (__rg_scheduleSync, vers Firestore) garde son propre délai, inchangé.
   let storageFooterDebounceTimer = null;
-  const syncCloud = () => {
-    if(window.__rg_scheduleSync) window.__rg_scheduleSync();
+  function scheduleStorageFooterRefresh(){
     clearTimeout(storageFooterDebounceTimer);
     storageFooterDebounceTimer = setTimeout(renderStorageFooter, 400);
+  }
+  const syncCloud = () => {
+    if(window.__rg_scheduleSync) window.__rg_scheduleSync();
+    scheduleStorageFooterRefresh();
   };
   const saveTasks = () => { syncCloud(); };
   // Les événements natifs JKME (travail/garde/off/rdv) ne vivent plus dans le grand document
@@ -1921,7 +1937,17 @@
   const saveScenes = () => { syncCloud(); };
   const saveMecanisme = () => { syncCloud(); };
   const saveHiddenTabs = () => { syncCloud(); };
-  const saveCustomSceneTabs = () => { syncCloud(); };
+  // Liste des notes personnalisées (id/label/format, customSceneTabs) : reste dans le document
+  // principal, via syncCloud() comme les autres champs ci-dessus.
+  const saveCustomTabsList = () => { syncCloud(); };
+  // Contenu d'UNE note personnalisée (customSceneTabsData[tabId]) : part dans son propre document
+  // Firestore (voir le <script type="module"> plus bas), avec son propre délai de 0,7s indépendant
+  // de celui du document principal — éditer une note ne doit pas non plus déclencher une écriture du
+  // document principal à chaque frappe.
+  function saveCustomTabContent(tabId){
+    if(window.__rg_scheduleCustomTabSync) window.__rg_scheduleCustomTabSync(tabId);
+    scheduleStorageFooterRefresh();
+  }
   const saveSceneOrder = () => { syncCloud(); };
   const saveBlocNotesOrder = () => { syncCloud(); };
   const savePillColors = () => { syncCloud(); };
@@ -2060,7 +2086,10 @@
   // Bouton "Sauvegarder" manuel (toolbars des notes + post-it) : force l'écriture Firestore tout
   // de suite au lieu d'attendre le délai de 0,7s de la sauvegarde automatique (__rg_scheduleSync).
   // Utile pour avoir une confirmation visuelle juste avant de fermer l'onglet ou de changer de note.
-  async function flushNoteSave(btn){
+  // `tabId` (optionnel) : quand le bouton est dans une note personnalisée, son contenu vit dans son
+  // propre document Firestore (voir saveCustomTabContent) — on flush alors les DEUX à la fois (le
+  // document principal ET celui de cette note), par sécurité.
+  async function flushNoteSave(btn, tabId){
     if(!btn || btn.disabled) return;
     const original = btn.innerHTML;
     btn.disabled = true;
@@ -2068,7 +2097,11 @@
     btn.innerHTML = btn.innerHTML.replace('💾', '…');
     let ok = true;
     try{
-      if(window.__rg_flushSync) ok = await window.__rg_flushSync();
+      const tasks = [];
+      if(window.__rg_flushSync) tasks.push(window.__rg_flushSync());
+      if(tabId != null && window.__rg_flushCustomTabSync) tasks.push(window.__rg_flushCustomTabSync(tabId));
+      const results = await Promise.all(tasks);
+      ok = results.every(r => r !== false);
     }catch(err){
       console.error('Erreur sauvegarde manuelle :', err);
       ok = false;
@@ -4333,7 +4366,7 @@
 
   // Édition directe sur un post-it (titre + contenu), sans repasser par le crayon/la modale.
   // `card` est l'élément .parti-card fraîchement inséré, `item` l'objet {title, content, updatedAt}
-  // correspondant, `saveFn` la fonction de sauvegarde (savePartis / saveCustomSceneTabs).
+  // correspondant, `saveFn` la fonction de sauvegarde (savePartis / saveCustomTabContent(ct.id)).
   // On ne redessine jamais la grille sur un simple "input" (ça ferait perdre le curseur) :
   // seul un clic sur ✎ ou ✕ redessine.
   function wirePostitCardInlineEdit(card, item, saveFn){
@@ -4979,7 +5012,7 @@
         const trimmed = name.trim();
         if(!trimmed) return;
         ct.label = trimmed;
-        saveCustomSceneTabs();
+        saveCustomTabsList();
         if(currentBlocView === 'custom' && currentCustomTabId === ct.id) renderCustomSubTabContent();
         renderBlocNotesPills();
       });
@@ -5633,7 +5666,10 @@
     customSceneTabs = customSceneTabs.filter(t=>t.id!==id);
     delete customSceneTabsData[id];
     delete pillColors['custom:'+id];
-    saveCustomSceneTabs();
+    saveCustomTabsList();
+    // Supprime aussi le document Firestore de cette note (son contenu vit à part, voir
+    // saveCustomTabContent) : sans ça, il resterait orphelin indéfiniment.
+    if(window.__rg_deleteCustomTabDoc) window.__rg_deleteCustomTabDoc(id);
     savePillColors();
     delete pinnedNotes['custom:'+id];
     savePinnedNotes();
@@ -5682,12 +5718,14 @@
         <div class="subtab-header">
           <h3 class="subtab-title">${escapeHtml(ct.label)}</h3>
         </div>
+        <div class="custom-tab-weight" id="customTabWeightIndicator"></div>
         <div style="margin-bottom:18px; display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn" id="customAddNoteBtn">+ Ajouter un post-it</button>
           <button type="button" class="btn btn-secondary" id="customExportNotesPdfBtn" title="Exporter tous les post-it de cette note en PDF">🖨 Exporter en PDF</button>
         </div>
         <div class="parti-grid" id="customNotesGrid"></div>
       `;
+      renderCustomTabWeight(data);
       wireCustomNotesFormat(ct, data);
     } else if(ct.format === 'scene'){
       block.innerHTML = `
@@ -5695,6 +5733,7 @@
           <div class="subtab-header">
             <div class="last-modified" id="customSceneLastModified">${formatUpdatedAt(data.updatedAt)}</div>
           </div>
+          <div class="custom-tab-weight" id="customTabWeightIndicator"></div>
           <div class="scene-image-box" id="customSceneImageBox">
             ${data.image ? `<img src="${data.image}" alt="">` : ''}
             <span class="placeholder-txt" id="customSceneImagePlaceholder" style="display:${data.image?'none':'block'};">+ Image</span>
@@ -5707,15 +5746,18 @@
           <div class="scene-editor-content" id="customSceneContentInput" contenteditable="true" data-placeholder="Écris ton contenu ici...">${data.content||''}</div>
         </div>
       `;
+      renderCustomTabWeight(data);
       wireCustomSceneFormat(ct, data);
     } else {
       block.innerHTML = `
         <div class="panel">
+          <div class="custom-tab-weight" id="customTabWeightIndicator"></div>
           <input type="text" class="scene-editor-title" id="customSimpleTitleInput" value="${escapeHtml(data.title||'')}" placeholder="Titre (optionnel)">
           <div class="scene-toolbar" id="customSimpleToolbar">${toolbarButtonsHtml}</div>
           <div class="scene-editor-content" id="customSimpleContent" contenteditable="true" data-placeholder="Écris ton contenu ici...">${data.content||''}</div>
         </div>
       `;
+      renderCustomTabWeight(data);
       wireCustomSimpleFormat(ct, data);
     }
   }
@@ -5725,7 +5767,8 @@
     const contentEl = document.getElementById('customSimpleContent');
     const stamp = () => {
       data.updatedAt = Date.now();
-      saveCustomSceneTabs();
+      saveCustomTabContent(ct.id);
+      renderCustomTabWeight(data);
     };
     titleEl.addEventListener('input', ()=>{ data.title = titleEl.value; stamp(); });
     contentEl.addEventListener('input', ()=>{ data.content = contentEl.innerHTML; stamp(); });
@@ -5736,7 +5779,7 @@
           exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML));
           return;
         }
-        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
+        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn, ct.id); return; }
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
@@ -5760,7 +5803,8 @@
     const stamp = () => {
       data.updatedAt = Date.now();
       document.getElementById('customSceneLastModified').textContent = formatUpdatedAt(data.updatedAt);
-      saveCustomSceneTabs();
+      saveCustomTabContent(ct.id);
+      renderCustomTabWeight(data);
     };
 
     titleEl.addEventListener('input', ()=>{ data.title = titleEl.value; stamp(); });
@@ -5772,7 +5816,7 @@
           exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML, data.image));
           return;
         }
-        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
+        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn, ct.id); return; }
         contentEl.focus();
         if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
         else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
@@ -5817,6 +5861,7 @@
   function wireCustomNotesFormat(ct, data){
     const grid = document.getElementById('customNotesGrid');
     const addBtn = document.getElementById('customAddNoteBtn');
+    const persist = () => { saveCustomTabContent(ct.id); renderCustomTabWeight(data); };
     document.getElementById('customExportNotesPdfBtn').addEventListener('click', ()=>{
       exportHtmlToPdf(ct.label, buildPostitsExportHtml(ct.label, data.items));
     });
@@ -5843,18 +5888,18 @@
       }).join('');
 
       grid.querySelectorAll('.parti-card').forEach((card, i)=>{
-        wirePostitCardInlineEdit(card, data.items[i], saveCustomSceneTabs);
+        wirePostitCardInlineEdit(card, data.items[i], persist);
       });
 
       grid.querySelectorAll('button[data-act]').forEach(btn=>{
         btn.addEventListener('click', ()=>{
-          if(btn.dataset.act==='save'){ flushNoteSave(btn); return; }
+          if(btn.dataset.act==='save'){ flushNoteSave(btn, ct.id); return; }
           const id = btn.dataset.id;
           const n = data.items.find(x=>String(x.id)===id);
           if(!n) return;
           if(btn.dataset.act==='del'){
             data.items = data.items.filter(x=>String(x.id)!==id);
-            saveCustomSceneTabs(); renderGrid();
+            persist(); renderGrid();
           } else if(btn.dataset.act==='edit'){
             openPostitModal({
               heading: 'Modifier le post-it',
@@ -5863,7 +5908,7 @@
               submitLabel: 'Enregistrer les modifications',
               onSubmit: (title, content) => {
                 n.title = title; n.content = content; n.updatedAt = Date.now();
-                saveCustomSceneTabs();
+                persist();
                 renderGrid();
               }
             });
@@ -5879,7 +5924,7 @@
         onSubmit: (title, content) => {
           if(!data.items) data.items = [];
           data.items.push({id: Date.now()+Math.random(), title, content, updatedAt: Date.now()});
-          saveCustomSceneTabs();
+          persist();
           renderGrid();
         }
       });
@@ -5887,7 +5932,7 @@
 
     enableGridDragReorder(grid, '.parti-drag-handle', ()=>data.items || [], (newOrder)=>{
       data.items = newOrder;
-      saveCustomSceneTabs();
+      persist();
     });
 
     renderGrid();
@@ -5912,7 +5957,7 @@
     if(!name) return;
     const id = 'custom_' + Date.now();
     customSceneTabs.push({id, label: name, format});
-    saveCustomSceneTabs();
+    saveCustomTabsList();
     // Note créée via le "+" d'un dossier précis : on l'insère directement à la fin de ses notes
     // existantes (juste avant le dossier suivant, s'il y en a un) plutôt que de la laisser tout en
     // bas de la liste complète, où reconcileBlocNotesOrder() l'aurait sinon ajoutée par défaut.
@@ -6121,6 +6166,30 @@
       }
       dragImg = null; dragMoved = false;
     });
+
+    // Coller une image (Cmd/Ctrl+V) directement dans l'éditeur — par ex. une capture d'écran ou une
+    // image copiée depuis un site — passait complètement à côté de la compression : seul le bouton
+    // "🖼 Image" (insertImageIntoEditor) compressait l'image avant de l'insérer. Une image collée
+    // arrivait donc telle quelle, parfois plusieurs Mo, ce qui peut à elle seule faire dépasser la
+    // limite de 1 Mo du document Firestore partagé — et dans ce cas, TOUTES les sauvegardes échouent
+    // ensuite (plus seulement celles de cette image), ce qui ressemble à « ça ne s'enregistre plus
+    // du tout » sans message d'erreur visible. On intercepte donc le collage d'image ici aussi, pour
+    // la faire passer par la même compression que le bouton.
+    containerEl.addEventListener('paste', (e)=>{
+      const items = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+      const imageItem = items.find(it => it.kind === 'file' && it.type && it.type.startsWith('image/'));
+      if(!imageItem) return; // pas une image collée : on laisse le comportement par défaut (texte...)
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if(!file) return;
+      compressImageForEditor(file).then(dataUrl => {
+        containerEl.focus();
+        document.execCommand('insertImage', false, dataUrl);
+        if(onChange) onChange();
+      }).catch(err => {
+        console.error('Erreur compression image collée :', err);
+      });
+    });
   }
 
   // ---------- POIDS DES IMAGES (pied de page) ----------
@@ -6148,6 +6217,11 @@
     return total;
   }
 
+  // Poids du document PRINCIPAL uniquement (scènes, Global, Mécanisme, Parti pris, Instagram).
+  // Depuis le 2 octobre 2026, les notes personnalisées (customSceneTabsData) n'en font plus partie :
+  // chacune vit dans son propre document Firestore, avec sa propre limite de 1 Mo indépendante (voir
+  // computeCustomTabBytes ci-dessous pour leur poids à elles, et saveCustomTabContent / le <script
+  // type="module"> pour l'explication complète).
   function computeTotalImageBytes(){
     let total = 0;
     scenes.forEach(s=>{
@@ -6157,19 +6231,33 @@
     total += inlineImagesBytes(notesData && notesData.content);
     total += inlineImagesBytes(mecanismeData && mecanismeData.content);
     partis.forEach(p=> total += inlineImagesBytes(p.content));
-    Object.keys(customSceneTabsData || {}).forEach(id=>{
-      const data = customSceneTabsData[id];
-      if(!data) return;
-      total += base64ImageBytes(data.image);
-      total += inlineImagesBytes(data.content);
-      if(Array.isArray(data.items)) data.items.forEach(it=> total += inlineImagesBytes(it.content));
-    });
     // Le simulateur Instagram (photo de profil + images de post) vit lui aussi dans le même
     // document Firestore à 1 Mo (voir window.__rg_getState) : il manquait ici, ce qui faisait
     // sous-estimer le vrai poids total affiché dans le pied de page ci-dessous.
     if(igProfile) total += base64ImageBytes(igProfile.avatar);
     (igPosts || []).forEach(p=> total += base64ImageBytes(p.image));
     return total;
+  }
+
+  // Poids d'UNE note personnalisée (son propre document, sa propre limite de 1 Mo).
+  function computeCustomTabBytes(data){
+    if(!data) return 0;
+    let total = base64ImageBytes(data.image);
+    total += inlineImagesBytes(data.content);
+    if(Array.isArray(data.items)) data.items.forEach(it=> total += inlineImagesBytes(it.content));
+    return total;
+  }
+
+  function renderCustomTabWeight(data){
+    const el = document.getElementById('customTabWeightIndicator');
+    if(!el) return;
+    const total = computeCustomTabBytes(data);
+    const pct = (total / STORAGE_LIMIT_BYTES) * 100;
+    const pctLabel = pct < 10 ? pct.toFixed(1) : Math.round(pct);
+    const fillClass = pct >= 90 ? 'is-danger' : (pct >= 60 ? 'is-warning' : '');
+    el.innerHTML = `Poids de cette note : <strong>${formatKB(total)} Ko</strong>` +
+      `<span class="storage-bar"><span class="storage-bar-fill ${fillClass}" style="width:${Math.min(100,pct)}%;"></span></span>` +
+      `<strong>${pctLabel} %</strong> de sa limite (1 Mo, indépendante des autres notes)`;
   }
 
   function formatKB(bytes){
@@ -6377,7 +6465,7 @@
           config: IW_SQUARE_SCENE,
           getDataUrl: () => data.image,
           setDataUrl: (v) => { data.image = v; },
-          onSaved: () => { saveCustomSceneTabs(); }
+          onSaved: () => { saveCustomTabContent(ct.id); renderCustomTabWeight(data); }
         });
       }
       extractInlineImages(data.content).forEach(src=>{
@@ -6387,7 +6475,7 @@
           config: IW_INLINE,
           getDataUrl: () => src,
           setDataUrl: (v) => { data.content = replaceInlineImageInContent(data.content, src, v); },
-          onSaved: () => { saveCustomSceneTabs(); }
+          onSaved: () => { saveCustomTabContent(ct.id); renderCustomTabWeight(data); }
         });
       });
       if(Array.isArray(data.items)){
@@ -6399,7 +6487,7 @@
               config: IW_INLINE,
               getDataUrl: () => src,
               setDataUrl: (v) => { it.content = replaceInlineImageInContent(it.content, src, v); },
-              onSaved: () => { saveCustomSceneTabs(); }
+              onSaved: () => { saveCustomTabContent(ct.id); renderCustomTabWeight(data); }
             });
           });
         });
@@ -6943,11 +7031,22 @@
   // __rg_scheduleAgendaSync juste avant onAuthStateChanged) plutôt que dans ce grand document
   // partagé — sinon LilyTracker devrait avoir accès à TOUT le contenu du livre pour ne synchroniser
   // que l'agenda. Pareil pour foreignPersoEvents (sharedAgenda/lilytracker), jamais inclus ici.
+  // customSceneTabsData (contenu des notes personnalisées) n'est plus inclus ici non plus depuis le
+  // 2 octobre 2026 : chaque note a désormais son propre document Firestore (users/{uid}/
+  // customTabData/{tabId}, voir saveCustomTabContent et le <script type="module"> plus bas), avec sa
+  // propre limite de 1 Mo indépendante des autres — avant, toutes les notes personnalisées
+  // partageaient le même budget de 1 Mo que les scènes, Global, etc. dans ce document unique.
+  // customSceneTabs (la LISTE des notes : id/label/format) reste ici, car minuscule et nécessaire dès
+  // le premier affichage des onglets.
   window.__rg_getState = () => ({
     tasks, categories, partis, scenes,
-    notes: notesData, customSceneTabs, customSceneTabsData, mecanismeData, hiddenTabs,
+    notes: notesData, customSceneTabs, mecanismeData, hiddenTabs,
     sceneOrder, blocNotesOrder, pillColors, pinnedNotes, igProfile, igPosts, igBioDrafts
   });
+
+  // Donne au <script type="module"> l'accès au contenu actuel d'une note personnalisée (pour
+  // l'écrire dans son propre document) sans lui exposer tout le reste de l'état de l'appli.
+  window.__rg_getCustomTabData = (tabId) => customSceneTabsData[tabId];
   window.__rg_setState = (state) => {
     tasks = state.tasks || [];
     // state.events : ancien emplacement (avant le partage d'agenda) — gardé en mémoire ici
@@ -7035,7 +7134,7 @@
   } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, getDocFromServer, setDoc, serverTimestamp,
-    collection, getDocs, deleteDoc
+    collection, getDocs, getDocsFromServer, deleteDoc, deleteField
   } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -7073,12 +7172,17 @@
   let syncPending = false;
   let applyingRemoteState = false;
 
-  function setSyncStatus(state){
+  function setSyncStatus(state, label){
     syncStatus.classList.remove('saving','error');
     if(state==='saving'){ syncStatus.classList.add('saving'); syncStatusLabel.textContent = 'Enregistrement…'; }
-    else if(state==='error'){ syncStatus.classList.add('error'); syncStatusLabel.textContent = 'Erreur de synchro'; }
+    else if(state==='error'){ syncStatus.classList.add('error'); syncStatusLabel.textContent = label || 'Erreur de synchro'; }
     else { syncStatusLabel.textContent = 'Synchronisé'; }
   }
+
+  // Évite de répéter la même alerte bloquante à chaque nouvelle tentative (toutes les 0,7s tant
+  // qu'on continue de taper) : un seul avertissement par épisode d'échec, réarmé dès qu'une
+  // sauvegarde réussit à nouveau.
+  let oversizeAlertShown = false;
 
   async function performSync(){
     clearTimeout(syncTimer);
@@ -7090,9 +7194,25 @@
       const state = window.__rg_getState();
       await setDoc(userDocRef, { ...state, updatedAt: serverTimestamp() });
       setSyncStatus('idle');
+      oversizeAlertShown = false;
     }catch(err){
       console.error('Erreur Firestore :', err);
-      setSyncStatus('error');
+      // Le document partagé est plafonné à 1 Mo côté Firestore. Le dépassement arrive le plus
+      // souvent à cause d'une image collée directement (Cmd/Ctrl+V) sans passer par la compression
+      // automatique (voir le correctif du collage dans enableImageEditing) — dans ce cas, TOUT
+      // échoue à s'enregistrer tant que cette image n'a pas été réduite ou retirée, ce qui peut
+      // sinon ressembler à « plus rien ne s'enregistre » sans qu'on comprenne pourquoi.
+      const msg = String((err && err.message) || '');
+      const isOversize = /longer than|exceeds|1,?048,?576|maximum.*size|too large/i.test(msg);
+      if(isOversize){
+        setSyncStatus('error', 'Document trop volumineux : rien ne s\'enregistre');
+        if(!oversizeAlertShown){
+          oversizeAlertShown = true;
+          alert("Impossible d'enregistrer : le document a dépassé la limite de 1 Mo de Firestore.\n\nC'est très probablement une image collée directement (Cmd/Ctrl+V) qui n'est pas passée par la compression automatique — une capture d'écran par exemple.\n\nOuvre l'indicateur de poids des images en bas de l'appli : l'image la plus lourde sera en tête de liste, avec un bouton pour la compresser. Tant que le document dépasse 1 Mo, AUCUNE modification ne sera sauvegardée, même ailleurs dans l'appli.");
+        }
+      } else {
+        setSyncStatus('error');
+      }
     }
   }
 
@@ -7181,20 +7301,39 @@
     const snap = await getDocs(backupsCol);
     const cutoffKey = localDateKey(new Date(Date.now() - 30*24*60*60*1000));
     const deletions = [];
-    snap.forEach(d => { if(d.id < cutoffKey) deletions.push(deleteDoc(d.ref)); });
+    snap.forEach(d => {
+      if(d.id < cutoffKey){
+        deletions.push(deleteDoc(d.ref));
+        // Chaque sauvegarde quotidienne d'une note personnalisée vit dans une sous-collection du
+        // jour correspondant (voir runDailyBackup) : supprimer le jour ne supprime pas tout seul ce
+        // qu'il contient, donc on la vide explicitement aussi.
+        deletions.push(
+          getDocs(collection(db, 'users', uid, 'backups', d.id, 'customTabs'))
+            .then(tabsSnap => Promise.all(tabsSnap.docs.map(td => deleteDoc(td.ref))))
+            .catch(err => console.error('Purge des notes personnalisées sauvegardées :', err))
+        );
+      }
+    });
     if(deletions.length) await Promise.all(deletions);
   }
 
   // Appelée juste après avoir chargé l'état depuis Firestore au démarrage : sauvegarde ce qui
   // vient d'être chargé (donc les données déjà enregistrées, pas les modifications en cours de
-  // frappe), une seule fois par jour civil (heure locale).
-  async function runDailyBackup(uid, dataToBackup){
+  // frappe), une seule fois par jour civil (heure locale). `customTabData` (notes personnalisées)
+  // est sauvegardé séparément, un document par note dans une sous-collection du jour : les regrouper
+  // dans dataToBackup recréerait la même limite de 1 Mo partagée qu'on vient de résoudre en les
+  // séparant dans le document principal.
+  async function runDailyBackup(uid, dataToBackup, customTabData){
     const todayKey = localDateKey();
     try{
       const backupRef = doc(db, 'users', uid, 'backups', todayKey);
       const existing = await getDoc(backupRef);
       if(!existing.exists()){
         await setDoc(backupRef, { ...dataToBackup, backedUpAt: serverTimestamp() });
+        const tabIds = Object.keys(customTabData || {});
+        for(const tabId of tabIds){
+          await setDoc(doc(db, 'users', uid, 'backups', todayKey, 'customTabs', tabId), customTabData[tabId]);
+        }
       }
       updateBackupFooter(todayKey, false);
       purgeOldBackups(uid).catch(err => console.error('Purge des sauvegardes automatiques :', err));
@@ -7213,8 +7352,13 @@
       if(!snap.exists()){ alert('Cette sauvegarde est introuvable.'); return; }
       const data = snap.data();
       delete data.backedUpAt;
+      // Notes personnalisées : chacune a sa propre sauvegarde (voir runDailyBackup), à restaurer à
+      // part — lecture serveur forcée, même précaution que partout ailleurs dans ce fichier.
+      const customTabsSnap = await getDocsFromServer(collection(db, 'users', uid, 'backups', key, 'customTabs'));
+      const restoredCustomTabData = {};
+      customTabsSnap.forEach(d => { restoredCustomTabData[d.id] = d.data(); });
       applyingRemoteState = true;
-      window.__rg_setState(data);
+      window.__rg_setState({ ...data, customSceneTabsData: restoredCustomTabData });
       // data.events (voir runDailyBackup, qui l'ajoute explicitement) : à restaurer aussi dans
       // sharedAgenda/jkme, sans quoi la sauvegarde restaurerait tout SAUF l'agenda partagé avec
       // LilyTracker — events n'étant plus dans __rg_setState depuis le partage d'agenda.
@@ -7223,8 +7367,21 @@
       applyingRemoteState = false;
       window.__rg_renderAll();
       delete data.events;
+      delete data.customSceneTabsData;
       await setDoc(userDocRef, { ...data, updatedAt: serverTimestamp() });
       await setDoc(sharedAgendaJkmeRef, { days: restoredEvents, updatedAt: serverTimestamp() });
+      // Réécrit chaque note personnalisée restaurée dans sa propre place au quotidien (pas
+      // seulement en mémoire), et supprime celles qui n'existent plus dans cette sauvegarde (une
+      // note créée après cette date ne doit pas survivre à une restauration vers une date antérieure).
+      const currentTabsSnap = await getDocsFromServer(collection(db, 'users', uid, 'customTabData'));
+      const writes = [];
+      Object.keys(restoredCustomTabData).forEach(tabId=>{
+        writes.push(setDoc(customTabDataRef(tabId), restoredCustomTabData[tabId]));
+      });
+      currentTabsSnap.forEach(d=>{
+        if(!(d.id in restoredCustomTabData)) writes.push(deleteDoc(d.ref));
+      });
+      await Promise.all(writes);
       setSyncStatus('idle');
       backupRestoreOverlay.classList.remove('active');
       alert('Sauvegarde restaurée avec succès.');
@@ -7362,6 +7519,117 @@
     }, 700);
   };
 
+  // ---------- NOTES PERSONNALISÉES DU BLOC-NOTES (users/{uid}/customTabData/{tabId}) ----------
+  // Demande du 2 octobre 2026 (suite à une note "inspi de post" qui ne s'enregistrait plus faute de
+  // place) : chaque note personnalisée du Bloc-notes (customSceneTabs) a maintenant SON PROPRE
+  // document Firestore, plafonné à 1 Mo indépendamment des autres — avant, tout customSceneTabsData
+  // vivait dans le document principal et partageait son unique budget de 1 Mo avec les scènes, le
+  // Global, etc. Seul le contenu (titre/texte/image/post-its) part dans ces documents séparés ; la
+  // LISTE des notes (id/label/format, dans customSceneTabs) reste dans le document principal, car
+  // elle est minuscule et doit rester disponible dès le premier chargement pour afficher les onglets.
+  function customTabDataRef(tabId){
+    return doc(db, 'users', SHARED_DOC_ID, 'customTabData', String(tabId));
+  }
+
+  async function loadAllCustomTabDataFromServer(){
+    // getDocsFromServer (et non getDocs) : même précaution que pour le document principal plus haut
+    // (forcer une vraie lecture réseau, jamais un cache local vide/périmé).
+    const snap = await getDocsFromServer(collection(db, 'users', SHARED_DOC_ID, 'customTabData'));
+    const result = {};
+    snap.forEach(d => { result[d.id] = d.data(); });
+    return result;
+  }
+
+  // Migration one-shot : si le document principal contient encore l'ancien customSceneTabsData
+  // embarqué (versions précédentes de l'appli) et qu'aucun document séparé n'existe déjà, on migre
+  // chaque note vers son propre document. On ne retire customSceneTabsData du document principal
+  // qu'une fois TOUTES les notes migrées avec succès ci-dessous : si une écriture échoue, l'erreur
+  // remonte avant ce retrait, donc au pire on retente cette migration au prochain chargement — à
+  // aucun moment une note ne peut disparaître.
+  async function migrateCustomTabDataIfNeeded(mainDocData){
+    const embedded = mainDocData && mainDocData.customSceneTabsData;
+    if(!embedded || typeof embedded !== 'object' || Object.keys(embedded).length === 0) return {};
+    const ids = Object.keys(embedded);
+    for(const id of ids){
+      await setDoc(customTabDataRef(id), embedded[id]);
+    }
+    await setDoc(userDocRef, { customSceneTabsData: deleteField() }, { merge: true });
+    return embedded;
+  }
+
+  let customTabSyncTimers = {};
+  let customTabSyncPending = {};
+  let customTabOversizeAlertShown = {};
+
+  async function performCustomTabSync(tabId){
+    clearTimeout(customTabSyncTimers[tabId]);
+    customTabSyncTimers[tabId] = null;
+    if(!userDocRef || applyingRemoteState) return;
+    customTabSyncPending[tabId] = false;
+    setSyncStatus('saving');
+    try{
+      const data = window.__rg_getCustomTabData ? window.__rg_getCustomTabData(tabId) : undefined;
+      if(data === undefined){
+        // La note a été supprimée entretemps (voir removeCustomSubTab, qui supprime aussi son
+        // document directement) : rien à écrire.
+        setSyncStatus('idle');
+        return;
+      }
+      await setDoc(customTabDataRef(tabId), data);
+      setSyncStatus('idle');
+      customTabOversizeAlertShown[tabId] = false;
+    }catch(err){
+      console.error('Erreur Firestore (note personnalisée ' + tabId + ') :', err);
+      const msg = String((err && err.message) || '');
+      const isOversize = /longer than|exceeds|1,?048,?576|maximum.*size|too large/i.test(msg);
+      if(isOversize){
+        setSyncStatus('error', 'Cette note dépasse 1 Mo : rien ne s\'enregistre');
+        if(!customTabOversizeAlertShown[tabId]){
+          customTabOversizeAlertShown[tabId] = true;
+          alert("Impossible d'enregistrer cette note : elle dépasse à elle seule la limite de 1 Mo de Firestore.\n\nC'est très probablement une image collée directement (Cmd/Ctrl+V) qui n'est pas passée par la compression automatique.\n\nOuvre l'indicateur de poids en haut de cette note, ou l'indicateur de poids des images en bas de l'appli : l'image la plus lourde sera signalée, avec un bouton pour la compresser. Tant que CETTE note dépasse 1 Mo, aucune modification ici ne sera sauvegardée (les autres notes et sections ne sont pas affectées).");
+        }
+      } else {
+        setSyncStatus('error');
+      }
+    }
+  }
+
+  window.__rg_scheduleCustomTabSync = function(tabId){
+    if(!userDocRef || applyingRemoteState) return;
+    setSyncStatus('saving');
+    customTabSyncPending[tabId] = true;
+    clearTimeout(customTabSyncTimers[tabId]);
+    customTabSyncTimers[tabId] = setTimeout(()=>performCustomTabSync(tabId), 700);
+  };
+
+  // Utilisé par le bouton "💾 Sauvegarder" d'une note personnalisée : force l'écriture de CETTE
+  // note tout de suite (voir flushNoteSave dans le <script> classique, qui flush aussi le document
+  // principal en même temps par sécurité).
+  window.__rg_flushCustomTabSync = async function(tabId){
+    await performCustomTabSync(tabId);
+    return !syncStatus.classList.contains('error');
+  };
+
+  window.__rg_deleteCustomTabDoc = async function(tabId){
+    try{ await deleteDoc(customTabDataRef(tabId)); }
+    catch(err){ console.error('Erreur suppression note (Firestore) :', err); }
+  };
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'hidden'){
+      Object.keys(customTabSyncPending).forEach(id => { if(customTabSyncPending[id]) performCustomTabSync(id); });
+    }
+  });
+  window.addEventListener('pagehide', ()=>{
+    Object.keys(customTabSyncPending).forEach(id => { if(customTabSyncPending[id]) performCustomTabSync(id); });
+  });
+  window.addEventListener('blur', ()=>{
+    Object.keys(customTabSyncPending).forEach(id => { if(customTabSyncPending[id]) performCustomTabSync(id); });
+  });
+  window.addEventListener('beforeunload', ()=>{
+    Object.keys(customTabSyncPending).forEach(id => { if(customTabSyncPending[id]) performCustomTabSync(id); });
+  });
+
   onAuthStateChanged(auth, async (user)=>{
     if(!user){
       userDocRef = null;
@@ -7410,14 +7678,29 @@
       const legacyOwnSnap = snap.exists() ? null : await getDocFromServer(doc(db, 'users', user.uid));
       if(snap.exists()){
         applyingRemoteState = true;
-        window.__rg_setState(snap.data());
+        const mainData = snap.data();
+        // Notes personnalisées : chacune vit maintenant dans son propre document (voir plus haut).
+        // On les charge séparément, et si rien n'existe encore là-bas mais que le document principal
+        // contient encore l'ancien format embarqué, on migre une seule fois (voir
+        // migrateCustomTabDataIfNeeded : ne retire l'ancien emplacement qu'une fois la migration
+        // confirmée réussie, jamais de perte possible même si ça échoue en cours de route).
+        let customTabData = await loadAllCustomTabDataFromServer();
+        if(Object.keys(customTabData).length === 0 && mainData.customSceneTabsData && Object.keys(mainData.customSceneTabsData).length){
+          customTabData = await migrateCustomTabDataIfNeeded(mainData);
+        }
+        window.__rg_setState({ ...mainData, customSceneTabsData: customTabData });
         await loadSharedAgenda();
         applyingRemoteState = false;
         window.__rg_renderAll();
         setSyncStatus('idle');
-        // events n'est plus dans snap.data() (voir __rg_getState) : on le rajoute explicitement pour
+        // events n'est plus dans mainData (voir __rg_getState) : on le rajoute explicitement pour
         // que la sauvegarde quotidienne continue de couvrir l'agenda, pas seulement le reste.
-        runDailyBackup(SHARED_DOC_ID, { ...snap.data(), events: window.__rg_getEvents() });
+        // customSceneTabsData est explicitement retiré du document principal sauvegardé : chaque
+        // note personnalisée a sa propre sauvegarde (3ᵉ argument), sans quoi on recréerait la même
+        // limite de 1 Mo partagée dans le document de sauvegarde lui-même.
+        const mainDataForBackup = { ...mainData };
+        delete mainDataForBackup.customSceneTabsData;
+        runDailyBackup(SHARED_DOC_ID, { ...mainDataForBackup, events: window.__rg_getEvents() }, customTabData);
       } else if(legacyOwnSnap.exists()){
         // Rien sous l'identifiant partagé, mais ce compte a des données sous son ancien document
         // individuel (users/{uid}, d'avant le passage à un espace partagé) : on les reprend
@@ -7425,12 +7708,17 @@
         const legacyOwnData = legacyOwnSnap.data();
         await setDoc(userDocRef, { ...legacyOwnData, updatedAt: serverTimestamp() });
         applyingRemoteState = true;
-        window.__rg_setState(legacyOwnData);
+        let customTabData = (legacyOwnData.customSceneTabsData && Object.keys(legacyOwnData.customSceneTabsData).length)
+          ? await migrateCustomTabDataIfNeeded(legacyOwnData)
+          : {};
+        window.__rg_setState({ ...legacyOwnData, customSceneTabsData: customTabData });
         await loadSharedAgenda();
         applyingRemoteState = false;
         window.__rg_renderAll();
         setSyncStatus('idle');
-        runDailyBackup(SHARED_DOC_ID, { ...legacyOwnData, events: window.__rg_getEvents() });
+        const legacyDataForBackup = { ...legacyOwnData };
+        delete legacyDataForBackup.customSceneTabsData;
+        runDailyBackup(SHARED_DOC_ID, { ...legacyDataForBackup, events: window.__rg_getEvents() }, customTabData);
       } else {
         // Aucun document cloud (ni partagé, ni ancien document individuel) : on regarde s'il reste
         // d'anciennes données locales (versions précédentes de l'appli) pour ne rien perdre. Dans
