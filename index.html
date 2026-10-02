@@ -7124,6 +7124,20 @@
   window.addEventListener('pagehide', ()=>{
     if(syncPending) performSync();
   });
+  // Safari (notamment en app du Dock, "Ajouter au Dock") ne déclenche pas toujours
+  // visibilitychange/pagehide de façon fiable : une fenêtre d'appli autonome n'a pas d'onglet à
+  // "cacher", donc passer à une autre appli (sans fermer la fenêtre) peut ne générer aucun de ces
+  // deux événements. 'blur' (perte du focus clavier/souris de la fenêtre), en revanche, se déclenche
+  // dans ce cas précis — on l'utilise donc en filet de sécurité supplémentaire, spécifiquement pour
+  // ce scénario "je change d'appli sans fermer la fenêtre".
+  window.addEventListener('blur', ()=>{
+    if(syncPending) performSync();
+  });
+  // Et si malgré tout la fenêtre se ferme sans qu'aucun des événements ci-dessus ne se déclenche
+  // (autre particularité connue de Safari), beforeunload en dernier recours.
+  window.addEventListener('beforeunload', ()=>{
+    if(syncPending) performSync();
+  });
 
   googleSignInBtn.addEventListener('click', async ()=>{
     loginError.textContent = '';
