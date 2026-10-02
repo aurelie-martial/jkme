@@ -2596,12 +2596,17 @@
   const postitForm = document.getElementById('postitForm');
   let postitOnSubmit = null;
 
-  function openPostitModal({ heading, title = '', content = '', submitLabel, onSubmit }){
+  function openPostitModal({ heading, title = '', content = '', submitLabel, onSubmit, relaxedImages = false }){
     postitModalHeading.textContent = heading;
     postitTitleInput.value = title;
     postitContentInput.innerHTML = toEditableHtml(content);
     postitSubmitBtn.textContent = submitLabel;
     postitOnSubmit = onSubmit;
+    // Ce modal est partagé entre les Partis pris (document principal, budget strict) et les post-it
+    // des notes personnalisées du Bloc-notes (document séparé, budget allégé) — voir
+    // wantsRelaxedImages : on bascule l'attribut à chaque ouverture selon le contexte qui l'a appelé.
+    if(relaxedImages) postitContentInput.setAttribute('data-relaxed-images', 'true');
+    else postitContentInput.removeAttribute('data-relaxed-images');
     postitOverlay.classList.add('active');
     setTimeout(()=> postitTitleInput.focus(), 30);
   }
@@ -5212,6 +5217,22 @@
     });
   }
 
+  // Compression allégée réservée aux notes personnalisées du Bloc-notes (demande du 2 octobre 2026,
+  // une fois qu'elles ont chacune leur propre document à 1 Mo indépendant — voir saveCustomTabContent
+  // et le <script type="module">) : plus de netteté puisqu'elles n'ont plus à partager leur budget
+  // avec Scènes/Mécanisme/Partis pris/Instagram, qui eux restent sur les budgets stricts ci-dessus.
+  const CUSTOM_TAB_INLINE_COMPRESS_OPTS = {targetKB:70, startWidth:1100, minWidth:200};
+  const CUSTOM_TAB_SQUARE_COMPRESS_OPTS = {targetKB:35, startSize:640, minSize:120};
+
+  // Un conteneur éditable marqué data-relaxed-images="true" (notes personnalisées du Bloc-notes
+  // uniquement) bénéficie du budget ci-dessus pour le collage d'image (voir enableImageEditing) et le
+  // redimensionnement manuel (voir shrinkInlineImageToDisplayWidth) ; insertImageIntoEditor vérifie la
+  // même chose pour le bouton "🖼 Image". Les éditeurs partagés avec le document principal (Mécanisme,
+  // Global, Scènes, Parti pris) n'ont pas cet attribut et gardent donc le budget strict.
+  function wantsRelaxedImages(containerEl){
+    return !!(containerEl && containerEl.closest('[data-relaxed-images="true"]'));
+  }
+
   // Bouton "Image" partagé par les éditeurs du Bloc-notes : ouvre un sélecteur de fichier,
   // compresse l'image choisie puis l'insère au point du curseur dans l'éditeur ciblé.
   let __rgEditorImageInput = null;
@@ -5235,7 +5256,7 @@
       input.value = '';
       if(!file) return;
       try{
-        const dataUrl = await compressImageForEditor(file);
+        const dataUrl = await compressImageForEditor(file, wantsRelaxedImages(containerEl) ? CUSTOM_TAB_INLINE_COMPRESS_OPTS : undefined);
         containerEl.focus();
         const sel2 = window.getSelection();
         sel2.removeAllRanges();
@@ -5701,7 +5722,7 @@
     <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
     <div class="scene-toolbar-sep"></div>
     <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
-    <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~30 Ko)">🖼 Image</button>
+    <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~70 Ko)">🖼 Image</button>
     <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
     <button type="button" class="toolbar-export-btn" data-cmd="exportPdf" title="Exporter cette note en PDF">🖨 PDF</button>
     <button type="button" class="toolbar-save-btn" data-cmd="manualSave" title="Forcer l'enregistrement tout de suite, sans attendre la sauvegarde automatique">💾 Sauvegarder</button>
@@ -5723,7 +5744,7 @@
           <button type="button" class="btn" id="customAddNoteBtn">+ Ajouter un post-it</button>
           <button type="button" class="btn btn-secondary" id="customExportNotesPdfBtn" title="Exporter tous les post-it de cette note en PDF">🖨 Exporter en PDF</button>
         </div>
-        <div class="parti-grid" id="customNotesGrid"></div>
+        <div class="parti-grid" id="customNotesGrid" data-relaxed-images="true"></div>
       `;
       renderCustomTabWeight(data);
       wireCustomNotesFormat(ct, data);
@@ -5740,10 +5761,10 @@
             <button type="button" class="scene-image-remove" id="customSceneImageRemoveBtn" style="display:${data.image?'block':'none'};">✕</button>
           </div>
           <input type="file" id="customSceneImageInput" accept="image/*" style="display:none;">
-          <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~13 Ko).</div>
+          <div class="scene-image-hint">Image carrée, recadrée et compressée automatiquement (~35 Ko).</div>
           <input type="text" class="scene-editor-title" id="customSceneTitleInput" value="${escapeHtml(data.title||'')}" placeholder="Titre">
           <div class="scene-toolbar" id="customSceneToolbar">${toolbarButtonsHtml}</div>
-          <div class="scene-editor-content" id="customSceneContentInput" contenteditable="true" data-placeholder="Écris ton contenu ici...">${data.content||''}</div>
+          <div class="scene-editor-content" id="customSceneContentInput" contenteditable="true" data-placeholder="Écris ton contenu ici..." data-relaxed-images="true">${data.content||''}</div>
         </div>
       `;
       renderCustomTabWeight(data);
@@ -5754,7 +5775,7 @@
           <div class="custom-tab-weight" id="customTabWeightIndicator"></div>
           <input type="text" class="scene-editor-title" id="customSimpleTitleInput" value="${escapeHtml(data.title||'')}" placeholder="Titre (optionnel)">
           <div class="scene-toolbar" id="customSimpleToolbar">${toolbarButtonsHtml}</div>
-          <div class="scene-editor-content" id="customSimpleContent" contenteditable="true" data-placeholder="Écris ton contenu ici...">${data.content||''}</div>
+          <div class="scene-editor-content" id="customSimpleContent" contenteditable="true" data-placeholder="Écris ton contenu ici..." data-relaxed-images="true">${data.content||''}</div>
         </div>
       `;
       renderCustomTabWeight(data);
@@ -5846,7 +5867,7 @@
       imageInput.value = '';
       if(!file) return;
       try{
-        const dataUrl = await compressImageSquare(file);
+        const dataUrl = await compressImageSquare(file, CUSTOM_TAB_SQUARE_COMPRESS_OPTS);
         data.image = dataUrl;
         const existingImg = imageBox.querySelector('img');
         if(existingImg){ existingImg.src = dataUrl; }
@@ -5906,6 +5927,7 @@
               title: n.title,
               content: n.content,
               submitLabel: 'Enregistrer les modifications',
+              relaxedImages: true,
               onSubmit: (title, content) => {
                 n.title = title; n.content = content; n.updatedAt = Date.now();
                 persist();
@@ -5921,6 +5943,7 @@
       openPostitModal({
         heading: 'Ajouter un post-it',
         submitLabel: "+ Ajouter le post-it",
+        relaxedImages: true,
         onSubmit: (title, content) => {
           if(!data.items) data.items = [];
           data.items.push({id: Date.now()+Math.random(), title, content, updatedAt: Date.now()});
@@ -6182,7 +6205,7 @@
       e.preventDefault();
       const file = imageItem.getAsFile();
       if(!file) return;
-      compressImageForEditor(file).then(dataUrl => {
+      compressImageForEditor(file, wantsRelaxedImages(containerEl) ? CUSTOM_TAB_INLINE_COMPRESS_OPTS : undefined).then(dataUrl => {
         containerEl.focus();
         document.execCommand('insertImage', false, dataUrl);
         if(onChange) onChange();
@@ -6325,12 +6348,17 @@
     if(targetWidth >= imgEl.naturalWidth * 0.92) return null;
     const currentBytes = base64ImageBytes(currentDataUrl);
     const aspect = imgEl.naturalHeight / imgEl.naturalWidth;
+    // Note personnalisée du Bloc-notes (son propre document à 1 Mo) : budget allégé, comme pour le
+    // collage et le bouton "🖼 Image" (voir wantsRelaxedImages).
+    const relaxed = wantsRelaxedImages(imgEl);
+    const targetKB = relaxed ? CUSTOM_TAB_INLINE_COMPRESS_OPTS.targetKB : 30;
+    const minSize = relaxed ? CUSTOM_TAB_INLINE_COMPRESS_OPTS.minWidth : 160;
     const newDataUrl = compressToTarget((canvas, width) => {
       const w = Math.min(width, imgEl.naturalWidth);
       const h = Math.max(1, Math.round(w * aspect));
       canvas.width = w; canvas.height = h;
       return { render: (ctx) => ctx.drawImage(imgEl, 0, 0, w, h) };
-    }, {targetKB:30, startSize: targetWidth, minSize:160});
+    }, {targetKB, startSize: targetWidth, minSize});
     const newBytes = base64ImageBytes(newDataUrl);
     return newBytes < currentBytes
       ? {newDataUrl, savedBytes: currentBytes - newBytes}
@@ -6393,6 +6421,12 @@
   const IW_INLINE = {targetKB:30, startSize:760, minSize:160, square:false};
   const IW_AVATAR = {targetKB:12, startSize:260, minSize:72, square:true};
   const IW_IG_POST = {targetKB:10, startSize:300, minSize:72, square:true};
+  // Notes personnalisées du Bloc-notes (document séparé, budget allégé — voir
+  // CUSTOM_TAB_INLINE_COMPRESS_OPTS / CUSTOM_TAB_SQUARE_COMPRESS_OPTS) : mêmes seuils ici, pour que
+  // l'indicateur de poids ne les signale pas à tort comme "à compresser" et que son bouton Compresser
+  // ne les écrase pas au budget strict des sections qui partagent encore un seul document.
+  const IW_SQUARE_CUSTOM = {targetKB:35, startSize:640, minSize:120, square:true};
+  const IW_INLINE_CUSTOM = {targetKB:70, startSize:1100, minSize:200, square:false};
 
   function collectImageEntries(){
     const entries = [];
@@ -6462,7 +6496,7 @@
         entries.push({
           label: (ct.label || 'Onglet') + ' (image)',
           bytes: base64ImageBytes(data.image),
-          config: IW_SQUARE_SCENE,
+          config: IW_SQUARE_CUSTOM,
           getDataUrl: () => data.image,
           setDataUrl: (v) => { data.image = v; },
           onSaved: () => { saveCustomTabContent(ct.id); renderCustomTabWeight(data); }
@@ -6472,7 +6506,7 @@
         entries.push({
           label: (ct.label || 'Onglet') + ' (image dans le texte)',
           bytes: base64ImageBytes(src),
-          config: IW_INLINE,
+          config: IW_INLINE_CUSTOM,
           getDataUrl: () => src,
           setDataUrl: (v) => { data.content = replaceInlineImageInContent(data.content, src, v); },
           onSaved: () => { saveCustomTabContent(ct.id); renderCustomTabWeight(data); }
@@ -6484,7 +6518,7 @@
             entries.push({
               label: (ct.label || 'Onglet') + ' — ' + (it.title || 'note') + ' (image dans le texte)',
               bytes: base64ImageBytes(src),
-              config: IW_INLINE,
+              config: IW_INLINE_CUSTOM,
               getDataUrl: () => src,
               setDataUrl: (v) => { it.content = replaceInlineImageInContent(it.content, src, v); },
               onSaved: () => { saveCustomTabContent(ct.id); renderCustomTabWeight(data); }
