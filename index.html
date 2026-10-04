@@ -126,6 +126,23 @@
   .kanban-sandbox-section #col-sandbox .empty-msg{flex:1 1 100%;}
   .kanban-col h3{font-family:'Plus Jakarta Sans', sans-serif; margin:0 0 14px; font-weight:600; font-size:1rem; display:flex; align-items:center; gap:8px; color:var(--ink);}
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+
+  /* Ajout rapide direct dans une colonne du Todo (voir wireKanbanQuickAdd) : vit hors de #col-xxx,
+     qui est entièrement vidé/reconstruit par renderTasks() à chaque changement. */
+  .kanban-quick-add{
+    display:block; width:100%; margin-top:10px; font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:600; font-size:0.78rem; padding:8px 10px; border:1px dashed var(--line);
+    border-radius:8px; background:transparent; color:var(--ink-soft); cursor:pointer;
+    transition:all .15s ease;
+  }
+  .kanban-quick-add:hover{border-color:var(--lavande); color:var(--lavande); background:var(--gris);}
+  .kanban-quick-add-form{margin-top:10px;}
+  .kanban-quick-add-input{
+    width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.83rem;
+    padding:8px 10px; border:1px solid var(--lavande); border-radius:8px; background:var(--panel);
+    color:var(--ink); box-sizing:border-box;
+  }
+  .kanban-quick-add-input:focus{outline:none; box-shadow:0 0 0 2px rgba(0,0,0,0.06);}
   .task-card{
     background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px;
     margin-bottom:10px; box-shadow:none; position:relative; overflow:hidden;
@@ -1267,20 +1284,24 @@
       <div class="kanban-col">
         <h3><span class="dot" style="background:var(--ink-soft)"></span>À faire</h3>
         <div id="col-todo"></div>
+        <button type="button" class="kanban-quick-add" data-status="todo">+ Ajouter</button>
       </div>
       <div class="kanban-col">
         <h3><span class="dot" style="background:var(--ciel)"></span>En cours</h3>
         <div id="col-doing"></div>
+        <button type="button" class="kanban-quick-add" data-status="doing">+ Ajouter</button>
       </div>
       <div class="kanban-col">
         <h3><span class="dot" style="background:var(--menthe)"></span>Terminé</h3>
         <div id="col-done"></div>
+        <button type="button" class="kanban-quick-add" data-status="done">+ Ajouter</button>
       </div>
     </div>
 
     <div class="kanban-col kanban-col-sandbox kanban-sandbox-section">
       <h3><span class="dot" style="background:var(--peche)"></span>Bac à sable</h3>
       <div id="col-sandbox"></div>
+      <button type="button" class="kanban-quick-add" data-status="sandbox">+ Ajouter</button>
     </div>
   </div>
 
@@ -2987,6 +3008,54 @@
     titleInput.value='';
     renderTasks();
   });
+
+  // Ajout direct dans une colonne du Todo (demande du 4 octobre 2026) : jusqu'ici, seuls "À faire"
+  // et "Bac à sable" étaient atteignables depuis le formulaire du haut — "En cours" et "Terminé"
+  // n'étaient accessibles qu'en faisant avancer une étape existante avec ▶. Le bouton "+ Ajouter" vit
+  // à dessein HORS de #col-xxx (voir le HTML), que renderTasks() vide et reconstruit entièrement à
+  // chaque rendu : le placer dedans l'aurait fait disparaître/réapparaître à chaque ajout.
+  function wireKanbanQuickAdd(btn){
+    const status = btn.dataset.status;
+    btn.addEventListener('click', ()=>{
+      if(btn.classList.contains('is-editing')) return;
+      btn.classList.add('is-editing');
+      btn.style.display = 'none';
+      const wrap = document.createElement('div');
+      wrap.className = 'kanban-quick-add-form';
+      wrap.innerHTML = `<input type="text" class="kanban-quick-add-input" placeholder="Nouvelle étape, puis Entrée...">`;
+      btn.insertAdjacentElement('beforebegin', wrap);
+      const input = wrap.querySelector('input');
+      input.focus();
+      function close(){
+        wrap.remove();
+        btn.style.display = '';
+        btn.classList.remove('is-editing');
+      }
+      input.addEventListener('keydown', e=>{
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          const title = input.value.trim();
+          if(!title) return;
+          const category = document.getElementById('taskCategory').value || (categories[0] && categories[0].name) || '';
+          tasks.push({id: Date.now()+Math.random(), title, category, status});
+          saveTasks();
+          renderTasks();
+          // renderTasks() ne touche pas ce champ (il vit hors de #col-xxx) : on le garde ouvert et
+          // vide pour enchaîner plusieurs ajouts de suite dans la même colonne.
+          input.value = '';
+          input.focus();
+        } else if(e.key === 'Escape'){
+          e.preventDefault();
+          close();
+        }
+      });
+      input.addEventListener('blur', ()=>{
+        // Petit délai pour laisser un clic sur un autre élément s'exécuter avant de refermer.
+        setTimeout(close, 150);
+      });
+    });
+  }
+  document.querySelectorAll('.kanban-quick-add').forEach(wireKanbanQuickAdd);
 
   // ---------- CALENDAR ----------
   const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
