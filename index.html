@@ -980,6 +980,17 @@
     animation: fadeIn .3s ease;
     border-top: 6px solid rgba(0,0,0,0.08);
     margin:0 0 20px; break-inside:avoid; -webkit-column-break-inside:avoid; page-break-inside:avoid;
+    /* Bug Safari connu : dans une mise en page en colonnes CSS (voir .parti-grid ci-dessus), le
+       moindre changement visuel sur une carte (ex. l'ombre au survol) peut faire disparaître une
+       autre carte, souvent celle de la dernière colonne, jusqu'au prochain repaint (un mouvement de
+       souris suffit à la faire "réapparaître") — d'où la carte sur la 3ᵉ colonne qui s'efface au
+       survol d'une autre. Forcer chaque carte sur son propre calque graphique (translateZ(0)) évite
+       à Safari de redessiner toute la colonne à chaque survol, et corrige ce bug à la racine.
+    */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
   .parti-card:hover{
     box-shadow: 4px 8px 18px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
