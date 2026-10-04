@@ -1985,7 +1985,13 @@
   const savePillColors = () => { syncCloud(); };
   const savePinnedNotes = () => { syncCloud(); };
   const saveIgProfile = () => { syncCloud(); };
-  const saveIgPosts = () => { syncCloud(); };
+  // Les images des posts Instagram vivent chacune dans leur propre document Firestore (demande du
+  // 4 octobre 2026, voir __rg_scheduleIgImagesSync dans le <script type="module">) : on synchronise
+  // donc à la fois le document principal (titre, légende, mentions J'aime...) et les images modifiées.
+  const saveIgPosts = () => {
+    syncCloud();
+    if(window.__rg_scheduleIgImagesSync) window.__rg_scheduleIgImagesSync();
+  };
   const saveIgBioDrafts = () => { syncCloud(); };
 
   function makeOrderId(){ return 'ord_' + Date.now() + '_' + Math.floor(Math.random()*100000); }
@@ -5335,6 +5341,15 @@
   const CUSTOM_TAB_INLINE_COMPRESS_OPTS = {targetKB:70, startWidth:1100, minWidth:200};
   const CUSTOM_TAB_SQUARE_COMPRESS_OPTS = {targetKB:35, startSize:640, minSize:120};
 
+  // Images de post Instagram : chacune a son propre document à 1 Mo depuis le 4 octobre 2026, donc
+  // qualité proche d'Instagram (1080 px). Si les documents séparés n'ont pas pu être activés (voir
+  // __rg_igImagesSeparate), on reste sur l'ancien budget strict du document principal partagé.
+  const IG_POST_RELAXED_COMPRESS_OPTS = {targetKB:150, startSize:1080, minSize:300};
+  const IG_POST_STRICT_COMPRESS_OPTS = {targetKB:10, startSize:300, minSize:72};
+  function igPostCompressOpts(){
+    return window.__rg_igImagesSeparate ? IG_POST_RELAXED_COMPRESS_OPTS : IG_POST_STRICT_COMPRESS_OPTS;
+  }
+
   // Un conteneur éditable marqué data-relaxed-images="true" (notes personnalisées du Bloc-notes
   // uniquement) bénéficie du budget ci-dessus pour le collage d'image (voir enableImageEditing) et le
   // redimensionnement manuel (voir shrinkInlineImageToDisplayWidth) ; insertImageIntoEditor vérifie la
@@ -5751,7 +5766,7 @@
     if(!file) return;
     const p = currentIgPost(); if(!p) return;
     try{
-      const dataUrl = await compressImageSquare(file, {targetKB:10, startSize:300, minSize:72});
+      const dataUrl = await compressImageSquare(file, igPostCompressOpts());
       p.image = dataUrl;
       saveIgPosts();
       renderIgPostImage(p);
@@ -6393,7 +6408,8 @@
     // document Firestore à 1 Mo (voir window.__rg_getState) : il manquait ici, ce qui faisait
     // sous-estimer le vrai poids total affiché dans le pied de page ci-dessous.
     if(igProfile) total += base64ImageBytes(igProfile.avatar);
-    (igPosts || []).forEach(p=> total += base64ImageBytes(p.image));
+    // Sauf les images de post, qui ont leur propre document depuis le 4 octobre 2026.
+    if(!window.__rg_igImagesSeparate) (igPosts || []).forEach(p=> total += base64ImageBytes(p.image));
     return total;
   }
 
@@ -6679,7 +6695,9 @@
       entries.push({
         label: 'Instagram — post ' + (i + 1),
         bytes: base64ImageBytes(p.image),
-        config: IW_IG_POST,
+        config: window.__rg_igImagesSeparate
+          ? {...IG_POST_RELAXED_COMPRESS_OPTS, square:true}
+          : IW_IG_POST,
         getDataUrl: () => p.image,
         setDataUrl: (v) => { p.image = v; },
         onSaved: () => { saveIgPosts(); }
@@ -7210,8 +7228,21 @@
   window.__rg_getState = () => ({
     tasks, categories, partis, scenes,
     notes: notesData, customSceneTabs, mecanismeData, hiddenTabs,
-    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, igProfile, igPosts, igBioDrafts
+    sceneOrder, blocNotesOrder, pillColors, pinnedNotes, igProfile,
+    // Depuis le 4 octobre 2026, l'image de chaque post vit dans son propre document
+    // (users/{uid}/igPostImages/{postId}) : on ne l'écrit plus dans le document principal, mais
+    // seulement une fois que ces documents séparés ont bien été chargés/migrés (drapeau
+    // __rg_igImagesSeparate) — sinon on garde l'ancien fonctionnement pour ne jamais rien perdre.
+    igPosts: window.__rg_igImagesSeparate ? igPosts.map(({image, ...rest}) => rest) : igPosts,
+    igBioDrafts
   });
+
+  // Images actuelles des posts Instagram (id → image), pour le <script type="module">.
+  window.__rg_getIgPostImages = () => {
+    const map = {};
+    (igPosts || []).forEach(p => { map[String(p.id)] = p.image || ''; });
+    return map;
+  };
 
   // Donne au <script type="module"> l'accès au contenu actuel d'une note personnalisée (pour
   // l'écrire dans son propre document) sans lui exposer tout le reste de l'état de l'appli.
@@ -7481,6 +7512,11 @@
             .then(tabsSnap => Promise.all(tabsSnap.docs.map(td => deleteDoc(td.ref))))
             .catch(err => console.error('Purge des notes personnalisées sauvegardées :', err))
         );
+        deletions.push(
+          getDocs(collection(db, 'users', uid, 'backups', d.id, 'igPostImages'))
+            .then(imgSnap => Promise.all(imgSnap.docs.map(td => deleteDoc(td.ref))))
+            .catch(err => console.error('Purge des images de post sauvegardées :', err))
+        );
       }
     });
     if(deletions.length) await Promise.all(deletions);
@@ -7498,7 +7534,15 @@
       const backupRef = doc(db, 'users', uid, 'backups', todayKey);
       const existing = await getDoc(backupRef);
       if(!existing.exists()){
+        // Images de post Instagram : sauvegardées à part (une par document), comme les notes.
+        const igImages = window.__rg_igImagesSeparate ? { ...igImagesSynced } : {};
+        if(window.__rg_igImagesSeparate && Array.isArray(dataToBackup.igPosts)){
+          dataToBackup = { ...dataToBackup, igPosts: dataToBackup.igPosts.map(({image, ...rest}) => rest) };
+        }
         await setDoc(backupRef, { ...dataToBackup, backedUpAt: serverTimestamp() });
+        for(const postId of Object.keys(igImages)){
+          if(igImages[postId]) await setDoc(doc(db, 'users', uid, 'backups', todayKey, 'igPostImages', postId), { image: igImages[postId] });
+        }
         const tabIds = Object.keys(customTabData || {});
         for(const tabId of tabIds){
           await setDoc(doc(db, 'users', uid, 'backups', todayKey, 'customTabs', tabId), customTabData[tabId]);
@@ -7526,6 +7570,16 @@
       const customTabsSnap = await getDocsFromServer(collection(db, 'users', uid, 'backups', key, 'customTabs'));
       const restoredCustomTabData = {};
       customTabsSnap.forEach(d => { restoredCustomTabData[d.id] = d.data(); });
+      // Images de post Instagram sauvegardées à part (sauvegardes faites depuis le 4 octobre 2026) ;
+      // une sauvegarde plus ancienne a encore les images directement dans data.igPosts : on les garde.
+      try{
+        const igImgSnap = await getDocsFromServer(collection(db, 'users', uid, 'backups', key, 'igPostImages'));
+        const restoredIgImages = {};
+        igImgSnap.forEach(d => { restoredIgImages[d.id] = d.data().image || ''; });
+        if(Array.isArray(data.igPosts)){
+          data.igPosts = data.igPosts.map(p => restoredIgImages[String(p.id)] ? { ...p, image: restoredIgImages[String(p.id)] } : p);
+        }
+      }catch(err){ console.error('Lecture des images de post sauvegardées :', err); }
       applyingRemoteState = true;
       window.__rg_setState({ ...data, customSceneTabsData: restoredCustomTabData });
       // data.events (voir runDailyBackup, qui l'ajoute explicitement) : à restaurer aussi dans
@@ -7537,6 +7591,9 @@
       window.__rg_renderAll();
       delete data.events;
       delete data.customSceneTabsData;
+      if(window.__rg_igImagesSeparate && Array.isArray(data.igPosts)){
+        data.igPosts = data.igPosts.map(({image, ...rest}) => rest);
+      }
       await setDoc(userDocRef, { ...data, updatedAt: serverTimestamp() });
       await setDoc(sharedAgendaJkmeRef, { days: restoredEvents, updatedAt: serverTimestamp() });
       // Réécrit chaque note personnalisée restaurée dans sa propre place au quotidien (pas
@@ -7551,6 +7608,12 @@
         if(!(d.id in restoredCustomTabData)) writes.push(deleteDoc(d.ref));
       });
       await Promise.all(writes);
+      // Réécrit les images de post restaurées dans leurs documents séparés (et supprime celles des
+      // posts qui n'existent plus dans cette sauvegarde).
+      if(window.__rg_igImagesSeparate){
+        try{ igImagesSynced = await loadAllIgPostImagesFromServer(); }catch(err){ console.error(err); }
+        await performIgImagesSync();
+      }
       setSyncStatus('idle');
       backupRestoreOverlay.classList.remove('active');
       alert('Sauvegarde restaurée avec succès.');
@@ -7799,6 +7862,100 @@
     Object.keys(customTabSyncPending).forEach(id => { if(customTabSyncPending[id]) performCustomTabSync(id); });
   });
 
+  // ---------- IMAGES DES POSTS INSTAGRAM (users/{uid}/igPostImages/{postId}) ----------
+  // Demande du 4 octobre 2026 : les images de post étaient très compressées (300 px, ~10 Ko) pour
+  // tenir dans le document principal à 1 Mo, partagé avec tout le reste. Chaque image vit maintenant
+  // dans SON PROPRE document ({image}), ce qui permet une qualité proche d'Instagram (1080 px). Le
+  // reste du post (titre, légende, mentions J'aime, date) reste dans le document principal.
+  // Sécurité : tant que ces documents n'ont pas été lus (et les anciennes images migrées) avec
+  // succès, window.__rg_igImagesSeparate reste false et l'appli garde l'ancien fonctionnement
+  // (images dans le document principal) — aucune image ne peut être perdue si ça échoue.
+  window.__rg_igImagesSeparate = false;
+  let igImagesSynced = {}; // postId → image telle qu'enregistrée dans Firestore
+  let igImagesSyncTimer = null;
+  let igImagesSyncPending = false;
+
+  function igPostImageRef(postId){
+    return doc(db, 'users', SHARED_DOC_ID, 'igPostImages', String(postId));
+  }
+
+  async function loadAllIgPostImagesFromServer(){
+    const snap = await getDocsFromServer(collection(db, 'users', SHARED_DOC_ID, 'igPostImages'));
+    const result = {};
+    snap.forEach(d => { result[d.id] = d.data().image || ''; });
+    return result;
+  }
+
+  // Charge les images séparées et les remet dans les posts (en mémoire) ; migre une seule fois les
+  // images encore présentes dans le document principal. Renvoie true si une migration a eu lieu.
+  async function prepareIgPostImages(mainData){
+    const posts = Array.isArray(mainData && mainData.igPosts) ? mainData.igPosts : [];
+    try{
+      const loaded = await loadAllIgPostImagesFromServer();
+      let migrated = false;
+      for(const p of posts){
+        const id = String(p.id);
+        if(loaded[id]){
+          p.image = loaded[id];
+        } else if(p.image){
+          await setDoc(igPostImageRef(id), { image: p.image });
+          loaded[id] = p.image;
+          migrated = true;
+        }
+      }
+      igImagesSynced = loaded;
+      window.__rg_igImagesSeparate = true;
+      return migrated;
+    }catch(err){
+      console.error('Images de post Instagram : documents séparés indisponibles, ancien fonctionnement conservé.', err);
+      window.__rg_igImagesSeparate = false;
+      return false;
+    }
+  }
+
+  async function performIgImagesSync(){
+    clearTimeout(igImagesSyncTimer);
+    igImagesSyncTimer = null;
+    if(!userDocRef || applyingRemoteState || !window.__rg_igImagesSeparate) return;
+    igImagesSyncPending = false;
+    const current = window.__rg_getIgPostImages ? window.__rg_getIgPostImages() : {};
+    const ops = [];
+    Object.keys(current).forEach(id => {
+      if(current[id] === (igImagesSynced[id] || '')) return;
+      const img = current[id];
+      ops.push((img ? setDoc(igPostImageRef(id), { image: img }) : deleteDoc(igPostImageRef(id)))
+        .then(() => { if(img) igImagesSynced[id] = img; else delete igImagesSynced[id]; }));
+    });
+    Object.keys(igImagesSynced).forEach(id => {
+      if(id in current) return;
+      ops.push(deleteDoc(igPostImageRef(id)).then(() => { delete igImagesSynced[id]; }));
+    });
+    if(!ops.length) return;
+    setSyncStatus('saving');
+    const results = await Promise.allSettled(ops);
+    const failed = results.filter(r => r.status === 'rejected');
+    if(failed.length){
+      failed.forEach(f => console.error('Erreur Firestore (image de post) :', f.reason));
+      setSyncStatus('error', 'Image de post non enregistrée');
+    } else if(!syncPending){
+      setSyncStatus('idle');
+    }
+  }
+
+  window.__rg_scheduleIgImagesSync = function(){
+    if(!userDocRef || applyingRemoteState || !window.__rg_igImagesSeparate) return;
+    igImagesSyncPending = true;
+    clearTimeout(igImagesSyncTimer);
+    igImagesSyncTimer = setTimeout(performIgImagesSync, 700);
+  };
+
+  ['pagehide', 'blur', 'beforeunload'].forEach(evt => {
+    window.addEventListener(evt, ()=>{ if(igImagesSyncPending) performIgImagesSync(); });
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'hidden' && igImagesSyncPending) performIgImagesSync();
+  });
+
   onAuthStateChanged(auth, async (user)=>{
     if(!user){
       userDocRef = null;
@@ -7857,11 +8014,15 @@
         if(Object.keys(customTabData).length === 0 && mainData.customSceneTabsData && Object.keys(mainData.customSceneTabsData).length){
           customTabData = await migrateCustomTabDataIfNeeded(mainData);
         }
+        const igMigrated = await prepareIgPostImages(mainData);
         window.__rg_setState({ ...mainData, customSceneTabsData: customTabData });
         await loadSharedAgenda();
         applyingRemoteState = false;
         window.__rg_renderAll();
         setSyncStatus('idle');
+        // Images de post tout juste migrées vers leurs propres documents : on réécrit le document
+        // principal sans elles pour libérer la place.
+        if(igMigrated) window.__rg_scheduleSync();
         // events n'est plus dans mainData (voir __rg_getState) : on le rajoute explicitement pour
         // que la sauvegarde quotidienne continue de couvrir l'agenda, pas seulement le reste.
         // customSceneTabsData est explicitement retiré du document principal sauvegardé : chaque
@@ -7880,6 +8041,7 @@
         let customTabData = (legacyOwnData.customSceneTabsData && Object.keys(legacyOwnData.customSceneTabsData).length)
           ? await migrateCustomTabDataIfNeeded(legacyOwnData)
           : {};
+        await prepareIgPostImages(legacyOwnData);
         window.__rg_setState({ ...legacyOwnData, customSceneTabsData: customTabData });
         await loadSharedAgenda();
         applyingRemoteState = false;
