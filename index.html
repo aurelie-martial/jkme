@@ -982,7 +982,6 @@
     margin:0 0 20px; break-inside:avoid; -webkit-column-break-inside:avoid; page-break-inside:avoid;
   }
   .parti-card:hover{
-    transform: translateY(-3px) rotate(0.5deg);
     box-shadow: 4px 8px 18px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
   }
   /* Épingle décorative en haut du post-it */
@@ -1971,7 +1970,12 @@
     function onPointerMove(e){
       if(!dragState || e.pointerId !== dragState.pointerId) return;
       const isRow = getComputedStyle(containerEl).flexDirection === 'row';
-      const siblings = Array.from(containerEl.children).filter(r=>r!==dragState.row);
+      // Les en-têtes de section ("★ Épinglées", "Toutes les notes" dans le Bloc-notes) sont de
+      // simples repères visuels sans data-order-key, intercalés au milieu des mêmes enfants que les
+      // lignes réordonnables. Sans ce filtre, l'élément qu'on glisse pouvait se faire comparer à ces
+      // repères et finir inséré juste à côté d'eux à chaque petit mouvement de souris, donnant
+      // l'impression que le titre "suivait" l'élément déplacé plutôt que de rester à sa place fixe.
+      const siblings = Array.from(containerEl.children).filter(r=>r!==dragState.row && r.hasAttribute('data-order-key'));
       const pos = isRow ? e.clientX : e.clientY;
       let insertBeforeEl = null;
       for(const r of siblings){
@@ -4888,8 +4892,6 @@
     );
 
     if(pinnedFolderIds.size || pinnedUngroupedNotes.length){
-      html += `<div class="scene-pills-section-label">★ Épinglées</div>`;
-
       // Une note isolée épinglée passe avant les dossiers épinglés : épingler une note précise
       // est un geste plus ciblé qu'épingler tout un dossier (voir aussi firstAvailableBlocNotesEntry,
       // qui applique la même priorité pour choisir la note ouverte par défaut).
@@ -4916,8 +4918,6 @@
           html += renderBlocNotesPillEntry(entry);
         }
       });
-
-      html += `<div class="scene-pills-section-label">Toutes les notes</div>`;
     }
 
     // Le reste de la liste n'inclut plus les dossiers épinglés (déjà remontés en bloc ci-dessus,
