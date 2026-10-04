@@ -4770,7 +4770,7 @@
     if(pinnedFolderIds.size){
       let inPinnedFolder = false;
       for(const entry of blocNotesOrder){
-        if(entry.type === 'divider'){ inPinnedFolder = !!(entry.label && pinnedFolderIds.has(entry.id)); continue; }
+        if(entry.type === 'divider'){ if(entry.label) inPinnedFolder = pinnedFolderIds.has(entry.id); continue; }
         if(inPinnedFolder) return entry;
       }
     }
@@ -4836,7 +4836,9 @@
   function containingFolderId(index){
     for(let i=index-1;i>=0;i--){
       const e = blocNotesOrder[i];
-      if(e.type === 'divider') return e.label ? e.id : null;
+      // Un simple trait (séparateur sans nom) placé dans un dossier n'en sort pas les notes :
+      // seul un dossier (séparateur nommé) suivant referme la portée du précédent.
+      if(e.type === 'divider' && e.label) return e.id;
     }
     return null;
   }
@@ -4858,7 +4860,7 @@
   function folderContainsPinnedNote(folderIndex){
     for(let i=folderIndex+1;i<blocNotesOrder.length;i++){
       const e = blocNotesOrder[i];
-      if(e.type === 'divider') return false;
+      if(e.type === 'divider'){ if(e.label) return false; continue; }
       if(pinnedNotes[pinKeyFor(e)]) return true;
     }
     return false;
@@ -4983,8 +4985,16 @@
       let inPinnedFolder = false;
       let pinnedFolderCollapsed = false;
       blocNotesOrder.forEach((entry, i)=>{
+        if(entry.type === 'divider' && !entry.label){
+          // Simple trait à l'intérieur d'un dossier épinglé : il reste dans son dossier.
+          if(!inPinnedFolder) return;
+          html += pinnedFolderCollapsed
+            ? `<div class="scene-divider-row" data-order-key="${entry.id}" style="display:none;" aria-hidden="true"></div>`
+            : renderBlocNotesPillEntry(entry);
+          return;
+        }
         if(entry.type === 'divider'){
-          inPinnedFolder = !!(entry.label && pinnedFolderIds.has(entry.id));
+          inPinnedFolder = pinnedFolderIds.has(entry.id);
           if(inPinnedFolder){
             html += renderBlocNotesPillEntry(entry);
             pinnedFolderCollapsed = !!entry.collapsed && !folderContainsPinnedNote(i);
@@ -5017,6 +5027,15 @@
     let inCollapsedFolder = false;
     let inPinnedFolderMain = false;
     blocNotesOrder.forEach((entry, i)=>{
+      if(entry.type === 'divider' && !entry.label){
+        // Simple trait : il appartient au dossier dans lequel il est placé (masqué si ce dossier
+        // est replié) et ne referme pas sa portée.
+        if(inPinnedFolderMain) return;
+        html += inCollapsedFolder
+          ? `<div class="scene-divider-row" data-order-key="${entry.id}" style="display:none;" aria-hidden="true"></div>`
+          : renderBlocNotesPillEntry(entry);
+        return;
+      }
       if(entry.type === 'divider'){
         inPinnedFolderMain = !!(entry.label && pinnedFolderIds.has(entry.id));
         if(inPinnedFolderMain) return;
@@ -6081,7 +6100,7 @@
       const folderIndex = blocNotesOrder.findIndex(en=>en.type==='divider' && String(en.id)===String(pendingNoteFolderId));
       if(folderIndex !== -1){
         let insertAt = folderIndex + 1;
-        while(insertAt < blocNotesOrder.length && blocNotesOrder[insertAt].type !== 'divider') insertAt++;
+        while(insertAt < blocNotesOrder.length && !(blocNotesOrder[insertAt].type === 'divider' && blocNotesOrder[insertAt].label)) insertAt++;
         blocNotesOrder.splice(insertAt, 0, {type:'custom', id});
         blocNotesOrder[folderIndex].collapsed = false;
         saveBlocNotesOrder();
