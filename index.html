@@ -1402,6 +1402,7 @@
         <select class="scene-mobile-select" id="blocNotesMobileSelect"></select>
         <div class="scene-sidebar-actions">
           <button type="button" class="btn-add-subtab" id="addSubTabBtn">+ Ajouter une note</button>
+          <button type="button" class="btn-add-subtab" id="addBlocNotesPlainDividerBtn" title="Ajoute un simple trait pour séparer visuellement des groupes de notes, sans les replier">+ Séparateur</button>
           <button type="button" class="btn-add-subtab" id="addBlocNotesDividerBtn" title="Crée un dossier repliable pour regrouper des notes (ex. « Roman », « Réseaux sociaux »)">+ Dossier</button>
           <button type="button" class="btn-organize-toggle" id="toggleBlocNotesOrganizeBtn" title="Réorganiser, recolorer ou supprimer les onglets">⚙ Organiser</button>
         </div>
@@ -5113,6 +5114,17 @@
     renderBlocNotesPills();
   });
 
+  // Séparateur simple (un trait, sans nom ni pli) : même principe qu'un dossier (voir juste
+  // au-dessus) mais sans "label", ce qui fait prendre à renderBlocNotesPillEntry le rendu .scene-divider-row
+  // au lieu du dossier repliable — c'est l'équivalent, pour le Bloc-notes, du bouton "+ Ajouter un
+  // séparateur" des Scènes (voir addSceneDividerBtn).
+  document.getElementById('addBlocNotesPlainDividerBtn').addEventListener('click', ()=>{
+    reconcileBlocNotesOrder();
+    blocNotesOrder.push({type:'divider', id: makeOrderId()});
+    saveBlocNotesOrder();
+    renderBlocNotesPills();
+  });
+
   enableDragReorder(blocNotesPillsEl, ()=>blocNotesOrder, (newOrder)=>{
     blocNotesOrder = newOrder;
     saveBlocNotesOrder();
@@ -6126,8 +6138,16 @@
 
     containerEl.addEventListener('pointerdown', (e)=>{
       const direct = e.target.closest('img');
-      const tolerance = e.pointerType === 'touch' ? 18 : 8;
-      const img = (direct && containerEl.contains(direct)) ? direct : findImageNear(containerEl, e.clientX, e.clientY, tolerance);
+      // La tolérance de proximité (sélectionner une image sans taper dessus exactement) ne s'applique
+      // qu'au toucher, où viser précisément un petit visuel est difficile. Au clavier/souris/trackpad,
+      // elle interceptait aussi le DÉBUT d'une sélection de texte lancée juste à côté d'une image (par
+      // ex. pour copier un bloc de texte + image vers une autre note) : le clic était alors pris pour
+      // « attraper l'image » au lieu de laisser le navigateur démarrer sa sélection native, ce qui
+      // pouvait déplacer ou faire disparaître l'image lors du copier-coller (voir aussi finishDrag,
+      // qui ne perd plus jamais l'image même si ça se reproduit).
+      const img = (direct && containerEl.contains(direct))
+        ? direct
+        : (e.pointerType === 'touch' ? findImageNear(containerEl, e.clientX, e.clientY, 18) : null);
       if(!img || !containerEl.contains(img)) return;
       e.preventDefault();
       selectImage(img, onChange);
@@ -6169,12 +6189,28 @@
         markInteractionJustHappened();
         let moved = false;
         const range = caretRangeFromPointCompat(e.clientX, e.clientY);
+        // Filet de sécurité : on garde où se trouvait l'image AVANT de la retirer du DOM, pour pouvoir
+        // la remettre exactement à sa place si le dépôt à l'endroit visé échoue. Avant ce correctif,
+        // un dépôt raté laissait dragImg.remove() appliqué sans rien réinséré nulle part : l'image
+        // disparaissait purement et simplement de la note dès que l'enregistrement suivant se produisait.
+        const originalParent = dragImg.parentNode;
+        const originalNextSibling = dragImg.nextSibling;
         if(range && containerEl.contains(range.startContainer) && range.startContainer !== dragImg){
           try{
             dragImg.remove();
             range.insertNode(dragImg);
             moved = true;
-          }catch(err){ /* dépôt impossible à cet endroit précis : on annule le déplacement */ }
+          }catch(err){
+            // Dépôt impossible à cet endroit précis : on remet l'image exactement où elle était avant
+            // de la retirer, plutôt que de la laisser disparaître (voir commentaire ci-dessus).
+            if(!containerEl.contains(dragImg)){
+              if(originalParent && containerEl.contains(originalParent)){
+                originalParent.insertBefore(dragImg, originalNextSibling);
+              } else {
+                containerEl.appendChild(dragImg);
+              }
+            }
+          }
         }
         if(moved && onChange) onChange();
         selectImage(dragImg, onChange);
