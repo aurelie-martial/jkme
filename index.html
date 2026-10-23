@@ -2234,8 +2234,9 @@
   // objectifs par case ("projet|début de semaine") et dates d'arrivée par projet.
   // Semaine 1 = semaine du lundi 19 octobre 2026 (demande du 23 octobre : "la semaine 1 a commencé
   // cette semaine"). extraWeeks = semaines ajoutées à la main avec le "+" en bas du planning.
-  const DEFAULT_PLANNING_START = '2026-10-19';
-  let planning = {v: 2, start: DEFAULT_PLANNING_START, extraWeeks: 0, goals: {}, targets: {}};
+  // v3 (23 octobre 2026, "commence les semaines début octobre") : Semaine 1 = lundi 5 octobre 2026.
+  const DEFAULT_PLANNING_START = '2026-10-05';
+  let planning = {v: 3, start: DEFAULT_PLANNING_START, extraWeeks: 0, goals: {}, targets: {}};
 
   // Simulateur Instagram (sous-onglet "Posts" de l'onglet "Scènes / Posts") : un profil unique
   // (photo, pseudo, nom, bio, stats) et une liste de posts (image + légende + mentions J'aime),
@@ -8406,9 +8407,9 @@
     pinnedNotes = (state.pinnedNotes && typeof state.pinnedNotes === 'object') ? state.pinnedNotes : {};
     // v2 (23 octobre 2026) : semaines du lundi au dimanche, Semaine 1 = 19 oct. Un planning plus
     // ancien (Semaine 1 au 5 novembre) est recalé une fois pour toutes.
-    planning = (state.planning && typeof state.planning === 'object' && state.planning.v === 2)
-      ? {v: 2, start: state.planning.start || DEFAULT_PLANNING_START, extraWeeks: Number(state.planning.extraWeeks) || 0, goals: state.planning.goals || {}, targets: state.planning.targets || {}}
-      : {v: 2, start: DEFAULT_PLANNING_START, extraWeeks: 0, goals: (state.planning && state.planning.goals) || {}, targets: (state.planning && state.planning.targets) || {}};
+    planning = (state.planning && typeof state.planning === 'object' && state.planning.v === 3)
+      ? {v: 3, start: state.planning.start || DEFAULT_PLANNING_START, extraWeeks: Number(state.planning.extraWeeks) || 0, goals: state.planning.goals || {}, targets: state.planning.targets || {}}
+      : {v: 3, start: DEFAULT_PLANNING_START, extraWeeks: (state.planning && Number(state.planning.extraWeeks)) || 0, goals: (state.planning && state.planning.goals) || {}, targets: (state.planning && state.planning.targets) || {}};
     igProfile =(state.igProfile && typeof state.igProfile === 'object') ? {...defaultIgProfile(), ...state.igProfile} : defaultIgProfile();
     igPosts = Array.isArray(state.igPosts) ? state.igPosts : [];
     // Migration : les brouillons créés avant l'ajout des champs nom/@ n'avaient qu'un texte de bio
