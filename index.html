@@ -414,6 +414,9 @@
   .pl-select-bar .pl-move-insta{background:var(--bg-insta); border-color:var(--line-insta); color:var(--proj-insta);}
   .pl-select-bar .pl-move-roman{background:var(--bg-roman); border-color:var(--line-roman); color:var(--proj-roman);}
   .pl-card.selectable{cursor:pointer;}
+  .pl-title-inline{flex:0 0 auto !important; width:100%; box-sizing:border-box; font-size:0.82rem !important; font-weight:500;}
+  .tc-actions .del.confirm, .pl-select-bar .pl-bulk-del.confirm{background:#FBEDEB; border-color:#EBC0BA; color:#9C3B33;}
+  .pl-card .tc-actions .del{margin-left:auto;}
   .pl-card.selected{box-shadow:0 0 0 2px var(--lavande);}
   .pl-check{flex:0 0 auto; width:16px; height:16px; border:1.5px solid #CBD5E1; border-radius:4px; background:var(--panel); font-size:0.7rem; line-height:13px; text-align:center; color:#fff; align-self:center;}
   .pl-card.selected .pl-check{background:var(--lavande); border-color:var(--lavande);}
@@ -3413,6 +3416,8 @@
   let plOpenId = null;
   // Mode sélection du bac à sable (23 octobre 2026) : cocher plusieurs étapes pour changer leur
   // projet d'un coup (utile pour les anciennes étapes, toutes rangées par défaut dans le roman).
+  let plDelConfirm = null;      // carte dont la suppression attend un 2e clic de confirmation
+  let plBulkDelConfirm = false; // idem pour la suppression groupée du bac à sable
   let plSelectMode = false;
   let plSelected = new Set();
   function plCardHtml(t, opts){
@@ -3424,6 +3429,7 @@
     return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}${selectable?' selectable':''}${sel?' selected':''}" data-plcard="${t.id}" ${open||selectable?'':'draggable="true"'}>
       <div class="tc-main">${selectable?`<span class="pl-check">${sel?'✓':''}</span>`:''}<span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}</div>
       ${open ? `<div class="tc-details">
+        <input type="text" class="tc-field pl-title-inline" data-id="${t.id}" value="${escapeHtml(t.title)}" title="Texte de l'étape (Entrée pour enregistrer)">
         <div class="tc-fields">
           <select class="tc-field pl-proj-inline" data-id="${t.id}" title="Projet">${PROJECTS.map(p=>`<option value="${p.id}" ${p.id===t.project?'selected':''}>${escapeHtml(p.label)}</option>`).join('')}</select>
           <input type="date" class="tc-field pl-due-inline" data-id="${t.id}" value="${t.due||''}" title="Deadline">
@@ -3431,6 +3437,7 @@
         <div class="tc-actions">
           ${t.due ? `<button type="button" data-pl="prev" data-id="${t.id}" title="Une semaine plus tôt">◀ sem.</button><button type="button" data-pl="next" data-id="${t.id}" title="Une semaine plus tard">sem. ▶</button>` : ''}
           <button type="button" data-pl="done" data-id="${t.id}">${isDone?'↺ À refaire':'✓ Terminé'}</button>
+          <button type="button" class="del${String(plDelConfirm)===String(t.id)?' confirm':''}" data-pl="del" data-id="${t.id}">${String(plDelConfirm)===String(t.id)?'Confirmer la suppression':'✕ Supprimer'}</button>
         </div>
       </div>` : ''}
     </div>`;
@@ -3458,16 +3465,17 @@
     const undated = visible.filter(t=>!t.due && t.status !== 'done');
     const sandboxHtml = `<div class="pl-sandbox pl-cell" data-cell="any|nodate">
       <div class="pl-sandbox-head"><h3>Bac à sable <span class="col-count">${undated.length || ''}</span></h3>
-        ${undated.length ? (plSelectMode ? '' : `<button type="button" class="pl-select-btn" id="plSelectStart">Changer le projet…</button>`) : ''}</div>
+        ${undated.length ? (plSelectMode ? '' : `<button type="button" class="pl-select-btn" id="plSelectStart">Sélectionner…</button>`) : ''}</div>
       ${plSelectMode ? `<div class="pl-select-bar">
         <span>${plSelected.size} sélectionnée${plSelected.size>1?'s':''}</span>
         <button type="button" id="plSelectAll">${plSelected.size === undated.length ? 'Tout désélectionner' : 'Tout sélectionner'}</button>
         <span class="sep"></span>
         ${PROJECTS.map(p=>`<button type="button" class="pl-move-to pl-move-${p.id}" data-move="${p.id}" ${plSelected.size?'':'disabled'}>→ ${escapeHtml(p.label)}</button>`).join('')}
+        <button type="button" id="plBulkDelete" class="pl-bulk-del${plBulkDelConfirm?' confirm':''}" ${plSelected.size?'':'disabled'}>${plBulkDelConfirm?`Confirmer : supprimer ${plSelected.size}`:'✕ Supprimer'}</button>
         <button type="button" id="plSelectCancel">Terminer</button>
       </div>` : ''}
       <div class="pl-sandbox-cards">${undated.length ? undated.map(t=>plCardHtml(t, {selectable: plSelectMode})).join('') : `<div class="empty-msg">Toutes tes étapes ont une date.</div>`}</div>
-      ${plSelectMode ? '<div class="qa-hint">Clique sur les cartes à changer, puis choisis leur projet.</div>' : '<div class="qa-hint">Glisse une carte dans une semaine pour lui donner une date, ou ramène-la ici pour la retirer.</div>'}
+      ${plSelectMode ? '<div class="qa-hint">Clique sur les cartes à modifier, puis change leur projet ou supprime-les.</div>' : '<div class="qa-hint">Glisse une carte dans une semaine pour lui donner une date, ou ramène-la ici pour la retirer.</div>'}
     </div>`;
 
     const targetsHtml = projs.map(p=>{
@@ -3523,15 +3531,24 @@
     // Mode sélection
     const q = id => el.querySelector('#'+id);
     if(q('plSelectStart')) q('plSelectStart').addEventListener('click', ()=>{ plSelectMode = true; plSelected = new Set(); plOpenId = null; renderTasks(); });
-    if(q('plSelectCancel')) q('plSelectCancel').addEventListener('click', ()=>{ plSelectMode = false; plSelected = new Set(); renderTasks(); });
+    if(q('plSelectCancel')) q('plSelectCancel').addEventListener('click', ()=>{ plSelectMode = false; plSelected = new Set(); plBulkDelConfirm = false; renderTasks(); });
+    if(q('plBulkDelete')) q('plBulkDelete').addEventListener('click', ()=>{
+      if(!plSelected.size) return;
+      if(!plBulkDelConfirm){ plBulkDelConfirm = true; renderTasks(); return; }
+      tasks = tasks.filter(t=>!plSelected.has(String(t.id)));
+      plSelected = new Set(); plBulkDelConfirm = false;
+      saveTasks(); renderTasks();
+    });
     if(q('plSelectAll')) q('plSelectAll').addEventListener('click', ()=>{
       plSelected = plSelected.size === undated.length ? new Set() : new Set(undated.map(t=>String(t.id)));
+      plBulkDelConfirm = false;
       renderTasks();
     });
     el.querySelectorAll('.pl-card.selectable').forEach(card=>{
       card.addEventListener('click', ()=>{
         const id = card.dataset.plcard;
         if(plSelected.has(id)) plSelected.delete(id); else plSelected.add(id);
+        plBulkDelConfirm = false;
         renderTasks();
       });
     });
@@ -3606,8 +3623,18 @@
       card.addEventListener('click', e=>{
         if(e.target.closest('button, select, input')) return;
         plOpenId = String(plOpenId) === card.dataset.plcard ? null : card.dataset.plcard;
+        plDelConfirm = null;
         renderTasks();
       });
+    });
+    el.querySelectorAll('.pl-title-inline').forEach(inp=>{
+      const commit = ()=>{
+        const t = tasks.find(x=>String(x.id)===inp.dataset.id);
+        const v = inp.value.trim();
+        if(t && v && v !== t.title){ t.title = v; saveTasks(); renderTasks(); }
+      };
+      inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); } if(e.key==='Escape'){ plOpenId = null; renderTasks(); } });
+      inp.addEventListener('change', commit);
     });
     el.querySelectorAll('.pl-proj-inline').forEach(sel=>{
       sel.addEventListener('change', ()=>{
@@ -3687,6 +3714,11 @@
         if(act==='prev' && t.due) t.due = addDaysKey(t.due, -7);
         if(act==='next' && t.due) t.due = addDaysKey(t.due, 7);
         if(act==='done') t.status = t.status==='done' ? 'todo' : 'done';
+        if(act==='del'){
+          // Deux clics pour supprimer (pas de boîte de dialogue du navigateur).
+          if(String(plDelConfirm) !== String(t.id)){ plDelConfirm = t.id; renderTasks(); return; }
+          tasks = tasks.filter(x=>x!==t); plDelConfirm = null; plOpenId = null;
+        }
         save();
       });
     });
