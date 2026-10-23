@@ -203,7 +203,8 @@
   /* Couleurs des projets (23 octobre 2026) : terracotta clair pour Instagram, vert sauge pour le
      roman — deux teintes chaudes/vertes bien distinctes du fond gris-bleu de l'appli. */
   :root{ --due-late:#C4574F; --due-soon:#C98A2E; --proj-insta:#B4664A; --proj-roman:#5E8A68;
-    --bg-insta:#FCEFE8; --line-insta:#F1D6C8; --bg-roman:#EDF5EE; --line-roman:#CFE3D3; }
+    --bg-insta:#FCEFE8; --line-insta:#F1D6C8; --bg-roman:#EDF5EE; --line-roman:#CFE3D3;
+    --proj-projet:#A07A22; --bg-projet:#FBF5E4; --line-projet:#EEDFB6; }
   /* Fond clair propre à chaque projet : blocs en vue Tout, colonnes entières en vue projet, et
      cartes isolées (groupe "En retard", vue Cette semaine). */
   .proj-block{border-radius:12px; padding:10px 10px 2px; margin:0 -6px 12px;}
@@ -425,11 +426,22 @@
   .pl-more{align-self:flex-start; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; font-weight:600; border:1px dashed var(--line); background:transparent; color:var(--ink-soft); border-radius:10px; padding:7px 14px; cursor:pointer;}
   .pl-more:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
   .pl-week-buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;}
-  .card-x{flex:0 0 auto; align-self:center; border:none; background:transparent; color:var(--ink-soft); font-size:0.72rem; line-height:1; width:20px; height:20px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease, background .12s ease; padding:0; margin-left:2px;}
+  #content-plan .task-card, .pl-card{position:relative;}
+  .card-x{position:absolute; top:8px; right:6px; border:none; background:var(--panel); color:var(--ink-soft); font-size:0.72rem; line-height:1; width:22px; height:22px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease, background .12s ease; padding:0; box-shadow:0 0 0 1px rgba(0,0,0,0.06);}
+  .task-card:hover .tc-main, .pl-card:hover .tc-main{padding-right:22px;}
   .task-card:hover .card-x, .pl-card:hover .card-x, .card-x:focus-visible, .task-card:focus .card-x{opacity:1;}
-  .card-x:hover{background:rgba(0,0,0,0.07); color:var(--ink);}
+  .card-x:hover{background:var(--gris); color:var(--ink);}
   @media(hover:none){ .card-x{opacity:0.7;} }
   .tc-main .tc-title{flex:1;}
+  /* 3e projet "Projet" (miel) */
+  #content-plan .task-card.pc-projet, .pl-card.pc-projet, #col-sandbox .task-card.pc-projet{background:var(--bg-projet); border-color:var(--line-projet);}
+  .lg-filter.lg-projet b{background:var(--bg-projet); border:1px solid var(--line-projet);}
+  .lg-filter.on.lg-projet{background:var(--bg-projet); border-color:var(--line-projet); color:var(--proj-projet);}
+  .pl-vproj-projet, .pc-bg-projet .pl-vcell-proj{color:var(--proj-projet);}
+  .pl-select-bar .pl-move-projet{background:var(--bg-projet); border-color:var(--line-projet); color:var(--proj-projet);}
+  /* Semaine en cours ~25 % plus haute */
+  .pl-vrow.current .pl-vcell{min-height:110px; padding-bottom:22px;}
+  .pl-vcell{min-height:88px;}
   .pl-sandbox.drop-over{background:#E9F1F7 !important;}
   @media(max-width:640px){
     .pl-vhead{display:none;}
@@ -3075,7 +3087,9 @@
   // ('insta-1'...) pour que deux appareils qui migrent chacun de leur côté obtiennent la même chose.
   const PROJECTS = [
     {id:'insta', label:'Instagram', color:'var(--proj-insta)'},
-    {id:'roman', label:'Roman graphique', color:'var(--proj-roman)'}
+    {id:'roman', label:'Roman graphique', color:'var(--proj-roman)'},
+    // Étapes générales de JKME, hors Instagram et roman (demande du 23 octobre 2026).
+    {id:'projet', label:'Projet', color:'var(--proj-projet)'}
   ];
   const DEFAULT_INSTA_CATS = [
     {id:'insta-1', project:'insta', name:'Stratégie & compte', color:'#9DB4C8'},
@@ -3099,29 +3113,33 @@
     try{ const v = localStorage.getItem('rg_todo_view'); if(TODO_VIEWS.some(x=>x.id===v)) return v; }catch(e){}
     return 'all';
   })();
-  // Filtre projet : 'all', 'insta' ou 'roman' (mémorisé dans ce navigateur).
-  let todoFilter = (function(){
-    try{ const v = localStorage.getItem('rg_todo_filter'); if(v==='insta' || v==='roman') return v; }catch(e){}
-    return 'all';
+  // Filtre projet : liste des projets affichés (mémorisée dans ce navigateur). Chaque pastille de
+  // la légende s'allume / s'éteint ; on ne peut pas tout éteindre (le dernier clic rallume tout).
+  let todoFilterSet = (function(){
+    try{
+      const v = JSON.parse(localStorage.getItem('rg_todo_filter_set') || 'null');
+      if(Array.isArray(v)){ const ok = v.filter(id=>PROJECTS.some(p=>p.id===id)); if(ok.length) return ok; }
+    }catch(e){}
+    return PROJECTS.map(p=>p.id);
   })();
-  function viewProject(){ return todoFilter === 'all' ? null : todoFilter; }
-  function shownProjects(){ const vp = viewProject(); return vp ? PROJECTS.filter(p=>p.id===vp) : PROJECTS; }
+  function viewProject(){ return todoFilterSet.length === 1 ? todoFilterSet[0] : null; }
+  function shownProjects(){ return PROJECTS.filter(p=>todoFilterSet.includes(p.id)); }
   function renderTodoFilter(){
     const el = document.getElementById('todoLegend');
     el.innerHTML = PROJECTS.map(p=>{
-      const on = todoFilter === 'all' || todoFilter === p.id;
+      const on = todoFilterSet.includes(p.id);
       return `<button type="button" class="lg-filter lg-${p.id}${on?' on':''}" data-filter="${p.id}" aria-pressed="${on}"><b></b>${escapeHtml(p.label)}</button>`;
     }).join('');
     el.querySelectorAll('.lg-filter').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const id = btn.dataset.filter;
-        const other = id === 'insta' ? 'roman' : 'insta';
-        // Les deux affichés → on décoche celui-ci (il ne reste que l'autre) ; un seul affiché → un
-        // clic sur lui réaffiche les deux, un clic sur l'autre bascule vers l'autre.
-        if(todoFilter === 'all') todoFilter = other;
-        else if(todoFilter === id) todoFilter = 'all';
-        else todoFilter = 'all';
-        try{ localStorage.setItem('rg_todo_filter', todoFilter); }catch(e){}
+        if(todoFilterSet.includes(id)){
+          todoFilterSet = todoFilterSet.filter(x=>x!==id);
+          if(!todoFilterSet.length) todoFilterSet = PROJECTS.map(p=>p.id);
+        } else {
+          todoFilterSet = PROJECTS.map(p=>p.id).filter(x=>x===id || todoFilterSet.includes(x));
+        }
+        try{ localStorage.setItem('rg_todo_filter_set', JSON.stringify(todoFilterSet)); }catch(e){}
         editingTaskId = null; openTaskId = null;
         renderTasks();
       });
@@ -3178,7 +3196,7 @@
   // pour enchaîner plusieurs ajouts sans tout resélectionner.
   let quickAddProject = 'insta';
   let quickAddCategory = {};
-  function formProject(){ return viewProject() || quickAddProject || 'insta'; }
+  function formProject(){ return viewProject() || (todoFilterSet.includes(quickAddProject) ? quickAddProject : todoFilterSet[0]) || 'insta'; }
   function renderCategorySelect(){ migrateTodoData(); }
   
   function renderCatList(){
@@ -3283,8 +3301,7 @@
   // projet. Les étapes en retard passent en tête (par date), le reste garde l'ordre manuel (▲▼).
   function groupKey(t){ return dueState(t)==='late' ? 'late' : 'normal'; }
   function visibleTasks(){
-    const vp = viewProject();
-    return vp ? tasks.filter(t=>t.project===vp) : tasks;
+    return tasks.filter(t=>todoFilterSet.includes(t.project));
   }
   function groupedList(status){
     const list = visibleTasks().filter(t=>t.status===status);
@@ -3497,10 +3514,10 @@
         <button type="button" id="plSelectCancel">Terminer</button>
       </div>` : ''}
       <div class="pl-sandbox-cards">${undated.length ? undated.map(t=>plCardHtml(t, {selectable: plSelectMode})).join('') : `<div class="empty-msg">Toutes tes étapes ont une date.</div>`}</div>
-      ${plSelectMode ? '<div class="qa-hint">Clique sur les cartes à modifier, puis change leur projet ou supprime-les.</div>' : '<div class="qa-hint">Glisse une carte dans une semaine pour lui donner une date, ou ramène-la ici pour la retirer.</div>'}
+      ${plSelectMode ? '<div class="qa-hint">Clique sur les cartes à modifier, puis change leur projet ou supprime-les.</div>' : ''}
     </div>`;
 
-    const gridCols = `var(--pl-head, 130px) repeat(${projs.length}, minmax(0, 1fr))`;
+    const gridCols = `var(--pl-head, 130px) ${projs.map(p=>p.id==='projet' ? 'minmax(0, 0.6fr)' : 'minmax(0, 1fr)').join(' ')}`;
     const headRow = `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div></div>${projs.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
     const rowsHtml = rows.map(r=>{
       const cells = projs.map(p=>{
@@ -4008,7 +4025,7 @@
       wrap.innerHTML = `
         <input type="text" class="kanban-quick-add-input" placeholder="Nouvelle étape, puis Entrée...">
         <div class="qa-row">
-          ${vp ? '' : `<select class="qa-project" title="Projet">${PROJECTS.map(p=>`<option value="${p.id}">${escapeHtml(p.label)}</option>`).join('')}</select>`}
+          ${vp ? '' : `<select class="qa-project" title="Projet">${shownProjects().map(p=>`<option value="${p.id}">${escapeHtml(p.label)}</option>`).join('')}</select>`}
           ${status==='done' ? '' : '<input type="date" class="qa-due" title="Deadline (facultative)">'}
         </div>
         <div class="qa-hint">Entrée pour ajouter · Échap pour fermer</div>`;
@@ -4157,8 +4174,8 @@
       .filter(t => t.due === key && t.status !== 'done')
       .map(t => ({
         id: 'due-' + t.id, title: t.title, time:'', endTime:'', type:'deadline',
-        color: t.project === 'insta' ? '#B4664A' : '#5E8A68',
-        projectLabel: t.project === 'insta' ? 'Instagram' : 'Roman graphique',
+        color: ({insta:'#B4664A', roman:'#5E8A68', projet:'#A07A22'})[t.project] || '#5E8A68',
+        projectLabel: ({insta:'Instagram', roman:'Roman graphique', projet:'Projet'})[t.project] || 'Roman graphique',
         startDate: key, endDate: key, _deadline: true
       }));
     return native.concat(foreign, deadlines);
