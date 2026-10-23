@@ -442,7 +442,7 @@
   .pl-vproj-projet, .pc-bg-projet .pl-vcell-proj{color:var(--proj-projet);}
   .pl-select-bar .pl-move-projet{background:var(--bg-projet); border-color:var(--line-projet); color:var(--proj-projet);}
   /* Semaine en cours ~25 % plus haute */
-  .pl-vrow.current .pl-vcell{min-height:110px; padding-bottom:22px;}
+  .pl-vrow.current .pl-vcell{min-height:110px;}
   .pl-vcell{min-height:88px;}
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
@@ -3549,7 +3549,7 @@
       }).join('');
       // Semaine entièrement passée (son dernier jour est avant aujourd'hui) : hachurée automatiquement.
       const isPast = r.week ? r.week.to < today : (r.key === 'before' && start <= today);
-      return `<div class="pl-vrow${r.current?' current':''}${isPast?' past':''}${r.later?' later':''}" style="grid-template-columns:${gridCols}">
+      return `<div class="pl-vrow${r.week?' is-week':''}${r.current?' current':''}${isPast?' past':''}${r.later?' later':''}" style="grid-template-columns:${gridCols}">
         <div class="pl-vlabel"><div class="pl-col-title">${escapeHtml(r.title)}</div><div class="pl-col-sub">${escapeHtml(r.sub)}</div>${r.current?'<span class="pl-now">en cours</span>':''}</div>
         ${cells}
       </div>`;
@@ -3571,6 +3571,7 @@
     if(el.querySelector('#plRemoveWeek')) el.querySelector('#plRemoveWeek').addEventListener('click', ()=>{ planning.extraWeeks = Math.max(0, (Number(planning.extraWeeks)||0) - 1); saveTasks(); renderTasks(); });
     if(el.querySelector('#plTogglePast')) el.querySelector('#plTogglePast').addEventListener('click', ()=>{ plShowPast = !plShowPast; renderTasks(); });
     const cols = rows.concat([{key:'nodate'}, laterRow]);
+    requestAnimationFrame(adjustCurrentWeekHeight);
     wirePlanning(el, cols);
     // Mode sélection
     const q = id => el.querySelector('#'+id);
@@ -3603,6 +3604,25 @@
       });
     });
   }
+
+  // La semaine en cours fait 25 % de plus que la plus haute des autres semaines (mesurée après
+  // affichage, donc selon leur contenu réel). Recalculé à chaque rendu, au redimensionnement et
+  // quand on revient sur l'onglet Todo (le planning caché n'a pas de hauteur mesurable).
+  function adjustCurrentWeekHeight(){
+    const el = document.getElementById('todoPlanning');
+    if(!el || !el.offsetParent) return;
+    const cur = [...el.querySelectorAll('.pl-vrow.is-week.current .pl-vcell')];
+    if(!cur.length) return;
+    cur.forEach(c=>{ c.style.minHeight = ''; });
+    const others = [...el.querySelectorAll('.pl-vrow.is-week:not(.current) .pl-vcell')];
+    const max = others.reduce((m,c)=>Math.max(m, c.getBoundingClientRect().height), 0);
+    if(!max) return;
+    cur.forEach(c=>{ c.style.minHeight = Math.round(max * 1.25) + 'px'; });
+  }
+  window.addEventListener('resize', ()=> requestAnimationFrame(adjustCurrentWeekHeight));
+  document.getElementById('mainTabsList').addEventListener('click', e=>{
+    if(e.target.closest('.tab-btn[data-tab="plan"]')) requestAnimationFrame(adjustCurrentWeekHeight);
+  });
 
   // Glisser-déposer dans le planning : on attrape une carte et on la lâche dans une case de la même
   // bande (même projet). Dans une semaine : une étape sans date prend le dernier jour de la semaine ;
