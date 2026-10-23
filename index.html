@@ -3493,7 +3493,7 @@
   }
   function planningRange(){
     const cur = weekIndexOf(todayKeyStr());
-    const lo = cur - 1;
+    const lo = cur; // la semaine précédente est aussi repliée derrière "Semaine précédente" (23 oct. 2026)
     const hi = cur + 3 + (Number(planning.extraWeeks) || 0);
     const earliestTask = tasks.filter(t=>t.due && t.status!=='sandbox').reduce((m,t)=>Math.min(m, weekIndexOf(t.due)), lo);
     const firstHidden = Math.min(0, earliestTask);
