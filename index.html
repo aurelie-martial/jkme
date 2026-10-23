@@ -467,6 +467,10 @@
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
   .pl-vcell.addable{cursor:pointer;}
+  .pl-vhead{align-items:end;}
+  .pl-vhead-btns .pl-week-buttons{width:var(--pl-head, 130px); flex-direction:column; align-items:stretch; gap:6px; margin:0;}
+  .pl-vhead-btns .pl-more{width:100%; box-sizing:border-box; font-size:0.68rem; padding:5px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;}
+  @media(max-width:640px){ .pl-vhead{display:grid !important; grid-template-columns:1fr !important;} .pl-vhead > :not(.pl-vhead-btns){display:none;} .pl-vhead-btns .pl-week-buttons{width:auto; flex-direction:row;} }
   .pl-drop-marker{height:3px; border-radius:2px; background:var(--lavande); margin:-3px 0;}
   .pl-vrow.current .pl-drop-marker{background:#fff;}
   .pl-card [data-edit-title]{cursor:text;}
@@ -3590,7 +3594,8 @@
     </div>`;
 
     const gridCols = `var(--pl-head, 130px) ${projs.map(p=>p.id==='projet' ? 'minmax(0, 0.6fr)' : 'minmax(0, 1fr)').join(' ')}`;
-    const headRow = `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div></div>${projs.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
+    // Le bouton "Semaine précédente" vit dans la 1re case de la ligne des titres (pas d'espace en plus).
+    const headRow = () => `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div class="pl-vhead-btns">${pastToggle}</div>${projs.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
     const renderRow = r=>{
       const cells = projs.map(p=>{
         const items = r.later
@@ -3625,7 +3630,7 @@
     // Bloc "Bac à sable" du haut retiré (23 octobre 2026) : toutes les étapes sans date vont dans la
     // ligne "À faire plus tard" en bas.
     el.innerHTML = `
-      <div class="pl-vgrid">${headRow}${pastToggle}${rowsHtml}
+      <div class="pl-vgrid">${headRow()}${rowsHtml}
         <div class="pl-week-buttons">
           <button type="button" class="pl-more pl-add-week" id="plAddWeek">+ Ajouter une semaine</button>
           ${(Number(planning.extraWeeks)||0) > 0 ? `<button type="button" class="pl-more" id="plRemoveWeek" title="Retirer la dernière semaine ajoutée">− Retirer une semaine</button>` : ''}
