@@ -445,6 +445,13 @@
   .pl-select-bar .pl-move-projet{background:var(--bg-projet); border-color:var(--line-projet); color:var(--proj-projet);}
   /* Semaine en cours ~25 % plus haute */
   .pl-vrow.current .pl-vcell{min-height:110px;}
+  /* Semaine en cours mise en avant : fond du même bleu que son titre (23 octobre 2026). */
+  .pl-vrow.current .pl-vcell{background:var(--lavande) !important; border-color:var(--lavande) !important;}
+  .pl-vrow.current .pl-vcell .pl-add{color:rgba(255,255,255,0.85);}
+  .pl-vrow.current .pl-vcell .pl-add:hover{color:#fff;}
+  .pl-vrow.current .pl-vcell .pl-vcell-proj{color:#fff !important;}
+  .pl-vrow.current .pl-vcell .pl-add-form input{border-color:#fff;}
+  .pl-vrow.current .pl-card{border-color:transparent;}
   .pl-vcell{min-height:88px;}
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
