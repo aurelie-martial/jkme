@@ -371,6 +371,12 @@
   .pl-card.dragging{opacity:0.35;}
   .pl-cell.drop-over{background:#E9F1F7 !important; box-shadow:inset 0 0 0 2px var(--lavande);}
   .pl-col-head.nodate, .pl-cell[data-cell$="|nodate"]{background:var(--gris) !important;}
+  #content-plan .task-card[draggable="true"]{cursor:grab;}
+  #content-plan .task-card.dragging{opacity:0.35;}
+  #content-plan .task-card:focus-visible{outline:2px solid var(--lavande); outline-offset:2px;}
+  #content-plan .kanban-col.drop-over h3{color:var(--lavande);}
+  .drop-marker{height:3px; border-radius:2px; background:var(--lavande); margin:-2px 0 6px;}
+  .drop-marker.horizontal{width:3px; height:auto; align-self:stretch; margin:0;}
   /* Plus aucun rond de couleur sur la page Todo ni dans le bas de page (demande du 23 octobre
      2026) : titres de colonnes, groupes de catégories, projets, statut de synchro et de sauvegarde. */
   #content-plan .dot, #content-plan .cat-group-dot, .todo-view-btn .proj-dot,
@@ -3272,6 +3278,8 @@
 
   const STATUS_LABELS = {sandbox:'Bac à sable', todo:'À faire', doing:'En cours', done:'Terminé'};
 
+  let focusTaskId = null; // carte à refocaliser après un déplacement au clavier
+  let todoDragId = null;
   let openTaskId = null; // carte dépliée (catégorie, date, boutons) — une seule à la fois
 
   function shortDue(t){
@@ -3316,7 +3324,7 @@
         </div>
       </div>`;
     }
-    return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${isOpen ? ' is-open' : ''}" data-card="${t.id}">
+    return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${isOpen ? ' is-open' : ''}" data-card="${t.id}" tabindex="0" ${isOpen ? '' : 'draggable="true"'} title="Glisser pour déplacer · au clavier : flèches ←→ change de colonne, ↑↓ change l'ordre, Entrée ouvre">
       <div class="tc-main">${titleHtml}${d.txt ? `<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>` : ''}</div>
       ${details}
     </div>`;
@@ -3609,11 +3617,118 @@
       });
     }
     wireTaskCards(document.getElementById('content-plan'));
+    if(focusTaskId !== null){
+      const c = document.querySelector(`#todoBoard .task-card[data-card="${focusTaskId}"]`);
+      if(c) c.focus({preventScroll:false});
+      focusTaskId = null;
+    }
     // Les deadlines apparaissent aussi dans l'Agenda (voir combinedDayEvents) : on le redessine.
     try{ renderCalendarView(); }catch(e){}
   }
 
+  // Déplacement d'une étape : vers une colonne (status) et, si beforeId est donné, juste avant
+  // cette carte dans l'ordre manuel ; sinon à la fin de la colonne.
+  function moveTask(t, status, beforeId){
+    t.status = status;
+    tasks = tasks.filter(x=>x!==t);
+    const before = beforeId != null ? tasks.find(x=>String(x.id)===String(beforeId)) : null;
+    if(before) tasks.splice(tasks.indexOf(before), 0, t);
+    else {
+      // fin de colonne : juste après la dernière étape (visible) de cette colonne
+      const inCol = groupedList(status);
+      const last = inCol[inCol.length-1];
+      if(last) tasks.splice(tasks.indexOf(last)+1, 0, t); else tasks.push(t);
+    }
+  }
+
+  function wireTodoDragAndKeys(root){
+    const STATUS_BY_COL = {'col-todo':'todo','col-doing':'doing','col-done':'done','col-sandbox':'sandbox'};
+    const ORDER = ['sandbox','todo','doing','done'];
+    root.querySelectorAll('#todoBoard .task-card').forEach(card=>{
+      card.addEventListener('dragstart', e=>{
+        todoDragId = card.dataset.card;
+        try{ e.dataTransfer.setData('text/plain', todoDragId); e.dataTransfer.effectAllowed = 'move'; }catch(err){}
+        setTimeout(()=>card.classList.add('dragging'), 0);
+      });
+      card.addEventListener('dragend', ()=>{
+        todoDragId = null;
+        card.classList.remove('dragging');
+        root.querySelectorAll('.drop-marker').forEach(m=>m.remove());
+        root.querySelectorAll('.kanban-col.drop-over').forEach(c=>c.classList.remove('drop-over'));
+      });
+      // Clavier : la carte doit avoir le focus (Tab), pas un de ses champs.
+      card.addEventListener('keydown', e=>{
+        if(e.target !== card) return;
+        const t = tasks.find(x=>String(x.id)===card.dataset.card);
+        if(!t) return;
+        const k = e.key;
+        if(k==='Enter' || k===' '){ e.preventDefault(); openTaskId = String(openTaskId)===card.dataset.card ? null : card.dataset.card; focusTaskId = card.dataset.card; renderTasks(); return; }
+        if(k==='Escape' && openTaskId !== null){ e.preventDefault(); openTaskId = null; focusTaskId = card.dataset.card; renderTasks(); return; }
+        if(k==='ArrowLeft' || k==='ArrowRight'){
+          e.preventDefault();
+          const i = ORDER.indexOf(t.status) + (k==='ArrowRight' ? 1 : -1);
+          if(i < 0 || i >= ORDER.length) return;
+          moveTask(t, ORDER[i], null);
+        } else if(k==='ArrowUp' || k==='ArrowDown'){
+          e.preventDefault();
+          const list = groupedList(t.status);
+          const gi = list.indexOf(t);
+          const nb = list[k==='ArrowUp' ? gi-1 : gi+1];
+          if(!nb || groupKey(nb) !== groupKey(t)) return;
+          const i1 = tasks.indexOf(t), i2 = tasks.indexOf(nb);
+          tasks[i1] = nb; tasks[i2] = t;
+        } else return;
+        focusTaskId = t.id;
+        saveTasks(); renderTasks();
+      });
+    });
+    // Zones de dépôt : chaque colonne entière (titre compris).
+    root.querySelectorAll('#todoBoard .kanban-col').forEach(colEl=>{
+      const list = colEl.querySelector('#col-todo, #col-doing, #col-done, #col-sandbox');
+      if(!list) return;
+      const status = STATUS_BY_COL[list.id];
+      const horizontal = list.id === 'col-sandbox';
+      const beforeCard = (x, y)=>{
+        const cards = [...list.querySelectorAll('.task-card:not(.dragging)')];
+        return cards.find(c=>{
+          const r = c.getBoundingClientRect();
+          if(horizontal) return y < r.top || (y <= r.bottom && x < r.left + r.width/2);
+          return y < r.top + r.height/2;
+        }) || null;
+      };
+      colEl.addEventListener('dragover', e=>{
+        if(!todoDragId) return;
+        e.preventDefault();
+        try{ e.dataTransfer.dropEffect = 'move'; }catch(err){}
+        colEl.classList.add('drop-over');
+        let marker = root.querySelector('.drop-marker');
+        if(!marker){ marker = document.createElement('div'); marker.className = 'drop-marker'; }
+        const b = beforeCard(e.clientX, e.clientY);
+        if(b) list.insertBefore(marker, b); else list.appendChild(marker);
+        marker.classList.toggle('horizontal', horizontal);
+      });
+      colEl.addEventListener('dragleave', e=>{
+        if(colEl.contains(e.relatedTarget)) return;
+        colEl.classList.remove('drop-over');
+        const m = list.querySelector('.drop-marker'); if(m) m.remove();
+      });
+      colEl.addEventListener('drop', e=>{
+        e.preventDefault();
+        const t = todoDragId && tasks.find(x=>String(x.id)===String(todoDragId));
+        colEl.classList.remove('drop-over');
+        if(!t) return;
+        const b = beforeCard(e.clientX, e.clientY);
+        const beforeId = b ? b.dataset.card : null;
+        todoDragId = null;
+        if(String(beforeId) === String(t.id)) return;
+        moveTask(t, status, beforeId);
+        saveTasks(); renderTasks();
+      });
+    });
+  }
+
   function wireTaskCards(root){
+    wireTodoDragAndKeys(root);
     // Un clic sur une carte la déplie / replie (sauf sur ses champs et boutons).
     root.querySelectorAll('#todoBoard .task-card').forEach(card=>{
       card.addEventListener('click', e=>{
