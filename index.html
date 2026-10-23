@@ -200,8 +200,10 @@
   .todo-view-btn.active{background:var(--panel); color:var(--ink); box-shadow:var(--shadow-sm);}
   .todo-view-btn .proj-dot{width:8px; height:8px; border-radius:50%; background:var(--proj-color);}
   .todo-view-btn .count{font-size:0.68rem; font-weight:700; background:var(--due-late); color:#fff; border-radius:999px; padding:1px 7px;}
-  :root{ --due-late:#C4574F; --due-soon:#C98A2E; --proj-insta:#B36B7A; --proj-roman:#5B7C99;
-    --bg-insta:#FBF2F4; --line-insta:#F0DCE1; --bg-roman:#EFF4F9; --line-roman:#D9E4EF; }
+  /* Couleurs des projets (23 octobre 2026) : terracotta clair pour Instagram, vert sauge pour le
+     roman — deux teintes chaudes/vertes bien distinctes du fond gris-bleu de l'appli. */
+  :root{ --due-late:#C4574F; --due-soon:#C98A2E; --proj-insta:#B4664A; --proj-roman:#5E8A68;
+    --bg-insta:#FCEFE8; --line-insta:#F1D6C8; --bg-roman:#EDF5EE; --line-roman:#CFE3D3; }
   /* Fond clair propre à chaque projet : blocs en vue Tout, colonnes entières en vue projet, et
      cartes isolées (groupe "En retard", vue Cette semaine). */
   .proj-block{border-radius:12px; padding:10px 10px 2px; margin:0 -6px 12px;}
@@ -318,9 +320,16 @@
   .todo-view-btn .count{background:transparent; color:var(--due-late); padding:0; font-size:0.8rem;}
   .todo-toolbar{margin-bottom:16px;}
   .todo-legend{display:flex; gap:16px; font-size:0.74rem; color:var(--ink-soft); margin:0 0 16px;}
-  .todo-legend b{display:inline-block; width:20px; height:11px; border-radius:4px; vertical-align:-1px; margin-right:6px;}
-  .todo-legend .lg-insta{background:var(--bg-insta); border:1px solid var(--line-insta);}
-  .todo-legend .lg-roman{background:var(--bg-roman); border:1px solid var(--line-roman);}
+  .lg-filter{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:7px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink-soft); border-radius:999px; padding:5px 12px 5px 8px; cursor:pointer; transition:all .15s ease;}
+  .lg-filter b{display:inline-block; width:18px; height:11px; border-radius:4px;}
+  .lg-filter.lg-insta b{background:var(--bg-insta); border:1px solid var(--line-insta);}
+  .lg-filter.lg-roman b{background:var(--bg-roman); border:1px solid var(--line-roman);}
+  .lg-filter.on.lg-insta{background:var(--bg-insta); border-color:var(--line-insta); color:var(--proj-insta);}
+  .lg-filter.on.lg-roman{background:var(--bg-roman); border-color:var(--line-roman); color:var(--proj-roman);}
+  .lg-filter:not(.on){opacity:0.55;}
+  .lg-filter:not(.on) b{filter:grayscale(1);}
+  .todo-legend{gap:8px;}
   #content-plan .kanban{gap:28px;}
   #content-plan .kanban-col{background:transparent; border:none; padding:0; min-height:0; box-shadow:none;}
   #content-plan .kanban-col h3{justify-content:space-between; font-weight:700; font-size:0.95rem; margin-bottom:12px;}
@@ -1465,7 +1474,7 @@
       <div class="todo-views" id="todoViews"></div>
     </div>
     <div id="todoAlert"></div>
-    <div class="todo-legend" id="todoLegend"><span><b class="lg-insta"></b>Instagram</span><span><b class="lg-roman"></b>Roman graphique</span></div>
+    <div class="todo-legend" id="todoLegend"></div>
 
 
     <div id="todoBoard">
@@ -3013,11 +3022,11 @@
     {id:'insta-6', project:'insta', name:'Publication', color:'#A9CFD8'},
     {id:'insta-7', project:'insta', name:'Communauté', color:'#D9D2A6'}
   ];
+  // Deux vues seulement (23 octobre 2026) ; le choix du projet se fait avec le filtre (la légende
+  // Instagram / Roman graphique, cliquable), commun aux deux vues.
   const TODO_VIEWS = [
-    {id:'all', label:'Tout'},
-    {id:'insta', label:'Instagram', project:'insta'},
-    {id:'roman', label:'Roman graphique', project:'roman'},
-    {id:'planning', label:'Planning'}
+    {id:'all', label:'Vue Todo'},
+    {id:'planning', label:'Vue Planning'}
   ];
   function projectById(id){ return PROJECTS.find(p=>p.id===id) || PROJECTS[1]; }
 
@@ -3026,7 +3035,34 @@
     try{ const v = localStorage.getItem('rg_todo_view'); if(TODO_VIEWS.some(x=>x.id===v)) return v; }catch(e){}
     return 'all';
   })();
-  function viewProject(){ const v = TODO_VIEWS.find(x=>x.id===todoView); return v && v.project ? v.project : null; }
+  // Filtre projet : 'all', 'insta' ou 'roman' (mémorisé dans ce navigateur).
+  let todoFilter = (function(){
+    try{ const v = localStorage.getItem('rg_todo_filter'); if(v==='insta' || v==='roman') return v; }catch(e){}
+    return 'all';
+  })();
+  function viewProject(){ return todoFilter === 'all' ? null : todoFilter; }
+  function shownProjects(){ const vp = viewProject(); return vp ? PROJECTS.filter(p=>p.id===vp) : PROJECTS; }
+  function renderTodoFilter(){
+    const el = document.getElementById('todoLegend');
+    el.innerHTML = PROJECTS.map(p=>{
+      const on = todoFilter === 'all' || todoFilter === p.id;
+      return `<button type="button" class="lg-filter lg-${p.id}${on?' on':''}" data-filter="${p.id}" aria-pressed="${on}"><b></b>${escapeHtml(p.label)}</button>`;
+    }).join('');
+    el.querySelectorAll('.lg-filter').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.filter;
+        const other = id === 'insta' ? 'roman' : 'insta';
+        // Les deux affichés → on décoche celui-ci (il ne reste que l'autre) ; un seul affiché → un
+        // clic sur lui réaffiche les deux, un clic sur l'autre bascule vers l'autre.
+        if(todoFilter === 'all') todoFilter = other;
+        else if(todoFilter === id) todoFilter = 'all';
+        else todoFilter = 'all';
+        try{ localStorage.setItem('rg_todo_filter', todoFilter); }catch(e){}
+        editingTaskId = null; openTaskId = null;
+        renderTasks();
+      });
+    });
+  }
 
   function migrateTodoData(){
     categories.forEach(c=>{ if(!c.project) c.project = 'roman'; });
@@ -3192,11 +3228,9 @@
   function renderTodoViews(){
     const el = document.getElementById('todoViews');
     el.innerHTML = TODO_VIEWS.map(v=>{
-      const p = v.project ? projectById(v.project) : null;
-      const pool = v.project ? tasks.filter(t=>t.project===v.project) : tasks;
-      const n = lateCount(pool) + todayCount(pool);
-      const showCount = n>0 && (v.id==='planning' || v.project);
-      return `<button type="button" class="todo-view-btn ${todoView===v.id?'active':''}" data-view="${v.id}" ${p?`style="--proj-color:${p.color}"`:''}>
+      const n = lateCount(tasks) + todayCount(tasks);
+      const showCount = n>0 && v.id==='planning';
+      return `<button type="button" class="todo-view-btn ${todoView===v.id?'active':''}" data-view="${v.id}">
         ${escapeHtml(v.label)}${showCount?`<span class="count" title="En retard ou pour aujourd'hui">${n}</span>`:''}
       </button>`;
     }).join('');
@@ -3362,7 +3396,7 @@
         <div class="pl-col-sub">${escapeHtml(c.sub)}</div>
       </div>`).join('');
 
-    const rows = PROJECTS.map(p=>{
+    const rows = shownProjects().map(p=>{
       const tg = (planning.targets||{})[p.id] || '';
       let targetHtml;
       if(plEditingTarget === p.id){
@@ -3552,7 +3586,7 @@
     const isWeek = todoView === 'planning';
     const board = document.getElementById('todoBoard');
     board.style.display = isWeek ? 'none' : '';
-    document.getElementById('todoLegend').style.display = (todoView==='all') ? '' : 'none';
+    renderTodoFilter();
     document.getElementById('todoPlanning').style.display = isWeek ? '' : 'none';
     if(isWeek){
       renderPlanning();
@@ -3865,7 +3899,7 @@
       .filter(t => t.due === key && t.status !== 'done')
       .map(t => ({
         id: 'due-' + t.id, title: t.title, time:'', endTime:'', type:'deadline',
-        color: t.project === 'insta' ? '#B36B7A' : '#5B7C99',
+        color: t.project === 'insta' ? '#B4664A' : '#5E8A68',
         projectLabel: t.project === 'insta' ? 'Instagram' : 'Roman graphique',
         startDate: key, endDate: key, _deadline: true
       }));
