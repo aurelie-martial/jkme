@@ -3129,6 +3129,9 @@
   function shownProjects(){ return PROJECTS.filter(p=>todoFilterSet.includes(p.id)); }
   function renderTodoFilter(){
     const el = document.getElementById('todoLegend');
+    // Filtre retiré (23 octobre 2026) : les trois projets sont toujours affichés.
+    todoFilterSet = PROJECTS.map(p=>p.id);
+    el.innerHTML = ''; el.style.display = 'none'; return;
     el.innerHTML = PROJECTS.map(p=>{
       const on = todoFilterSet.includes(p.id);
       return `<button type="button" class="lg-filter lg-${p.id}${on?' on':''}" data-filter="${p.id}" aria-pressed="${on}"><b></b>${escapeHtml(p.label)}</button>`;
