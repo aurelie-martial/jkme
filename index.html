@@ -443,6 +443,8 @@
   /* Semaine en cours ~25 % plus haute */
   .pl-vrow.current .pl-vcell{min-height:110px; padding-bottom:22px;}
   .pl-vcell{min-height:88px;}
+  .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
+  .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
   .pl-sandbox.drop-over{background:#E9F1F7 !important;}
   @media(max-width:640px){
     .pl-vhead{display:none;}
@@ -3500,10 +3502,14 @@
     // Semaines repliées : on garde quand même visibles leurs étapes non terminées (en retard).
     if(dated.some(t=>t.due < firstDay && t.status!=='done')) rows.push({key:'before', title:'Plus ancien', sub:'étapes non terminées', test:t=>t.due < firstDay && t.status!=='done'});
     weeks.forEach(w=>rows.push({key:w.from, title: w.i>=0 ? `Semaine ${w.i+1}` : fmtRange(w.from, w.to), sub: w.i>=0 ? fmtRange(w.from, w.to) : (w.i===range.cur-1 ? 'semaine dernière' : ''), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
-    if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus tard', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
+    if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus loin', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
 
     const sortCards = (a,b)=> (a.status==='done') - (b.status==='done') || (a.due||'').localeCompare(b.due||'');
-    const undated = visible.filter(t=>!t.due && t.status !== 'done');
+    // Bac à sable = étapes sans date qui ne sont pas rangées dans "À faire plus tard".
+    const undated = visible.filter(t=>!t.due && !t.later && t.status !== 'done');
+    // Ligne fixe "À faire plus tard" (23 octobre 2026), tout en bas : étapes à traiter un jour,
+    // sans date (champ t.later).
+    const laterRow = {key:'later', title:'À faire plus tard', sub:'sans date précise', later:true};
     const sandboxHtml = `<div class="pl-sandbox pl-cell" data-cell="any|nodate">
       <div class="pl-sandbox-head"><h3>Bac à sable <span class="col-count">${undated.length || ''}</span></h3>
         ${undated.length ? (plSelectMode ? '' : `<button type="button" class="pl-select-btn" id="plSelectStart">Sélectionner…</button>`) : ''}</div>
@@ -3521,9 +3527,11 @@
 
     const gridCols = `var(--pl-head, 130px) ${projs.map(p=>p.id==='projet' ? 'minmax(0, 0.6fr)' : 'minmax(0, 1fr)').join(' ')}`;
     const headRow = `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div></div>${projs.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
-    const rowsHtml = rows.map(r=>{
+    const renderRow = r=>{
       const cells = projs.map(p=>{
-        const items = dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
+        const items = r.later
+          ? visible.filter(t=>t.project===p.id && t.later && !t.due && t.status!=='done')
+          : dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
         const cellKey = `${p.id}|${r.key}`;
         const goal = r.week ? ((planning.goals||{})[cellKey] || '') : null;
         const adding = plAddingCell === cellKey;
@@ -3532,16 +3540,17 @@
           ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="Objectif de la semaine…">` : ''}
           ${items.map(plCardHtml).join('')}
           ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
-                   : (r.week ? `<button type="button" class="pl-add" data-pl-add="${cellKey}">+ Ajouter</button>` : '')}
+                   : ((r.week || r.later) ? `<button type="button" class="pl-add" data-pl-add="${cellKey}">+ Ajouter</button>` : '')}
         </div>`;
       }).join('');
       // Semaine entièrement passée (son dernier jour est avant aujourd'hui) : hachurée automatiquement.
       const isPast = r.week ? r.week.to < today : (r.key === 'before' && start <= today);
-      return `<div class="pl-vrow${r.current?' current':''}${isPast?' past':''}" style="grid-template-columns:${gridCols}">
+      return `<div class="pl-vrow${r.current?' current':''}${isPast?' past':''}${r.later?' later':''}" style="grid-template-columns:${gridCols}">
         <div class="pl-vlabel"><div class="pl-col-title">${escapeHtml(r.title)}</div><div class="pl-col-sub">${escapeHtml(r.sub)}</div>${r.current?'<span class="pl-now">en cours</span>':''}</div>
         ${cells}
       </div>`;
-    }).join('');
+    };
+    const rowsHtml = rows.map(renderRow).join('');
 
     const pastToggle = (hiddenCount || plShowPast)
       ? `<button type="button" class="pl-more" id="plTogglePast">${plShowPast ? '▾ Masquer les semaines précédentes' : `▴ Afficher les semaines précédentes (${hiddenCount})`}</button>` : '';
@@ -3552,11 +3561,12 @@
           <button type="button" class="pl-more pl-add-week" id="plAddWeek">+ Ajouter une semaine</button>
           ${(Number(planning.extraWeeks)||0) > 0 ? `<button type="button" class="pl-more" id="plRemoveWeek" title="Retirer la dernière semaine ajoutée">− Retirer une semaine</button>` : ''}
         </div>
+        ${renderRow(laterRow)}
       </div>`;
     el.querySelector('#plAddWeek').addEventListener('click', ()=>{ planning.extraWeeks = (Number(planning.extraWeeks)||0) + 1; saveTasks(); renderTasks(); });
     if(el.querySelector('#plRemoveWeek')) el.querySelector('#plRemoveWeek').addEventListener('click', ()=>{ planning.extraWeeks = Math.max(0, (Number(planning.extraWeeks)||0) - 1); saveTasks(); renderTasks(); });
     if(el.querySelector('#plTogglePast')) el.querySelector('#plTogglePast').addEventListener('click', ()=>{ plShowPast = !plShowPast; renderTasks(); });
-    const cols = rows.concat([{key:'nodate'}]);
+    const cols = rows.concat([{key:'nodate'}, laterRow]);
     wirePlanning(el, cols);
     // Mode sélection
     const q = id => el.querySelector('#'+id);
@@ -3595,7 +3605,7 @@
   // une étape déjà datée garde son jour de la semaine et se décale d'autant de semaines. Dans
   // "Sans date" : la deadline est retirée.
   function plDropDue(t, colKey, cols){
-    if(colKey === 'nodate') return '';
+    if(colKey === 'nodate' || colKey === 'later') return '';
     const col = cols.find(c=>c.key===colKey);
     if(!col || !col.week) return null;
     if(!t.due) return col.week.to;
@@ -3640,9 +3650,12 @@
         const due = plDropDue(t, colKey, cols);
         if(due === null) return;
         plDragId = null;
-        if(due !== (t.due||'')){
+        const later = colKey === 'later';
+        if(due !== (t.due||'') || later !== !!t.later){
           t.due = due;
-          if(due && t.status === 'sandbox') t.status = 'todo'; // une idée qu'on planifie devient une étape à faire
+          t.later = later;
+          // une idée qu'on planifie (ou qu'on garde pour plus tard) devient une étape à faire
+          if((due || later) && t.status === 'sandbox') t.status = 'todo';
           saveTasks();
         }
         renderTasks();
@@ -3674,7 +3687,7 @@
     el.querySelectorAll('.pl-due-inline').forEach(inp=>{
       inp.addEventListener('change', ()=>{
         const t = tasks.find(x=>String(x.id)===inp.dataset.id);
-        if(t){ t.due = inp.value || ''; saveTasks(); renderTasks(); }
+        if(t){ t.due = inp.value || ''; if(t.due) t.later = false; saveTasks(); renderTasks(); }
       });
     });
     const save = ()=>{ saveTasks(); renderTasks(); };
@@ -3714,7 +3727,9 @@
         if(!title) return;
         // Une étape ajoutée dans une semaine prend pour deadline le dernier jour de cette semaine.
         const due = col && col.week ? col.week.to : '';
-        tasks.push(newTask(title, 'todo', {project, due}));
+        const nt = newTask(title, 'todo', {project, due});
+        if(colKey === 'later') nt.later = true;
+        tasks.push(nt);
         save(); // plAddingCell reste ouvert : on peut enchaîner les ajouts dans la même case
       });
       form.addEventListener('focusout', ()=> setTimeout(()=>{
