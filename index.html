@@ -425,6 +425,11 @@
   .pl-more{align-self:flex-start; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; font-weight:600; border:1px dashed var(--line); background:transparent; color:var(--ink-soft); border-radius:10px; padding:7px 14px; cursor:pointer;}
   .pl-more:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
   .pl-week-buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;}
+  .card-x{flex:0 0 auto; align-self:center; border:none; background:transparent; color:var(--ink-soft); font-size:0.72rem; line-height:1; width:20px; height:20px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease, background .12s ease; padding:0; margin-left:2px;}
+  .task-card:hover .card-x, .pl-card:hover .card-x, .card-x:focus-visible, .task-card:focus .card-x{opacity:1;}
+  .card-x:hover{background:rgba(0,0,0,0.07); color:var(--ink);}
+  @media(hover:none){ .card-x{opacity:0.7;} }
+  .tc-main .tc-title{flex:1;}
   .pl-sandbox.drop-over{background:#E9F1F7 !important;}
   @media(max-width:640px){
     .pl-vhead{display:none;}
@@ -3379,7 +3384,7 @@
       </div>`;
     }
     return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${isOpen ? ' is-open' : ''}" data-card="${t.id}" tabindex="0" ${isOpen ? '' : 'draggable="true"'} title="Glisser pour déplacer · au clavier : flèches ←→ change de colonne, ↑↓ change l'ordre, Entrée ouvre">
-      <div class="tc-main">${titleHtml}${d.txt ? `<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>` : ''}</div>
+      <div class="tc-main">${titleHtml}${d.txt ? `<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>` : ''}<button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button></div>
       ${details}
     </div>`;
   }
@@ -3438,7 +3443,7 @@
     const open = !selectable && String(plOpenId) === String(t.id);
     const sel = selectable && plSelected.has(String(t.id));
     return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}${selectable?' selectable':''}${sel?' selected':''}" data-plcard="${t.id}" ${open||selectable?'':'draggable="true"'}>
-      <div class="tc-main">${selectable?`<span class="pl-check">${sel?'✓':''}</span>`:''}<span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}</div>
+      <div class="tc-main">${selectable?`<span class="pl-check">${sel?'✓':''}</span>`:''}<span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}${selectable?'':`<button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button>`}</div>
       ${open ? `<div class="tc-details">
         <input type="text" class="tc-field pl-title-inline" data-id="${t.id}" value="${escapeHtml(t.title)}" title="Texte de l'étape (Entrée pour enregistrer)">
         <div class="tc-fields">
@@ -3448,7 +3453,7 @@
         <div class="tc-actions">
           ${t.due ? `<button type="button" data-pl="prev" data-id="${t.id}" title="Une semaine plus tôt">◀ sem.</button><button type="button" data-pl="next" data-id="${t.id}" title="Une semaine plus tard">sem. ▶</button>` : ''}
           <button type="button" data-pl="done" data-id="${t.id}">${isDone?'↺ À refaire':'✓ Terminé'}</button>
-          <button type="button" class="del${String(plDelConfirm)===String(t.id)?' confirm':''}" data-pl="del" data-id="${t.id}">${String(plDelConfirm)===String(t.id)?'Confirmer la suppression':'✕ Supprimer'}</button>
+          <button type="button" class="del" data-pl="del" data-id="${t.id}">✕ Supprimer</button>
         </div>
       </div>` : ''}
     </div>`;
@@ -3488,7 +3493,7 @@
         <button type="button" id="plSelectAll">${plSelected.size === undated.length ? 'Tout désélectionner' : 'Tout sélectionner'}</button>
         <span class="sep"></span>
         ${PROJECTS.map(p=>`<button type="button" class="pl-move-to pl-move-${p.id}" data-move="${p.id}" ${plSelected.size?'':'disabled'}>→ ${escapeHtml(p.label)}</button>`).join('')}
-        <button type="button" id="plBulkDelete" class="pl-bulk-del${plBulkDelConfirm?' confirm':''}" ${plSelected.size?'':'disabled'}>${plBulkDelConfirm?`Confirmer : supprimer ${plSelected.size}`:'✕ Supprimer'}</button>
+        <button type="button" id="plBulkDelete" class="pl-bulk-del${plBulkDelConfirm?' confirm':''}" ${plSelected.size?'':'disabled'}>✕ Supprimer</button>
         <button type="button" id="plSelectCancel">Terminer</button>
       </div>` : ''}
       <div class="pl-sandbox-cards">${undated.length ? undated.map(t=>plCardHtml(t, {selectable: plSelectMode})).join('') : `<div class="empty-msg">Toutes tes étapes ont une date.</div>`}</div>
@@ -3540,7 +3545,6 @@
     if(q('plSelectCancel')) q('plSelectCancel').addEventListener('click', ()=>{ plSelectMode = false; plSelected = new Set(); plBulkDelConfirm = false; renderTasks(); });
     if(q('plBulkDelete')) q('plBulkDelete').addEventListener('click', ()=>{
       if(!plSelected.size) return;
-      if(!plBulkDelConfirm){ plBulkDelConfirm = true; renderTasks(); return; }
       tasks = tasks.filter(t=>!plSelected.has(String(t.id)));
       plSelected = new Set(); plBulkDelConfirm = false;
       saveTasks(); renderTasks();
@@ -3718,15 +3722,23 @@
         if(act==='prev' && t.due) t.due = addDaysKey(t.due, -7);
         if(act==='next' && t.due) t.due = addDaysKey(t.due, 7);
         if(act==='done') t.status = t.status==='done' ? 'todo' : 'done';
-        if(act==='del'){
-          // Deux clics pour supprimer (pas de boîte de dialogue du navigateur).
-          if(String(plDelConfirm) !== String(t.id)){ plDelConfirm = t.id; renderTasks(); return; }
-          tasks = tasks.filter(x=>x!==t); plDelConfirm = null; plOpenId = null;
-        }
+        if(act==='del'){ tasks = tasks.filter(x=>x!==t); plOpenId = null; }
         save();
       });
     });
   }
+
+  // Croix ✕ sur chaque carte (23 octobre 2026) : suppression en un clic, sans confirmation.
+  document.getElementById('content-plan').addEventListener('click', e=>{
+    const x = e.target.closest('.card-x');
+    if(!x) return;
+    e.stopPropagation();
+    const id = x.dataset.del;
+    tasks = tasks.filter(t=>String(t.id)!==String(id));
+    if(String(openTaskId)===String(id)) openTaskId = null;
+    if(String(plOpenId)===String(id)) plOpenId = null;
+    saveTasks(); renderTasks();
+  }, true);
 
   function renderTasks(){
     migrateTodoData();
