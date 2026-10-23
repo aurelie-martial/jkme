@@ -3569,11 +3569,15 @@
     const visible = tasks.filter(t=>projs.some(p=>p.id===t.project));
     const dated = visible.filter(t=>t.due && t.status !== 'sandbox');
     const rows = [];
-    // Semaines repliées : on garde quand même visibles leurs étapes non terminées (en retard).
-    if(dated.some(t=>t.due < firstDay && t.status!=='done')) rows.push({key:'before', title:'Plus ancien', sub:'étapes non terminées', test:t=>t.due < firstDay && t.status!=='done'});
-    // Numéro de semaine du calendrier (ISO 8601, comme dans les agendas français) plutôt que
-    // Semaine 1 / 2 / 3 (23 octobre 2026).
-    weeks.forEach(w=>rows.push({key:w.from, title:`Semaine ${isoWeekNumber(w.from)}`, sub: fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
+    // Toute tâche non terminée d'une semaine passée est rangée dans "Plus ancien", juste au-dessus
+    // de la semaine en cours (23 octobre 2026) ; les semaines passées ne gardent que les tâches
+    // terminées (barrées). Numéros de semaine du calendrier (ISO 8601).
+    const curFrom = planningWeekAt(range.cur).from;
+    const weekRow = w=>({key:w.from, title:`Semaine ${isoWeekNumber(w.from)}`, sub: fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to,
+      test: w.to < curFrom ? (t=>t.due>=w.from && t.due<=w.to && t.status==='done') : (t=>t.due>=w.from && t.due<=w.to)});
+    weeks.filter(w=>w.to < curFrom).forEach(w=>rows.push(weekRow(w)));
+    if(dated.some(t=>t.due < curFrom && t.status!=='done')) rows.push({key:'before', title:'Plus ancien', sub:'non terminées', test:t=>t.due < curFrom && t.status!=='done'});
+    weeks.filter(w=>w.to >= curFrom).forEach(w=>rows.push(weekRow(w)));
     if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus loin', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
 
     // Ordre manuel (glisser-déposer, 23 octobre 2026) : l'ordre du tableau tasks, tâches barrées en bas.
@@ -3620,7 +3624,7 @@
         </div>`;
       }).join('');
       // Semaine entièrement passée (son dernier jour est avant aujourd'hui) : hachurée automatiquement.
-      const isPast = r.week ? r.week.to < today : (r.key === 'before' && start <= today);
+      const isPast = r.week ? r.week.to < today : false; // "Plus ancien" reste à traiter : pas hachuré
       return `<div class="pl-vrow${r.week?' is-week':''}${r.current?' current':''}${isPast?' past':''}${r.later?' later':''}" style="grid-template-columns:${gridCols}">
         <div class="pl-vlabel"><div class="pl-col-title">${escapeHtml(r.title)}</div><div class="pl-col-sub">${escapeHtml(r.sub)}</div>${r.current?'<span class="pl-now">en cours</span>':''}</div>
         ${cells}
