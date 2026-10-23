@@ -459,6 +459,13 @@
   .pl-vcell.addable:hover{box-shadow:inset 0 0 0 1px var(--ink-soft);}
   .pl-vrow.current .pl-vcell.addable:hover{box-shadow:inset 0 0 0 2px rgba(255,255,255,0.6);}
   .pl-vcell .pl-card{cursor:pointer;}
+  /* Saisie d'une nouvelle étape : déjà sous forme de carte, à la couleur de son projet. */
+  .pl-draft{border:1px solid var(--line); border-radius:10px; padding:2px 4px; background:var(--panel); box-shadow:0 0 0 2px rgba(91,124,153,0.25);}
+  .pl-draft.pd-insta{background:var(--bg-insta); border-color:var(--line-insta);}
+  .pl-draft.pd-roman{background:var(--bg-roman); border-color:var(--line-roman);}
+  .pl-draft.pd-projet{background:var(--bg-projet); border-color:var(--line-projet);}
+  .pl-draft .pl-add-input, .pl-vrow.current .pl-vcell .pl-draft .pl-add-input{border:none !important; background:transparent !important; box-shadow:none; outline:none; width:100%; box-sizing:border-box; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; font-weight:500; color:var(--ink); padding:6px 6px;}
+  .pl-vrow.current .pl-draft{box-shadow:0 0 0 2px rgba(255,255,255,0.7);}
   .pl-sandbox.drop-over{background:#E9F1F7 !important;}
   @media(max-width:640px){
     .pl-vhead{display:none;}
@@ -3559,7 +3566,7 @@
           <div class="pl-vcell-proj">${escapeHtml(p.label)}</div>
           ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="🎯 Objectif (facultatif)" title="Objectif de la semaine — pour ajouter une étape, utilise « + Ajouter »">` : ''}
           ${items.map(plCardHtml).join('')}
-          ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
+          ${adding ? `<div class="pl-add-form pl-draft pd-${p.id}"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
                    : ''}
         </div>`;
       }).join('');
