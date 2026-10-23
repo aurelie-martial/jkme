@@ -292,7 +292,9 @@
   .pl-cell.target{box-shadow:inset 0 0 0 2px var(--due-soon);}
   .pl-flag{font-size:0.72rem; font-weight:700; color:#8A5B12;}
   .pl-countdown{font-size:0.66rem; font-weight:600; color:var(--ink-soft); text-align:right;}
-  .pl-goal{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; font-weight:600; color:var(--ink); border:1px dashed transparent; background:transparent; border-radius:7px; padding:5px 6px; width:100%; box-sizing:border-box;}
+  .pl-goal{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.74rem; font-weight:600; font-style:italic; color:var(--ink-soft); border:1px dashed transparent; background:transparent; border-radius:7px; padding:4px 6px; width:100%; box-sizing:border-box;}
+  .pl-goal:not(:placeholder-shown)::before{content:'';}
+  .pl-goal:not(:placeholder-shown){color:var(--lavande);}
   .pl-goal::placeholder{color:var(--ink-soft); font-weight:500; opacity:0.7;}
   .pl-goal:hover, .pl-goal:focus{border-color:rgba(0,0,0,0.15); background:rgba(255,255,255,0.7); outline:none;}
   .pl-card{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--cat-color); border-radius:9px; padding:8px 9px;}
@@ -3537,11 +3539,13 @@
           ? visible.filter(t=>t.project===p.id && t.later && !t.due && t.status!=='done')
           : dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
         const cellKey = `${p.id}|${r.key}`;
-        const goal = r.week ? ((planning.goals||{})[cellKey] || '') : null;
+        // Champ "Objectif de la semaine" retiré (23 octobre 2026) : les objectifs déjà saisis restent
+        // dans planning.goals mais ne sont plus affichés.
+        const goal = null;
         const adding = plAddingCell === cellKey;
         return `<div class="pl-cell pl-vcell pc-bg-${p.id}" data-cell="${cellKey}">
           <div class="pl-vcell-proj">${escapeHtml(p.label)}</div>
-          ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="Objectif de la semaine…">` : ''}
+          ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="🎯 Objectif (facultatif)" title="Objectif de la semaine — pour ajouter une étape, utilise « + Ajouter »">` : ''}
           ${items.map(plCardHtml).join('')}
           ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
                    : ((r.week || r.later) ? `<button type="button" class="pl-add" data-pl-add="${cellKey}">+ Ajouter</button>` : '')}
@@ -3743,23 +3747,32 @@
       const [project, colKey] = inp.dataset.cell.split('|');
       const col = cols.find(c=>c.key===colKey);
       inp.focus();
-      inp.addEventListener('keydown', e=>{
-        if(e.key==='Escape'){ plAddingCell = null; renderTasks(); return; }
-        if(e.key!=='Enter') return;
-        e.preventDefault();
+      const addFromInput = ()=>{
         const title = inp.value.trim();
-        if(!title) return;
+        if(!title) return false;
         // Une étape ajoutée dans une semaine prend pour deadline le dernier jour de cette semaine.
         const due = col && col.week ? col.week.to : '';
         const nt = newTask(title, 'todo', {project, due});
         if(colKey === 'later') nt.later = true;
         tasks.push(nt);
-        save(); // plAddingCell reste ouvert : on peut enchaîner les ajouts dans la même case
+        inp.value = '';
+        return true;
+      };
+      inp.addEventListener('keydown', e=>{
+        if(e.key==='Escape'){ plAddingCell = null; renderTasks(); return; }
+        if(e.key!=='Enter') return;
+        e.preventDefault();
+        if(addFromInput()) save(); // plAddingCell reste ouvert : on peut enchaîner les ajouts dans la même case
       });
+      // Cliquer ailleurs sans appuyer sur Entrée ajoute quand même l'étape tapée (23 octobre 2026),
+      // puis referme le champ.
       form.addEventListener('focusout', ()=> setTimeout(()=>{
-        if(!form.isConnected || form.contains(document.activeElement) || inp.value.trim()) return;
-        plAddingCell = null; renderTasks();
-      }, 200));
+        if(!form.isConnected || form.contains(document.activeElement)) return;
+        const added = addFromInput();
+        plAddingCell = null;
+        if(added) saveTasks();
+        renderTasks();
+      }, 150));
     });
     el.querySelectorAll('.pl-due-input').forEach(inp=>{
       let done = false;
