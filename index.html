@@ -422,6 +422,9 @@
   .pl-card.selected .pl-check{background:var(--lavande); border-color:var(--lavande);}
   .pl-card.selectable .tc-main{justify-content:flex-start;}
   .pl-card.selectable .tc-due{margin-left:auto;}
+  .pl-more{align-self:flex-start; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; font-weight:600; border:1px dashed var(--line); background:transparent; color:var(--ink-soft); border-radius:10px; padding:7px 14px; cursor:pointer;}
+  .pl-more:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
+  .pl-week-buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;}
   .pl-sandbox.drop-over{background:#E9F1F7 !important;}
   @media(max-width:640px){
     .pl-vhead{display:none;}
@@ -2195,8 +2198,10 @@
   let pinnedNotes = {};
   // Planning du Todo (voir renderPlanning) : début de la Semaine 1, nombre de semaines affichées,
   // objectifs par case ("projet|début de semaine") et dates d'arrivée par projet.
-  const DEFAULT_PLANNING_START = '2026-11-05';
-  let planning = {start: DEFAULT_PLANNING_START, weeks: 8, goals: {}, targets: {}};
+  // Semaine 1 = semaine du lundi 19 octobre 2026 (demande du 23 octobre : "la semaine 1 a commencé
+  // cette semaine"). extraWeeks = semaines ajoutées à la main avec le "+" en bas du planning.
+  const DEFAULT_PLANNING_START = '2026-10-19';
+  let planning = {v: 2, start: DEFAULT_PLANNING_START, extraWeeks: 0, goals: {}, targets: {}};
 
   // Simulateur Instagram (sous-onglet "Posts" de l'onglet "Scènes / Posts") : un profil unique
   // (photo, pseudo, nom, bio, stats) et une liste de posts (image + légende + mentions J'aime),
@@ -3389,18 +3394,24 @@
   let plAddingCell = null;   // "projet|début de semaine" où un ajout est en cours
   let plEditingTarget = null; // projet dont on change la date d'arrivée
 
-  function planningWeeks(){
+  let plShowPast = false; // semaines d'avant la semaine précédente : repliées par défaut
+  // Semaines affichées : par défaut la semaine précédente (hachurée), la semaine en cours et les
+  // 3 suivantes (5 au total), plus celles ajoutées avec "+". Index 0 = Semaine 1 (planning.start) ;
+  // les semaines d'avant ont un index négatif et sont nommées par leurs dates.
+  function planningWeekAt(i){
     const start = planning.start || DEFAULT_PLANNING_START;
-    let n = Number(planning.weeks) || 8;
-    // Étend le planning jusqu'à la date d'arrivée la plus lointaine (20 semaines max).
-    Object.values(planning.targets || {}).forEach(tg=>{
-      if(tg && tg >= start){
-        const [y1,m1,d1] = start.split('-').map(Number), [y2,m2,d2] = tg.split('-').map(Number);
-        const w = Math.floor((new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / (7*86400000)) + 1;
-        n = Math.max(n, Math.min(w, 20));
-      }
-    });
-    return Array.from({length:n}, (_,i)=>({i, from:addDaysKey(start, 7*i), to:addDaysKey(start, 7*i+6)}));
+    return {i, from:addDaysKey(start, 7*i), to:addDaysKey(start, 7*i+6)};
+  }
+  function weekIndexOf(key){
+    return Math.floor(weeksBetween(planning.start || DEFAULT_PLANNING_START, key) / 7);
+  }
+  function planningRange(){
+    const cur = weekIndexOf(todayKeyStr());
+    const lo = cur - 1;
+    const hi = cur + 3 + (Number(planning.extraWeeks) || 0);
+    const earliestTask = tasks.filter(t=>t.due && t.status!=='sandbox').reduce((m,t)=>Math.min(m, weekIndexOf(t.due)), lo);
+    const firstHidden = Math.min(0, earliestTask);
+    return {cur, lo, hi, firstHidden};
   }
   function fmtRange(a, b){
     const [ya,ma,da] = a.split('-').map(Number), [yb,mb,db] = b.split('-').map(Number);
@@ -3450,15 +3461,21 @@
   function renderPlanning(){
     const el = document.getElementById('todoPlanning');
     const start = planning.start || DEFAULT_PLANNING_START;
-    const weeks = planningWeeks();
+    const range = planningRange();
+    const from = plShowPast ? range.firstHidden : range.lo;
+    const weeks = [];
+    for(let i=from; i<=range.hi; i++) weeks.push(planningWeekAt(i));
+    const firstDay = weeks[0].from;
     const lastDay = weeks[weeks.length-1].to;
+    const hiddenCount = plShowPast ? 0 : Math.max(0, range.lo - range.firstHidden);
     const today = todayKeyStr();
     const projs = shownProjects();
     const visible = tasks.filter(t=>projs.some(p=>p.id===t.project));
     const dated = visible.filter(t=>t.due && t.status !== 'sandbox');
     const rows = [];
-    if(dated.some(t=>t.due < start && t.status!=='done')) rows.push({key:'before', title:'Avant', sub:`avant le ${formatShort(start)}`, test:t=>t.due < start && t.status!=='done'});
-    weeks.forEach(w=>rows.push({key:w.from, title:`Semaine ${w.i+1}`, sub:fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
+    // Semaines repliées : on garde quand même visibles leurs étapes non terminées (en retard).
+    if(dated.some(t=>t.due < firstDay && t.status!=='done')) rows.push({key:'before', title:'Plus ancien', sub:'étapes non terminées', test:t=>t.due < firstDay && t.status!=='done'});
+    weeks.forEach(w=>rows.push({key:w.from, title: w.i>=0 ? `Semaine ${w.i+1}` : fmtRange(w.from, w.to), sub: w.i>=0 ? fmtRange(w.from, w.to) : (w.i===range.cur-1 ? 'semaine dernière' : ''), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
     if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus tard', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
 
     const sortCards = (a,b)=> (a.status==='done') - (b.status==='done') || (a.due||'').localeCompare(b.due||'');
@@ -3478,32 +3495,16 @@
       ${plSelectMode ? '<div class="qa-hint">Clique sur les cartes à modifier, puis change leur projet ou supprime-les.</div>' : '<div class="qa-hint">Glisse une carte dans une semaine pour lui donner une date, ou ramène-la ici pour la retirer.</div>'}
     </div>`;
 
-    const targetsHtml = projs.map(p=>{
-      const tg = (planning.targets||{})[p.id] || '';
-      if(plEditingTarget === p.id){
-        return `<label>🏁 Arrivée ${escapeHtml(p.label)} <span class="due-edit"><input type="date" class="pl-target-input" data-project="${p.id}" value="${tg}">${tg?`<button type="button" data-pl-target-clear="${p.id}">Retirer</button>`:''}</span></label>`;
-      }
-      if(tg){
-        const days = weeksBetween(today, tg);
-        const left = days < 0 ? 'dépassée' : (days < 14 ? `J-${days}` : `dans ${Math.round(days/7)} sem.`);
-        return `<button type="button" class="pl-target set pl-target-${p.id}" data-pl-target="${p.id}" title="Changer la date d'arrivée">🏁 ${escapeHtml(p.label)} : ${escapeHtml(formatShort(tg))} · ${left}</button>`;
-      }
-      return `<button type="button" class="pl-target" data-pl-target="${p.id}">🏁 Date d'arrivée ${escapeHtml(p.label)}</button>`;
-    }).join('');
-
     const gridCols = `var(--pl-head, 130px) repeat(${projs.length}, minmax(0, 1fr))`;
     const headRow = `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div></div>${projs.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
     const rowsHtml = rows.map(r=>{
       const cells = projs.map(p=>{
-        const tg = (planning.targets||{})[p.id] || '';
         const items = dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
         const cellKey = `${p.id}|${r.key}`;
         const goal = r.week ? ((planning.goals||{})[cellKey] || '') : null;
-        const isTarget = r.week && tg && tg>=r.week.from && tg<=r.week.to;
         const adding = plAddingCell === cellKey;
-        return `<div class="pl-cell pl-vcell pc-bg-${p.id}${isTarget?' target':''}" data-cell="${cellKey}">
+        return `<div class="pl-cell pl-vcell pc-bg-${p.id}" data-cell="${cellKey}">
           <div class="pl-vcell-proj">${escapeHtml(p.label)}</div>
-          ${isTarget ? `<div class="pl-flag">🏁 Arrivée le ${escapeHtml(formatShort(tg))}</div>` : ''}
           ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="Objectif de la semaine…">` : ''}
           ${items.map(plCardHtml).join('')}
           ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
@@ -3518,14 +3519,19 @@
       </div>`;
     }).join('');
 
+    const pastToggle = (hiddenCount || plShowPast)
+      ? `<button type="button" class="pl-more" id="plTogglePast">${plShowPast ? '▾ Masquer les semaines précédentes' : `▴ Afficher les semaines précédentes (${hiddenCount})`}</button>` : '';
     el.innerHTML = `
-      <div class="pl-settings">
-        <label>Semaine 1 commence le <input type="date" id="plStart" value="${start}"></label>
-        <label>Afficher <select id="plWeeks">${[4,6,8,10,12,16].map(n=>`<option value="${n}" ${Number(planning.weeks||8)===n?'selected':''}>${n} semaines</option>`).join('')}</select></label>
-        ${targetsHtml}
-      </div>
       ${sandboxHtml}
-      <div class="pl-vgrid">${headRow}${rowsHtml}</div>`;
+      <div class="pl-vgrid">${headRow}${pastToggle}${rowsHtml}
+        <div class="pl-week-buttons">
+          <button type="button" class="pl-more pl-add-week" id="plAddWeek">+ Ajouter une semaine</button>
+          ${(Number(planning.extraWeeks)||0) > 0 ? `<button type="button" class="pl-more" id="plRemoveWeek" title="Retirer la dernière semaine ajoutée">− Retirer une semaine</button>` : ''}
+        </div>
+      </div>`;
+    el.querySelector('#plAddWeek').addEventListener('click', ()=>{ planning.extraWeeks = (Number(planning.extraWeeks)||0) + 1; saveTasks(); renderTasks(); });
+    if(el.querySelector('#plRemoveWeek')) el.querySelector('#plRemoveWeek').addEventListener('click', ()=>{ planning.extraWeeks = Math.max(0, (Number(planning.extraWeeks)||0) - 1); saveTasks(); renderTasks(); });
+    if(el.querySelector('#plTogglePast')) el.querySelector('#plTogglePast').addEventListener('click', ()=>{ plShowPast = !plShowPast; renderTasks(); });
     const cols = rows.concat([{key:'nodate'}]);
     wirePlanning(el, cols);
     // Mode sélection
@@ -3649,8 +3655,6 @@
       });
     });
     const save = ()=>{ saveTasks(); renderTasks(); };
-    el.querySelector('#plStart').addEventListener('change', e=>{ if(e.target.value){ planning.start = e.target.value; save(); } });
-    el.querySelector('#plWeeks').addEventListener('change', e=>{ planning.weeks = Number(e.target.value); save(); });
     el.querySelectorAll('.pl-goal').forEach(inp=>{
       inp.addEventListener('change', ()=>{
         planning.goals = planning.goals || {};
@@ -8291,9 +8295,11 @@
     blocNotesOrder = Array.isArray(state.blocNotesOrder) ? state.blocNotesOrder : null;
     pillColors = (state.pillColors && typeof state.pillColors === 'object') ? state.pillColors : {};
     pinnedNotes = (state.pinnedNotes && typeof state.pinnedNotes === 'object') ? state.pinnedNotes : {};
-    planning = (state.planning && typeof state.planning === 'object')
-      ? {start: state.planning.start || DEFAULT_PLANNING_START, weeks: state.planning.weeks || 8, goals: state.planning.goals || {}, targets: state.planning.targets || {}}
-      : {start: DEFAULT_PLANNING_START, weeks: 8, goals: {}, targets: {}};
+    // v2 (23 octobre 2026) : semaines du lundi au dimanche, Semaine 1 = 19 oct. Un planning plus
+    // ancien (Semaine 1 au 5 novembre) est recalé une fois pour toutes.
+    planning = (state.planning && typeof state.planning === 'object' && state.planning.v === 2)
+      ? {v: 2, start: state.planning.start || DEFAULT_PLANNING_START, extraWeeks: Number(state.planning.extraWeeks) || 0, goals: state.planning.goals || {}, targets: state.planning.targets || {}}
+      : {v: 2, start: DEFAULT_PLANNING_START, extraWeeks: 0, goals: (state.planning && state.planning.goals) || {}, targets: (state.planning && state.planning.targets) || {}};
     igProfile =(state.igProfile && typeof state.igProfile === 'object') ? {...defaultIgProfile(), ...state.igProfile} : defaultIgProfile();
     igPosts = Array.isArray(state.igPosts) ? state.igPosts : [];
     // Migration : les brouillons créés avant l'ajout des champs nom/@ n'avaient qu'un texte de bio
