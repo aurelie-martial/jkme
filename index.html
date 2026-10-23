@@ -466,6 +466,8 @@
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
   .pl-vcell.addable{cursor:pointer;}
+  .pl-drop-marker{height:3px; border-radius:2px; background:var(--lavande); margin:-3px 0;}
+  .pl-vrow.current .pl-drop-marker{background:#fff;}
   .pl-card [data-edit-title]{cursor:text;}
   .pl-card [data-edit-due]{cursor:pointer; border-radius:5px; padding:1px 4px; margin:-1px -4px;}
   .pl-card [data-edit-due]:hover{background:rgba(0,0,0,0.06);}
@@ -3564,7 +3566,8 @@
     weeks.forEach(w=>rows.push({key:w.from, title:`Semaine ${isoWeekNumber(w.from)}`, sub: fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
     if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus loin', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
 
-    const sortCards = (a,b)=> (a.status==='done') - (b.status==='done') || (a.due||'').localeCompare(b.due||'');
+    // Ordre manuel (glisser-déposer, 23 octobre 2026) : l'ordre du tableau tasks, tâches barrées en bas.
+    const sortCards = (a,b)=> (a.status==='done') - (b.status==='done');
     // Bac à sable = étapes sans date qui ne sont pas rangées dans "À faire plus tard".
     const undated = visible.filter(t=>!t.due && !t.later && t.status !== 'done');
     // Ligne fixe "À faire plus tard" (23 octobre 2026), tout en bas : étapes à traiter un jour,
@@ -3590,7 +3593,7 @@
     const renderRow = r=>{
       const cells = projs.map(p=>{
         const items = r.later
-          ? visible.filter(t=>t.project===p.id && !t.due && (t.status!=='done' || t.later)).sort((a,b)=>(a.status==='done')-(b.status==='done'))
+          ? visible.filter(t=>t.project===p.id && !t.due && (t.status!=='done' || t.later)).sort(sortCards)
           : dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
         const cellKey = `${p.id}|${r.key}`;
         // Champ "Objectif de la semaine" retiré (23 octobre 2026) : les objectifs déjà saisis restent
@@ -3713,6 +3716,7 @@
       card.addEventListener('dragend', ()=>{
         plDragId = null;
         card.classList.remove('dragging');
+        el.querySelectorAll('.pl-drop-marker').forEach(m=>m.remove());
         el.querySelectorAll('.pl-cell.drop-over').forEach(c=>c.classList.remove('drop-over'));
       });
     });
@@ -3722,32 +3726,69 @@
         const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
         return t && plDropDue(t, colKey, cols) !== null;
       };
+      // Carte devant laquelle on dépose (selon la hauteur du pointeur), null = en fin de case.
+      const beforeCard = y => [...cell.querySelectorAll('.pl-card:not(.dragging)')].find(c=>{
+        const r = c.getBoundingClientRect(); return y < r.top + r.height/2;
+      }) || null;
       cell.addEventListener('dragover', e=>{
         if(!canDrop()) return;
         e.preventDefault();
         try{ e.dataTransfer.dropEffect = 'move'; }catch(err){}
         cell.classList.add('drop-over');
+        let marker = el.querySelector('.pl-drop-marker');
+        if(!marker){ marker = document.createElement('div'); marker.className = 'pl-drop-marker'; }
+        const b = beforeCard(e.clientY);
+        if(b){ if(marker.nextSibling !== b) cell.insertBefore(marker, b); }
+        else {
+          const cards = cell.querySelectorAll('.pl-card:not(.dragging)');
+          const last = cards[cards.length-1];
+          const anchor = last ? last.nextSibling : null;
+          if(last){ if(marker.previousSibling !== last) cell.insertBefore(marker, anchor); }
+          else if(marker.parentNode !== cell) cell.appendChild(marker);
+        }
       });
-      cell.addEventListener('dragleave', e=>{ if(!cell.contains(e.relatedTarget)) cell.classList.remove('drop-over'); });
+      cell.addEventListener('dragleave', e=>{
+        if(cell.contains(e.relatedTarget)) return;
+        cell.classList.remove('drop-over');
+        const m = cell.querySelector('.pl-drop-marker'); if(m) m.remove();
+      });
       cell.addEventListener('drop', e=>{
         e.preventDefault();
         cell.classList.remove('drop-over');
         const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
         if(!t) return;
+        // Nouvelle position dans l'ordre manuel : juste avant la carte visée, sinon après la
+        // dernière carte de la case.
+        const b = beforeCard(e.clientY);
+        const beforeId = b ? b.dataset.plcard : null;
+        const cellIds = [...cell.querySelectorAll('.pl-card:not(.dragging)')].map(c=>c.dataset.plcard);
+        const reorder = ()=>{
+          if(String(beforeId) === String(t.id)) return false;
+          const before = beforeId ? tasks.find(x=>String(x.id)===String(beforeId)) : null;
+          tasks = tasks.filter(x=>x!==t);
+          if(before) tasks.splice(tasks.indexOf(before), 0, t);
+          else {
+            const idxs = cellIds.map(id=>tasks.findIndex(x=>String(x.id)===String(id))).filter(i=>i>=0);
+            if(idxs.length) tasks.splice(Math.max(...idxs)+1, 0, t); else tasks.push(t);
+          }
+          return true;
+        };
         const due = plDropDue(t, colKey, cols);
         if(due === null) return;
         plDragId = null;
         const later = colKey === 'later';
         // Déposée dans la colonne d'un autre projet : elle en prend le projet (et donc la couleur).
         const newProject = project !== 'any' ? project : t.project;
+        let changed = reorder();
         if(due !== (t.due||'') || later !== !!t.later || newProject !== t.project){
           t.project = newProject;
           t.due = due;
           t.later = later;
           // une idée qu'on planifie (ou qu'on garde pour plus tard) devient une étape à faire
           if((due || later) && t.status === 'sandbox') t.status = 'todo';
-          saveTasks();
+          changed = true;
         }
+        if(changed) saveTasks();
         renderTasks();
       });
     });
