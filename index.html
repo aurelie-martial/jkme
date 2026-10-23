@@ -377,6 +377,35 @@
   #content-plan .kanban-col.drop-over h3{color:var(--lavande);}
   .drop-marker{height:3px; border-radius:2px; background:var(--lavande); margin:-2px 0 6px;}
   .drop-marker.horizontal{width:3px; height:auto; align-self:stretch; margin:0;}
+  /* Planning vertical */
+  .pl-settings .pl-target{font-size:0.76rem; padding:5px 10px;}
+  .pl-target.set.pl-target-insta{background:var(--bg-insta); border-color:var(--line-insta); color:var(--proj-insta);}
+  .pl-target.set.pl-target-roman{background:var(--bg-roman); border-color:var(--line-roman); color:var(--proj-roman);}
+  .pl-sandbox{border:1px dashed var(--line); border-radius:12px; padding:14px 16px; margin-bottom:22px; min-height:0; background:var(--panel);}
+  .pl-sandbox-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .pl-sandbox-head h3{margin:0; font-size:0.95rem; font-weight:700; color:var(--ink);}
+  .pl-sandbox-cards{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;}
+  .pl-sandbox-cards .pl-card{flex:0 1 260px;}
+  .pl-vgrid{display:flex; flex-direction:column; gap:10px;}
+  .pl-vhead, .pl-vrow{display:grid; gap:10px;}
+  .pl-vproj{font-size:0.8rem; font-weight:700; padding:0 4px;}
+  .pl-vproj-insta{color:var(--proj-insta);} .pl-vproj-roman{color:var(--proj-roman);}
+  .pl-vlabel{padding:10px 4px; display:flex; flex-direction:column; gap:3px; align-items:flex-start;}
+  .pl-vrow.current .pl-vlabel .pl-col-title{color:var(--lavande);}
+  .pl-vcell{border:1px solid var(--line); border-radius:12px; min-height:70px; background:var(--panel) !important;}
+  .pl-vrow.current .pl-vcell{border-color:#BFD0DF;}
+  .pl-vcell.target{box-shadow:inset 0 0 0 2px var(--due-soon);}
+  .pl-vcell-proj{display:none; font-size:0.72rem; font-weight:700;}
+  .pc-bg-insta .pl-vcell-proj{color:var(--proj-insta);} .pc-bg-roman .pl-vcell-proj{color:var(--proj-roman);}
+  .pl-vcell .pl-add{margin-top:auto; text-align:left; border:none; background:transparent; font-weight:500; font-size:0.78rem; padding:2px;}
+  .pl-vcell .pl-add:hover{background:transparent; color:var(--ink);}
+  .pl-sandbox.drop-over{background:#E9F1F7 !important;}
+  @media(max-width:640px){
+    .pl-vhead{display:none;}
+    .pl-vrow{grid-template-columns:1fr !important; gap:6px;}
+    .pl-vlabel{flex-direction:row; align-items:baseline; gap:8px; padding:6px 2px 0;}
+    .pl-vcell-proj{display:block;}
+  }
   /* Plus aucun rond de couleur sur la page Todo ni dans le bas de page (demande du 23 octobre
      2026) : titres de colonnes, groupes de catégories, projets, statut de synchro et de sauvegarde. */
   #content-plan .dot, #content-plan .cat-group-dot, .todo-view-btn .proj-dot,
@@ -3378,67 +3407,79 @@
     </div>`;
   }
 
+  // Disposition verticale (demande du 23 octobre 2026) : un bloc "Bac à sable" en haut avec toutes
+  // les étapes sans date, puis une ligne par semaine (les unes sous les autres, sans scroll
+  // horizontal), avec une case par projet affiché. Les dates d'arrivée 🏁 se règlent dans la barre
+  // du haut ; la semaine qui la contient est marquée dans la case du projet.
   function renderPlanning(){
     const el = document.getElementById('todoPlanning');
     const start = planning.start || DEFAULT_PLANNING_START;
     const weeks = planningWeeks();
     const lastDay = weeks[weeks.length-1].to;
     const today = todayKeyStr();
-    const pool = tasks.filter(t=>t.status !== 'sandbox');
-    const before = pool.filter(t=>t.due && t.due < start && t.status !== 'done');
-    const hasBefore = before.length > 0;
-    const after = pool.filter(t=>t.due && t.due > lastDay && t.status !== 'done');
-    // "Sans date" en première colonne (demande du 23 octobre 2026) : c'est le réservoir d'où l'on
-    // fait glisser les étapes vers leur semaine.
-    const cols = [{key:'nodate', title:'Sans date', sub:'à glisser dans une semaine', test:t=>!t.due && (t.status==='todo' || t.status==='doing')}];
-    if(hasBefore) cols.push({key:'before', title:'Avant', sub:`avant le ${formatShort(start)}`, test:t=>t.due && t.due < start && t.status!=='done'});
-    weeks.forEach(w=>cols.push({key:w.from, title:`Semaine ${w.i+1}`, sub:fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to, test:t=>t.due && t.due>=w.from && t.due<=w.to}));
-    if(after.length) cols.push({key:'after', title:'Plus tard', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due && t.due > lastDay && t.status!=='done'});
+    const projs = shownProjects();
+    const visible = tasks.filter(t=>projs.some(p=>p.id===t.project));
+    const dated = visible.filter(t=>t.due && t.status !== 'sandbox');
+    const rows = [];
+    if(dated.some(t=>t.due < start && t.status!=='done')) rows.push({key:'before', title:'Avant', sub:`avant le ${formatShort(start)}`, test:t=>t.due < start && t.status!=='done'});
+    weeks.forEach(w=>rows.push({key:w.from, title:`Semaine ${w.i+1}`, sub:fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
+    if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus tard', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
 
-    const head = `<div class="pl-corner"></div>` + cols.map(c=>`
-      <div class="pl-col-head${c.current?' current':''}${c.key==='nodate'?' nodate':''}">
-        <div class="pl-col-title">${escapeHtml(c.title)}${c.current?' <span class="pl-now">en cours</span>':''}</div>
-        <div class="pl-col-sub">${escapeHtml(c.sub)}</div>
-      </div>`).join('');
+    const sortCards = (a,b)=> (a.status==='done') - (b.status==='done') || (a.due||'').localeCompare(b.due||'');
+    const undated = visible.filter(t=>!t.due && t.status !== 'done');
+    const sandboxHtml = `<div class="pl-sandbox pl-cell" data-cell="any|nodate">
+      <div class="pl-sandbox-head"><h3>Bac à sable</h3><span class="col-count">${undated.length || ''}</span></div>
+      <div class="pl-sandbox-cards">${undated.length ? undated.map(plCardHtml).join('') : `<div class="empty-msg">Toutes tes étapes ont une date.</div>`}</div>
+      <div class="qa-hint">Glisse une carte dans une semaine pour lui donner une date, ou ramène-la ici pour la retirer.</div>
+    </div>`;
 
-    const rows = shownProjects().map(p=>{
+    const targetsHtml = projs.map(p=>{
       const tg = (planning.targets||{})[p.id] || '';
-      let targetHtml;
       if(plEditingTarget === p.id){
-        targetHtml = `<span class="due-edit"><input type="date" class="pl-target-input" data-project="${p.id}" value="${tg}">${tg?`<button type="button" data-pl-target-clear="${p.id}">Retirer</button>`:''}</span>`;
-      } else if(tg){
+        return `<label>🏁 Arrivée ${escapeHtml(p.label)} <span class="due-edit"><input type="date" class="pl-target-input" data-project="${p.id}" value="${tg}">${tg?`<button type="button" data-pl-target-clear="${p.id}">Retirer</button>`:''}</span></label>`;
+      }
+      if(tg){
         const days = weeksBetween(today, tg);
         const left = days < 0 ? 'dépassée' : (days < 14 ? `J-${days}` : `dans ${Math.round(days/7)} sem.`);
-        targetHtml = `<button type="button" class="pl-target set" data-pl-target="${p.id}" title="Changer la date d'arrivée">🏁 ${escapeHtml(formatShort(tg))} · ${left}</button>`;
-      } else {
-        targetHtml = `<button type="button" class="pl-target" data-pl-target="${p.id}">🏁 Date d'arrivée</button>`;
+        return `<button type="button" class="pl-target set pl-target-${p.id}" data-pl-target="${p.id}" title="Changer la date d'arrivée">🏁 ${escapeHtml(p.label)} : ${escapeHtml(formatShort(tg))} · ${left}</button>`;
       }
-      const rowHead = `<div class="pl-row-head pl-row-${p.id}"><div class="pl-row-name">${escapeHtml(p.label)}</div>${targetHtml}</div>`;
-      const cells = cols.map(c=>{
-        const items = pool.filter(t=>t.project===p.id && c.test(t))
-          .sort((a,b)=> (a.status==='done') - (b.status==='done') || (a.due||'').localeCompare(b.due||'') || catIndexIn(a)-catIndexIn(b));
-        const cellKey = `${p.id}|${c.key}`;
-        const goal = c.week ? ((planning.goals||{})[cellKey] || '') : null;
-        const isTargetWeek = c.week && tg && tg>=c.week.from && tg<=c.week.to;
-        const countdown = (c.week && tg && c.week.from <= tg && !isTargetWeek) ? Math.ceil(weeksBetween(c.week.from, tg)/7) : null;
+      return `<button type="button" class="pl-target" data-pl-target="${p.id}">🏁 Date d'arrivée ${escapeHtml(p.label)}</button>`;
+    }).join('');
+
+    const gridCols = `var(--pl-head, 130px) repeat(${projs.length}, minmax(0, 1fr))`;
+    const headRow = `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div></div>${projs.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
+    const rowsHtml = rows.map(r=>{
+      const cells = projs.map(p=>{
+        const tg = (planning.targets||{})[p.id] || '';
+        const items = dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
+        const cellKey = `${p.id}|${r.key}`;
+        const goal = r.week ? ((planning.goals||{})[cellKey] || '') : null;
+        const isTarget = r.week && tg && tg>=r.week.from && tg<=r.week.to;
         const adding = plAddingCell === cellKey;
-        return `<div class="pl-cell pl-row-${p.id}${c.current?' current':''}${isTargetWeek?' target':''}" data-cell="${cellKey}">
-          ${isTargetWeek ? `<div class="pl-flag">🏁 Arrivée le ${escapeHtml(formatShort(tg))}</div>` : (countdown!==null ? `<div class="pl-countdown">🏁 J-${countdown} sem.</div>` : '')}
+        return `<div class="pl-cell pl-vcell pc-bg-${p.id}${isTarget?' target':''}" data-cell="${cellKey}">
+          <div class="pl-vcell-proj">${escapeHtml(p.label)}</div>
+          ${isTarget ? `<div class="pl-flag">🏁 Arrivée le ${escapeHtml(formatShort(tg))}</div>` : ''}
           ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="Objectif de la semaine…">` : ''}
           ${items.map(plCardHtml).join('')}
           ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
-                   : (c.key!=='before' && c.key!=='after' ? `<button type="button" class="pl-add" data-pl-add="${cellKey}">+</button>` : '')}
+                   : (r.week ? `<button type="button" class="pl-add" data-pl-add="${cellKey}">+ Ajouter</button>` : '')}
         </div>`;
       }).join('');
-      return rowHead + cells;
+      return `<div class="pl-vrow${r.current?' current':''}" style="grid-template-columns:${gridCols}">
+        <div class="pl-vlabel"><div class="pl-col-title">${escapeHtml(r.title)}</div><div class="pl-col-sub">${escapeHtml(r.sub)}</div>${r.current?'<span class="pl-now">en cours</span>':''}</div>
+        ${cells}
+      </div>`;
     }).join('');
 
     el.innerHTML = `
       <div class="pl-settings">
         <label>Semaine 1 commence le <input type="date" id="plStart" value="${start}"></label>
         <label>Afficher <select id="plWeeks">${[4,6,8,10,12,16].map(n=>`<option value="${n}" ${Number(planning.weeks||8)===n?'selected':''}>${n} semaines</option>`).join('')}</select></label>
+        ${targetsHtml}
       </div>
-      <div class="pl-scroll"><div class="pl-grid" style="grid-template-columns:var(--pl-head, 150px) repeat(${cols.length}, minmax(var(--pl-col, 210px), 1fr))">${head}${rows}</div></div>`;
+      ${sandboxHtml}
+      <div class="pl-vgrid">${headRow}${rowsHtml}</div>`;
+    const cols = rows.concat([{key:'nodate'}]);
     wirePlanning(el, cols);
   }
 
@@ -3475,7 +3516,7 @@
       const [project, colKey] = cell.dataset.cell.split('|');
       const canDrop = ()=>{
         const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
-        return t && t.project === project && plDropDue(t, colKey, cols) !== null;
+        return t && (project === 'any' || t.project === project) && plDropDue(t, colKey, cols) !== null;
       };
       cell.addEventListener('dragover', e=>{
         if(!canDrop()) return;
@@ -3488,11 +3529,15 @@
         e.preventDefault();
         cell.classList.remove('drop-over');
         const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
-        if(!t || t.project !== project) return;
+        if(!t || (project !== 'any' && t.project !== project)) return;
         const due = plDropDue(t, colKey, cols);
         if(due === null) return;
         plDragId = null;
-        if(due !== (t.due||'')){ t.due = due; saveTasks(); }
+        if(due !== (t.due||'')){
+          t.due = due;
+          if(due && t.status === 'sandbox') t.status = 'todo'; // une idée qu'on planifie devient une étape à faire
+          saveTasks();
+        }
         renderTasks();
       });
     });
