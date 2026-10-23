@@ -200,12 +200,40 @@
   .todo-view-btn.active{background:var(--panel); color:var(--ink); box-shadow:var(--shadow-sm);}
   .todo-view-btn .proj-dot{width:8px; height:8px; border-radius:50%; background:var(--proj-color);}
   .todo-view-btn .count{font-size:0.68rem; font-weight:700; background:var(--due-late); color:#fff; border-radius:999px; padding:1px 7px;}
-  :root{ --due-late:#C4574F; --due-soon:#C98A2E; --proj-insta:#B36B7A; --proj-roman:#5B7C99; }
+  :root{ --due-late:#C4574F; --due-soon:#C98A2E; --proj-insta:#B36B7A; --proj-roman:#5B7C99;
+    --bg-insta:#FBF2F4; --line-insta:#F0DCE1; --bg-roman:#EFF4F9; --line-roman:#D9E4EF; }
+  /* Fond clair propre à chaque projet : blocs en vue Tout, colonnes entières en vue projet, et
+     cartes isolées (groupe "En retard", vue Cette semaine). */
+  .proj-block{border-radius:12px; padding:10px 10px 2px; margin:0 -6px 12px;}
+  .proj-block-insta{background:var(--bg-insta); border:1px solid var(--line-insta);}
+  .proj-block-roman{background:var(--bg-roman); border:1px solid var(--line-roman);}
+  .proj-block-title{font-size:0.7rem; font-weight:700; letter-spacing:0.04em; margin:0 0 8px; display:flex; align-items:center; gap:6px;}
+  .proj-block-insta .proj-block-title{color:var(--proj-insta);}
+  .proj-block-roman .proj-block-title{color:var(--proj-roman);}
+  .proj-block .cat-group-label{border-bottom-color:rgba(0,0,0,0.07);}
+  .proj-block .cat-group-label:first-of-type{margin-top:0;}
+  .task-card.pc-insta:not(.is-done){background:var(--bg-insta);}
+  .task-card.pc-roman:not(.is-done){background:var(--bg-roman);}
+  .proj-block .task-card:not(.is-done){background:var(--panel);}
+  #todoBoard.view-insta .kanban-col{background:var(--bg-insta); border-color:var(--line-insta);}
+  #todoBoard.view-roman .kanban-col{background:var(--bg-roman); border-color:var(--line-roman);}
+  #todoBoard.view-insta .task-card:not(.is-done), #todoBoard.view-roman .task-card:not(.is-done){background:var(--panel);}
+  #todoBoard.view-insta .kanban-quick-add, #todoBoard.view-roman .kanban-quick-add{background:rgba(255,255,255,0.6);}
   .add-task-form input[type=date]{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.84rem; border:1px solid var(--line);
     border-radius:9px; padding:6px 9px; background:var(--panel); color:var(--ink);
   }
   #todoAlert:empty{display:none;}
+  .todo-footer{display:flex; justify-content:center; margin-top:22px;}
+  .todo-footer .btn{font-size:0.8rem; padding:7px 14px;}
+  /* Formulaire d'ajout dans une colonne : titre + projet (vue Tout) + catégorie + deadline. */
+  .kanban-quick-add-form{display:flex; flex-direction:column; gap:6px;}
+  .qa-row{display:flex; gap:6px; flex-wrap:wrap;}
+  .qa-row select, .qa-row input[type=date]{
+    flex:1 1 110px; min-width:0; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; font-weight:500;
+    border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--panel); color:var(--ink);
+  }
+  .qa-hint{font-size:0.7rem; color:var(--ink-soft);}
   .todo-alert{
     display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#FBF1EF; border:1px solid #EFD3CE;
     color:var(--ink); border-radius:12px; padding:10px 14px; margin-bottom:14px; font-size:0.85rem; font-weight:500;
@@ -1341,15 +1369,6 @@
     </div>
     <div id="todoAlert"></div>
 
-    <form class="add-task-form" id="addTaskForm">
-      <select id="taskProject" title="Projet"></select>
-      <input type="text" id="taskTitle" placeholder="Ex : Écrire le texte du post sur l'isolement..." required>
-      <select id="taskCategory"></select>
-      <input type="date" id="taskDue" title="Deadline (facultative)">
-      <button type="button" id="manageCatsBtn" class="btn btn-ghost">⚙ Catégories</button>
-      <button type="submit" class="btn">+ Ajouter l'étape</button>
-      <button type="button" id="addToSandboxBtn" class="btn btn-ghost" title="Noter l'idée sans la mettre en priorité tout de suite">+ Bac à sable</button>
-    </form>
 
     <div id="todoBoard">
       <div class="kanban">
@@ -1378,6 +1397,10 @@
     </div>
 
     <div id="todoWeek" class="todo-week" style="display:none"></div>
+
+    <div class="todo-footer">
+      <button type="button" id="manageCatsBtn" class="btn btn-ghost">⚙ Gérer les catégories</button>
+    </div>
   </div>
 
   <!-- CALENDRIER -->
@@ -2942,28 +2965,14 @@
   function todayCount(list){ return list.filter(t=>dueState(t)==='today').length; }
 
   // ---------- CATEGORIES ----------
-  function renderProjectSelect(){
-    const sel = document.getElementById('taskProject');
-    const vp = viewProject();
-    const prev = sel.value;
-    sel.innerHTML = PROJECTS.map(p=>`<option value="${p.id}">${escapeHtml(p.label)}</option>`).join('');
-    sel.value = vp || (PROJECTS.some(p=>p.id===prev) ? prev : 'insta');
-    // Dans la vue d'un projet, le projet est implicite : inutile de le redemander.
-    sel.style.display = vp ? 'none' : '';
-  }
-  function formProject(){ return viewProject() || document.getElementById('taskProject').value || 'insta'; }
-
-  function renderCategorySelect(){
-    migrateTodoData();
-    renderProjectSelect();
-    const sel = document.getElementById('taskCategory');
-    const prevVal = sel.value;
-    const list = catsOf(formProject());
-    sel.innerHTML = list.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
-    if(list.some(c=>c.name===prevVal)) sel.value = prevVal;
-  }
-  document.getElementById('taskProject').addEventListener('change', renderCategorySelect);
-
+  // Plus de formulaire en haut du Todo (demande du 23 octobre 2026) : on ajoute une étape
+  // directement dans sa colonne. Le dernier projet / la dernière catégorie choisis y sont retenus
+  // pour enchaîner plusieurs ajouts sans tout resélectionner.
+  let quickAddProject = 'insta';
+  let quickAddCategory = {};
+  function formProject(){ return viewProject() || quickAddProject || 'insta'; }
+  function renderCategorySelect(){ migrateTodoData(); }
+  
   function renderCatList(){
     const container = document.getElementById('catList');
     const vp = viewProject();
@@ -3153,7 +3162,7 @@
     const proj = projectById(t.project);
     const metaHtml = (showProject ? `<span class="proj-tag" style="--proj-color:${proj.color}">${escapeHtml(proj.label)}</span>` : '') +
       (showStatus ? `<span class="status-tag">${STATUS_LABELS[t.status]}</span>` : '') + dueHtml;
-    return `<div class="task-card${t.status === 'done' ? ' is-done' : ''}${ds==='late' ? ' is-late' : ''}" style="--cat-color:${getTaskCatColor(t)}">
+    return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${ds==='late' ? ' is-late' : ''}" style="--cat-color:${getTaskCatColor(t)}">
       <div class="card-icons">${iconsHtml}</div>
       <select class="chip cat-select" data-id="${t.id}">
         ${catOptions.map(c=>`<option value="${escapeHtml(c.name)}" ${c.name===t.category?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}
@@ -3202,9 +3211,11 @@
     renderTodoAlert();
     updateTodoTabBadge();
     const isWeek = todoView === 'week';
-    document.getElementById('todoBoard').style.display = isWeek ? 'none' : '';
+    const board = document.getElementById('todoBoard');
+    board.style.display = isWeek ? 'none' : '';
+    board.classList.toggle('view-insta', todoView==='insta');
+    board.classList.toggle('view-roman', todoView==='roman');
     document.getElementById('todoWeek').style.display = isWeek ? '' : 'none';
-    document.getElementById('addTaskForm').style.display = isWeek ? 'none' : '';
     if(isWeek){
       renderTodoWeekView();
     } else {
@@ -3219,6 +3230,9 @@
           return;
         }
         let lastGroup = null;
+        // En vue "Tout", les étapes de chaque projet sont regroupées dans un bloc au fond clair qui
+        // lui est propre (rose pâle Instagram, bleu pâle roman — demande du 23 octobre 2026).
+        let openBlock = null;
         let html = '';
         grouped.forEach((t, i)=>{
           const g = groupKey(t);
@@ -3226,8 +3240,12 @@
             if(g === '__late__'){
               html += `<div class="cat-group-label late-label"><span class="cat-group-dot"></span>En retard</div>`;
             } else {
-              const label = showProject ? `${projectById(t.project).label} · ${t.category}` : t.category;
-              html += `<div class="cat-group-label" style="--cat-color:${getTaskCatColor(t)}"><span class="cat-group-dot"></span>${escapeHtml(label)}</div>`;
+              if(showProject && openBlock !== t.project){
+                if(openBlock) html += `</div>`;
+                html += `<div class="proj-block proj-block-${t.project}"><div class="proj-block-title">${escapeHtml(projectById(t.project).label)}</div>`;
+                openBlock = t.project;
+              }
+              html += `<div class="cat-group-label" style="--cat-color:${getTaskCatColor(t)}"><span class="cat-group-dot"></span>${escapeHtml(t.category)}</div>`;
             }
             lastGroup = g;
           }
@@ -3237,6 +3255,7 @@
             showProject: showProject && g==='__late__'
           });
         });
+        if(openBlock) html += `</div>`;
         cols[status].innerHTML = html;
       });
     }
@@ -3329,33 +3348,11 @@
 
   function newTask(title, status, opts){
     const project = (opts && opts.project) || formProject();
-    let category = (opts && opts.category) || document.getElementById('taskCategory').value;
+    let category = opts && opts.category;
     if(!catsOf(project).some(c=>c.name===category)){ const first = catsOf(project)[0]; category = first ? first.name : ''; }
-    const due = (opts && 'due' in opts) ? opts.due : (document.getElementById('taskDue').value || '');
+    const due = (opts && opts.due) || '';
     return {id: Date.now()+Math.random(), title, category, status, project, due};
   }
-
-  document.getElementById('addTaskForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const title = document.getElementById('taskTitle').value.trim();
-    if(!title || !document.getElementById('taskCategory').value) return;
-    tasks.push(newTask(title, 'todo'));
-    saveTasks();
-    document.getElementById('taskTitle').value='';
-    document.getElementById('taskDue').value='';
-    renderTasks();
-  });
-
-  document.getElementById('addToSandboxBtn').addEventListener('click', ()=>{
-    const titleInput = document.getElementById('taskTitle');
-    const title = titleInput.value.trim();
-    if(!title || !document.getElementById('taskCategory').value) return;
-    tasks.push(newTask(title, 'sandbox'));
-    saveTasks();
-    titleInput.value='';
-    document.getElementById('taskDue').value='';
-    renderTasks();
-  });
 
   // Ajout direct dans une colonne du Todo (demande du 4 octobre 2026) : jusqu'ici, seuls "À faire"
   // et "Bac à sable" étaient atteignables depuis le formulaire du haut — "En cours" et "Terminé"
@@ -3371,36 +3368,63 @@
       btn.style.display = 'none';
       const wrap = document.createElement('div');
       wrap.className = 'kanban-quick-add-form';
-      const projLabel = viewProject() ? '' : ` (${projectById(formProject()).label})`;
-      wrap.innerHTML = `<input type="text" class="kanban-quick-add-input" placeholder="Nouvelle étape${escapeHtml(projLabel)}, puis Entrée...">`;
+      const vp = viewProject();
+      wrap.innerHTML = `
+        <input type="text" class="kanban-quick-add-input" placeholder="Nouvelle étape, puis Entrée...">
+        <div class="qa-row">
+          ${vp ? '' : `<select class="qa-project" title="Projet">${PROJECTS.map(p=>`<option value="${p.id}">${escapeHtml(p.label)}</option>`).join('')}</select>`}
+          <select class="qa-category" title="Catégorie"></select>
+          ${status==='done' ? '' : '<input type="date" class="qa-due" title="Deadline (facultative)">'}
+        </div>
+        <div class="qa-hint">Entrée pour ajouter · Échap pour fermer</div>`;
       btn.insertAdjacentElement('beforebegin', wrap);
-      const input = wrap.querySelector('input');
+      const input = wrap.querySelector('.kanban-quick-add-input');
+      const projSel = wrap.querySelector('.qa-project');
+      const catSel = wrap.querySelector('.qa-category');
+      const dueInp = wrap.querySelector('.qa-due');
+      const curProject = ()=> vp || (projSel ? projSel.value : formProject());
+      function fillCats(){
+        const p = curProject();
+        const list = catsOf(p);
+        catSel.innerHTML = list.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+        if(list.some(c=>c.name===quickAddCategory[p])) catSel.value = quickAddCategory[p];
+      }
+      if(projSel){ projSel.value = formProject(); projSel.addEventListener('change', ()=>{ quickAddProject = projSel.value; fillCats(); }); }
+      catSel.addEventListener('change', ()=>{ quickAddCategory[curProject()] = catSel.value; });
+      fillCats();
       input.focus();
       function close(){
         wrap.remove();
         btn.style.display = '';
         btn.classList.remove('is-editing');
       }
-      input.addEventListener('keydown', e=>{
-        if(e.key === 'Enter'){
-          e.preventDefault();
-          const title = input.value.trim();
-          if(!title) return;
-          tasks.push(newTask(title, status, {due:''}));
-          saveTasks();
-          renderTasks();
-          // renderTasks() ne touche pas ce champ (il vit hors de #col-xxx) : on le garde ouvert et
-          // vide pour enchaîner plusieurs ajouts de suite dans la même colonne.
-          input.value = '';
-          input.focus();
-        } else if(e.key === 'Escape'){
-          e.preventDefault();
-          close();
-        }
+      function add(){
+        const title = input.value.trim();
+        if(!title) return;
+        const project = curProject();
+        if(projSel) quickAddProject = project;
+        quickAddCategory[project] = catSel.value;
+        tasks.push(newTask(title, status, {project, category: catSel.value, due: dueInp ? dueInp.value : ''}));
+        saveTasks();
+        renderTasks();
+        // renderTasks() ne touche pas ce formulaire (il vit hors de #col-xxx) : on le garde ouvert,
+        // titre et date vidés, pour enchaîner plusieurs ajouts de suite dans la même colonne.
+        input.value = '';
+        if(dueInp) dueInp.value = '';
+        input.focus();
+      }
+      wrap.addEventListener('keydown', e=>{
+        if(e.key === 'Enter'){ e.preventDefault(); add(); }
+        else if(e.key === 'Escape'){ e.preventDefault(); close(); }
       });
-      input.addEventListener('blur', ()=>{
-        // Petit délai pour laisser un clic sur un autre élément s'exécuter avant de refermer.
-        setTimeout(close, 150);
+      // Ferme quand le focus quitte tout le formulaire (pas en passant du titre à la catégorie ou
+      // à la date) et que rien n'a été tapé ; petit délai pour laisser le nouveau focus s'installer.
+      wrap.addEventListener('focusout', ()=>{
+        setTimeout(()=>{
+          if(!wrap.isConnected || wrap.contains(document.activeElement)) return;
+          if(input.value.trim()) return;
+          close();
+        }, 200);
       });
     });
   }
