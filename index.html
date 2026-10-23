@@ -430,6 +430,9 @@
   .pl-more:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
   .pl-week-buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; justify-content:center;}
   .pl-week-buttons .pl-more{align-self:auto;}
+  /* Centrés sous les 3 colonnes de projets, pas sous toute la page (colonne des semaines + écart). */
+  .pl-vgrid > .pl-week-buttons{margin-left:calc(var(--pl-head, 130px) + 10px);}
+  @media(max-width:640px){ .pl-vgrid > .pl-week-buttons{margin-left:0;} }
   #content-plan .task-card, .pl-card{position:relative;}
   .card-x{position:absolute; top:8px; right:6px; border:none; background:var(--panel); color:var(--ink-soft); font-size:0.72rem; line-height:1; width:22px; height:22px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease, background .12s ease; padding:0; box-shadow:0 0 0 1px rgba(0,0,0,0.06);}
   .task-card:hover .tc-main, .pl-card:hover .tc-main{padding-right:22px;}
@@ -3453,6 +3456,14 @@
     const start = planning.start || DEFAULT_PLANNING_START;
     return {i, from:addDaysKey(start, 7*i), to:addDaysKey(start, 7*i+6)};
   }
+  function isoWeekNumber(key){
+    const [y,m,d] = key.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m-1, d));
+    const day = dt.getUTCDay() || 7;           // lundi = 1 … dimanche = 7
+    dt.setUTCDate(dt.getUTCDate() + 4 - day);  // jeudi de la même semaine
+    const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+    return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
+  }
   function weekIndexOf(key){
     return Math.floor(weeksBetween(planning.start || DEFAULT_PLANNING_START, key) / 7);
   }
@@ -3526,7 +3537,9 @@
     const rows = [];
     // Semaines repliées : on garde quand même visibles leurs étapes non terminées (en retard).
     if(dated.some(t=>t.due < firstDay && t.status!=='done')) rows.push({key:'before', title:'Plus ancien', sub:'étapes non terminées', test:t=>t.due < firstDay && t.status!=='done'});
-    weeks.forEach(w=>rows.push({key:w.from, title: w.i>=0 ? `Semaine ${w.i+1}` : fmtRange(w.from, w.to), sub: w.i>=0 ? fmtRange(w.from, w.to) : (w.i===range.cur-1 ? 'semaine dernière' : ''), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
+    // Numéro de semaine du calendrier (ISO 8601, comme dans les agendas français) plutôt que
+    // Semaine 1 / 2 / 3 (23 octobre 2026).
+    weeks.forEach(w=>rows.push({key:w.from, title:`Semaine ${isoWeekNumber(w.from)}`, sub: fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to, test:t=>t.due>=w.from && t.due<=w.to}));
     if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus loin', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
 
     const sortCards = (a,b)=> (a.status==='done') - (b.status==='done') || (a.due||'').localeCompare(b.due||'');
