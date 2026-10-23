@@ -357,6 +357,11 @@
   .pl-cell.pl-row-insta, .pl-cell.pl-row-roman{background:var(--panel);}
   .pl-row-head.pl-row-insta, .pl-row-head.pl-row-roman{background:var(--panel);}
   .pl-scroll{border-radius:12px;}
+  .pl-card[draggable="true"]{cursor:grab;}
+  .pl-card[draggable="true"]:active{cursor:grabbing;}
+  .pl-card.dragging{opacity:0.35;}
+  .pl-cell.drop-over{background:#E9F1F7 !important; box-shadow:inset 0 0 0 2px var(--lavande);}
+  .pl-col-head.nodate, .pl-cell[data-cell$="|nodate"]{background:var(--gris) !important;}
   /* Plus aucun rond de couleur sur la page Todo ni dans le bas de page (demande du 23 octobre
      2026) : titres de colonnes, groupes de catégories, projets, statut de synchro et de sauvegarde. */
   #content-plan .dot, #content-plan .cat-group-dot, .todo-view-btn .proj-dot,
@@ -3322,7 +3327,7 @@
     const isDone = t.status === 'done';
     const d = shortDue(t);
     const open = String(plOpenId) === String(t.id);
-    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}" data-plcard="${t.id}">
+    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}" data-plcard="${t.id}" ${open?'':'draggable="true"'}>
       <div class="tc-main"><span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}</div>
       ${open ? `<div class="tc-details">
         <div class="tc-fields"><input type="date" class="tc-field pl-due-inline" data-id="${t.id}" value="${t.due||''}" title="Deadline"></div>
@@ -3344,11 +3349,12 @@
     const before = pool.filter(t=>t.due && t.due < start && t.status !== 'done');
     const hasBefore = before.length > 0;
     const after = pool.filter(t=>t.due && t.due > lastDay && t.status !== 'done');
-    const cols = [];
+    // "Sans date" en première colonne (demande du 23 octobre 2026) : c'est le réservoir d'où l'on
+    // fait glisser les étapes vers leur semaine.
+    const cols = [{key:'nodate', title:'Sans date', sub:'à glisser dans une semaine', test:t=>!t.due && (t.status==='todo' || t.status==='doing')}];
     if(hasBefore) cols.push({key:'before', title:'Avant', sub:`avant le ${formatShort(start)}`, test:t=>t.due && t.due < start && t.status!=='done'});
     weeks.forEach(w=>cols.push({key:w.from, title:`Semaine ${w.i+1}`, sub:fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to, test:t=>t.due && t.due>=w.from && t.due<=w.to}));
     if(after.length) cols.push({key:'after', title:'Plus tard', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due && t.due > lastDay && t.status!=='done'});
-    cols.push({key:'nodate', title:'Sans date', sub:'à planifier', test:t=>!t.due && (t.status==='todo' || t.status==='doing')});
 
     const head = `<div class="pl-corner"></div>` + cols.map(c=>`
       <div class="pl-col-head${c.current?' current':''}${c.key==='nodate'?' nodate':''}">
@@ -3397,7 +3403,60 @@
     wirePlanning(el, cols);
   }
 
+  // Glisser-déposer dans le planning : on attrape une carte et on la lâche dans une case de la même
+  // bande (même projet). Dans une semaine : une étape sans date prend le dernier jour de la semaine ;
+  // une étape déjà datée garde son jour de la semaine et se décale d'autant de semaines. Dans
+  // "Sans date" : la deadline est retirée.
+  function plDropDue(t, colKey, cols){
+    if(colKey === 'nodate') return '';
+    const col = cols.find(c=>c.key===colKey);
+    if(!col || !col.week) return null;
+    if(!t.due) return col.week.to;
+    const start = planning.start || DEFAULT_PLANNING_START;
+    const offset = weeksBetween(start, t.due);
+    const oldFrom = addDaysKey(start, Math.floor(offset/7)*7);
+    return addDaysKey(t.due, weeksBetween(oldFrom, col.week.from));
+  }
+  let plDragId = null;
+
   function wirePlanning(el, cols){
+    el.querySelectorAll('.pl-card[draggable="true"]').forEach(card=>{
+      card.addEventListener('dragstart', e=>{
+        plDragId = card.dataset.plcard;
+        try{ e.dataTransfer.setData('text/plain', plDragId); e.dataTransfer.effectAllowed = 'move'; }catch(err){}
+        setTimeout(()=>card.classList.add('dragging'), 0);
+      });
+      card.addEventListener('dragend', ()=>{
+        plDragId = null;
+        card.classList.remove('dragging');
+        el.querySelectorAll('.pl-cell.drop-over').forEach(c=>c.classList.remove('drop-over'));
+      });
+    });
+    el.querySelectorAll('.pl-cell').forEach(cell=>{
+      const [project, colKey] = cell.dataset.cell.split('|');
+      const canDrop = ()=>{
+        const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
+        return t && t.project === project && plDropDue(t, colKey, cols) !== null;
+      };
+      cell.addEventListener('dragover', e=>{
+        if(!canDrop()) return;
+        e.preventDefault();
+        try{ e.dataTransfer.dropEffect = 'move'; }catch(err){}
+        cell.classList.add('drop-over');
+      });
+      cell.addEventListener('dragleave', e=>{ if(!cell.contains(e.relatedTarget)) cell.classList.remove('drop-over'); });
+      cell.addEventListener('drop', e=>{
+        e.preventDefault();
+        cell.classList.remove('drop-over');
+        const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
+        if(!t || t.project !== project) return;
+        const due = plDropDue(t, colKey, cols);
+        if(due === null) return;
+        plDragId = null;
+        if(due !== (t.due||'')){ t.due = due; saveTasks(); }
+        renderTasks();
+      });
+    });
     el.querySelectorAll('.pl-card').forEach(card=>{
       card.addEventListener('click', e=>{
         if(e.target.closest('button, select, input')) return;
