@@ -446,6 +446,11 @@
   @media(hover:none){ .card-check{opacity:0.7;} }
   .task-card:hover .tc-main, .pl-card:hover .tc-main{padding-right:50px !important;}
   .pl-card.is-done .tc-title{text-decoration:line-through; color:var(--ink-soft);}
+  /* ✓ et ✕ toujours visibles sur les cartes du planning (23 octobre 2026). */
+  .pl-card .card-check, .pl-card .card-x{opacity:1;}
+  .pl-card .tc-main{padding-right:50px !important;}
+  .pl-card.is-editing .tc-main{padding-right:0 !important;}
+  .pl-card .tc-due-empty{opacity:0.55;}
   @media(hover:none){ .card-x{opacity:0.7;} }
   .tc-main .tc-title{flex:1;}
   /* 3e projet "Projet" (miel) */
