@@ -455,6 +455,10 @@
   .pl-vcell{min-height:88px;}
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
+  .pl-vcell.addable{cursor:pointer;}
+  .pl-vcell.addable:hover{box-shadow:inset 0 0 0 1px var(--ink-soft);}
+  .pl-vrow.current .pl-vcell.addable:hover{box-shadow:inset 0 0 0 2px rgba(255,255,255,0.6);}
+  .pl-vcell .pl-card{cursor:pointer;}
   .pl-sandbox.drop-over{background:#E9F1F7 !important;}
   @media(max-width:640px){
     .pl-vhead{display:none;}
@@ -3550,12 +3554,12 @@
         // dans planning.goals mais ne sont plus affichés.
         const goal = null;
         const adding = plAddingCell === cellKey;
-        return `<div class="pl-cell pl-vcell pc-bg-${p.id}" data-cell="${cellKey}">
+        return `<div class="pl-cell pl-vcell pc-bg-${p.id}${(r.week || r.later) ? ' addable' : ''}" data-cell="${cellKey}" ${(r.week || r.later) ? 'title="Clique sur le fond pour ajouter une étape"' : ''}>
           <div class="pl-vcell-proj">${escapeHtml(p.label)}</div>
           ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="🎯 Objectif (facultatif)" title="Objectif de la semaine — pour ajouter une étape, utilise « + Ajouter »">` : ''}
           ${items.map(plCardHtml).join('')}
           ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
-                   : ((r.week || r.later) ? `<button type="button" class="pl-add" data-pl-add="${cellKey}">+ Ajouter</button>` : '')}
+                   : ''}
         </div>`;
       }).join('');
       // Semaine entièrement passée (son dernier jour est avant aujourd'hui) : hachurée automatiquement.
@@ -3651,6 +3655,7 @@
     return addDaysKey(t.due, weeksBetween(oldFrom, col.week.from));
   }
   let plDragId = null;
+  let plPendingCommit = null; // ajoute l'étape en cours de saisie (s'il y en a une)
 
   function wirePlanning(el, cols){
     el.querySelectorAll('.pl-card[draggable="true"]').forEach(card=>{
@@ -3749,7 +3754,17 @@
       btn.addEventListener('mousedown', e=>e.preventDefault());
       btn.addEventListener('click', ()=>{ delete planning.targets[btn.dataset.plTargetClear]; plEditingTarget = null; save(); });
     });
-    el.querySelectorAll('[data-pl-add]').forEach(btn=> btn.addEventListener('click', ()=>{ plAddingCell = btn.dataset.plAdd; renderTasks(); }));
+    // Plus de bouton "+ Ajouter" (23 octobre 2026) : un clic sur le fond d'une case ouvre l'ajout.
+    el.querySelectorAll('.pl-vcell.addable').forEach(cell=>{
+      cell.addEventListener('click', e=>{
+        if(e.target.closest('.pl-card, .pl-add-form, button, input, select')) return;
+        if(plAddingCell === cell.dataset.cell) return;
+        // Une étape tapée dans une autre case (sans Entrée) est enregistrée avant de changer de case.
+        if(plPendingCommit && plPendingCommit()) saveTasks();
+        plAddingCell = cell.dataset.cell;
+        renderTasks();
+      });
+    });
     el.querySelectorAll('.pl-add-input').forEach(inp=>{
       const form = inp.closest('.pl-add-form');
       const [project, colKey] = inp.dataset.cell.split('|');
@@ -3767,17 +3782,20 @@
         return true;
       };
       inp.addEventListener('keydown', e=>{
-        if(e.key==='Escape'){ plAddingCell = null; renderTasks(); return; }
+        if(e.key==='Escape'){ inp.value = ''; plPendingCommit = null; plAddingCell = null; renderTasks(); return; }
         if(e.key!=='Enter') return;
         e.preventDefault();
         if(addFromInput()) save(); // plAddingCell reste ouvert : on peut enchaîner les ajouts dans la même case
       });
       // Cliquer ailleurs sans appuyer sur Entrée ajoute quand même l'étape tapée (23 octobre 2026),
       // puis referme le champ.
+      const myCell = inp.dataset.cell;
+      plPendingCommit = addFromInput;
       form.addEventListener('focusout', ()=> setTimeout(()=>{
         if(!form.isConnected || form.contains(document.activeElement)) return;
         const added = addFromInput();
-        plAddingCell = null;
+        // Si un clic a déjà ouvert l'ajout dans une autre case, on ne le referme pas.
+        if(plAddingCell === myCell) plAddingCell = null;
         if(added) saveTasks();
         renderTasks();
       }, 150));
