@@ -404,6 +404,21 @@
   }
   .pl-vrow.past .pl-vlabel{opacity:0.55;}
   .pl-vrow.past .pl-goal, .pl-vrow.past .pl-add{opacity:0.6;}
+  .pl-sandbox-head h3{display:flex; align-items:baseline; gap:8px;}
+  .pl-select-btn{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; font-weight:600; border:1px solid var(--line); background:var(--panel); color:var(--ink-soft); border-radius:8px; padding:4px 10px; cursor:pointer;}
+  .pl-select-btn:hover{color:var(--ink);}
+  .pl-select-bar{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:10px; font-size:0.78rem; color:var(--ink-soft);}
+  .pl-select-bar .sep{flex:1;}
+  .pl-select-bar button{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; font-weight:600; border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:8px; padding:4px 10px; cursor:pointer;}
+  .pl-select-bar button:disabled{opacity:0.45; cursor:default;}
+  .pl-select-bar .pl-move-insta{background:var(--bg-insta); border-color:var(--line-insta); color:var(--proj-insta);}
+  .pl-select-bar .pl-move-roman{background:var(--bg-roman); border-color:var(--line-roman); color:var(--proj-roman);}
+  .pl-card.selectable{cursor:pointer;}
+  .pl-card.selected{box-shadow:0 0 0 2px var(--lavande);}
+  .pl-check{flex:0 0 auto; width:16px; height:16px; border:1.5px solid #CBD5E1; border-radius:4px; background:var(--panel); font-size:0.7rem; line-height:13px; text-align:center; color:#fff; align-self:center;}
+  .pl-card.selected .pl-check{background:var(--lavande); border-color:var(--lavande);}
+  .pl-card.selectable .tc-main{justify-content:flex-start;}
+  .pl-card.selectable .tc-due{margin-left:auto;}
   .pl-sandbox.drop-over{background:#E9F1F7 !important;}
   @media(max-width:640px){
     .pl-vhead{display:none;}
@@ -3396,14 +3411,23 @@
   }
 
   let plOpenId = null;
-  function plCardHtml(t){
+  // Mode sélection du bac à sable (23 octobre 2026) : cocher plusieurs étapes pour changer leur
+  // projet d'un coup (utile pour les anciennes étapes, toutes rangées par défaut dans le roman).
+  let plSelectMode = false;
+  let plSelected = new Set();
+  function plCardHtml(t, opts){
+    const selectable = opts && opts.selectable;
     const isDone = t.status === 'done';
     const d = shortDue(t);
-    const open = String(plOpenId) === String(t.id);
-    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}" data-plcard="${t.id}" ${open?'':'draggable="true"'}>
-      <div class="tc-main"><span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}</div>
+    const open = !selectable && String(plOpenId) === String(t.id);
+    const sel = selectable && plSelected.has(String(t.id));
+    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}${selectable?' selectable':''}${sel?' selected':''}" data-plcard="${t.id}" ${open||selectable?'':'draggable="true"'}>
+      <div class="tc-main">${selectable?`<span class="pl-check">${sel?'✓':''}</span>`:''}<span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}</div>
       ${open ? `<div class="tc-details">
-        <div class="tc-fields"><input type="date" class="tc-field pl-due-inline" data-id="${t.id}" value="${t.due||''}" title="Deadline"></div>
+        <div class="tc-fields">
+          <select class="tc-field pl-proj-inline" data-id="${t.id}" title="Projet">${PROJECTS.map(p=>`<option value="${p.id}" ${p.id===t.project?'selected':''}>${escapeHtml(p.label)}</option>`).join('')}</select>
+          <input type="date" class="tc-field pl-due-inline" data-id="${t.id}" value="${t.due||''}" title="Deadline">
+        </div>
         <div class="tc-actions">
           ${t.due ? `<button type="button" data-pl="prev" data-id="${t.id}" title="Une semaine plus tôt">◀ sem.</button><button type="button" data-pl="next" data-id="${t.id}" title="Une semaine plus tard">sem. ▶</button>` : ''}
           <button type="button" data-pl="done" data-id="${t.id}">${isDone?'↺ À refaire':'✓ Terminé'}</button>
@@ -3433,9 +3457,17 @@
     const sortCards = (a,b)=> (a.status==='done') - (b.status==='done') || (a.due||'').localeCompare(b.due||'');
     const undated = visible.filter(t=>!t.due && t.status !== 'done');
     const sandboxHtml = `<div class="pl-sandbox pl-cell" data-cell="any|nodate">
-      <div class="pl-sandbox-head"><h3>Bac à sable</h3><span class="col-count">${undated.length || ''}</span></div>
-      <div class="pl-sandbox-cards">${undated.length ? undated.map(plCardHtml).join('') : `<div class="empty-msg">Toutes tes étapes ont une date.</div>`}</div>
-      <div class="qa-hint">Glisse une carte dans une semaine pour lui donner une date, ou ramène-la ici pour la retirer.</div>
+      <div class="pl-sandbox-head"><h3>Bac à sable <span class="col-count">${undated.length || ''}</span></h3>
+        ${undated.length ? (plSelectMode ? '' : `<button type="button" class="pl-select-btn" id="plSelectStart">Changer le projet…</button>`) : ''}</div>
+      ${plSelectMode ? `<div class="pl-select-bar">
+        <span>${plSelected.size} sélectionnée${plSelected.size>1?'s':''}</span>
+        <button type="button" id="plSelectAll">${plSelected.size === undated.length ? 'Tout désélectionner' : 'Tout sélectionner'}</button>
+        <span class="sep"></span>
+        ${PROJECTS.map(p=>`<button type="button" class="pl-move-to pl-move-${p.id}" data-move="${p.id}" ${plSelected.size?'':'disabled'}>→ ${escapeHtml(p.label)}</button>`).join('')}
+        <button type="button" id="plSelectCancel">Terminer</button>
+      </div>` : ''}
+      <div class="pl-sandbox-cards">${undated.length ? undated.map(t=>plCardHtml(t, {selectable: plSelectMode})).join('') : `<div class="empty-msg">Toutes tes étapes ont une date.</div>`}</div>
+      ${plSelectMode ? '<div class="qa-hint">Clique sur les cartes à changer, puis choisis leur projet.</div>' : '<div class="qa-hint">Glisse une carte dans une semaine pour lui donner une date, ou ramène-la ici pour la retirer.</div>'}
     </div>`;
 
     const targetsHtml = projs.map(p=>{
@@ -3488,6 +3520,28 @@
       <div class="pl-vgrid">${headRow}${rowsHtml}</div>`;
     const cols = rows.concat([{key:'nodate'}]);
     wirePlanning(el, cols);
+    // Mode sélection
+    const q = id => el.querySelector('#'+id);
+    if(q('plSelectStart')) q('plSelectStart').addEventListener('click', ()=>{ plSelectMode = true; plSelected = new Set(); plOpenId = null; renderTasks(); });
+    if(q('plSelectCancel')) q('plSelectCancel').addEventListener('click', ()=>{ plSelectMode = false; plSelected = new Set(); renderTasks(); });
+    if(q('plSelectAll')) q('plSelectAll').addEventListener('click', ()=>{
+      plSelected = plSelected.size === undated.length ? new Set() : new Set(undated.map(t=>String(t.id)));
+      renderTasks();
+    });
+    el.querySelectorAll('.pl-card.selectable').forEach(card=>{
+      card.addEventListener('click', ()=>{
+        const id = card.dataset.plcard;
+        if(plSelected.has(id)) plSelected.delete(id); else plSelected.add(id);
+        renderTasks();
+      });
+    });
+    el.querySelectorAll('.pl-move-to').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        tasks.forEach(t=>{ if(plSelected.has(String(t.id))) t.project = btn.dataset.move; });
+        plSelected = new Set();
+        saveTasks(); renderTasks();
+      });
+    });
   }
 
   // Glisser-déposer dans le planning : on attrape une carte et on la lâche dans une case de la même
@@ -3548,11 +3602,17 @@
         renderTasks();
       });
     });
-    el.querySelectorAll('.pl-card').forEach(card=>{
+    el.querySelectorAll('.pl-card:not(.selectable)').forEach(card=>{
       card.addEventListener('click', e=>{
         if(e.target.closest('button, select, input')) return;
         plOpenId = String(plOpenId) === card.dataset.plcard ? null : card.dataset.plcard;
         renderTasks();
+      });
+    });
+    el.querySelectorAll('.pl-proj-inline').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        const t = tasks.find(x=>String(x.id)===sel.dataset.id);
+        if(t){ t.project = sel.value; saveTasks(); renderTasks(); }
       });
     });
     el.querySelectorAll('.pl-due-inline').forEach(inp=>{
