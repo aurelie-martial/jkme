@@ -3580,7 +3580,7 @@
     const rowsHtml = rows.map(renderRow).join('');
 
     const pastToggle = (hiddenCount || plShowPast)
-      ? `<button type="button" class="pl-more" id="plTogglePast">${plShowPast ? '▾ Masquer les semaines précédentes' : `▴ Afficher les semaines précédentes (${hiddenCount})`}</button>` : '';
+      ? `<div class="pl-week-buttons"><button type="button" class="pl-more" id="plTogglePast">${plShowPast ? '▾ Masquer les semaines précédentes' : `▴ Afficher les semaines précédentes (${hiddenCount})`}</button></div>` : '';
     // Bloc "Bac à sable" du haut retiré (23 octobre 2026) : toutes les étapes sans date vont dans la
     // ligne "À faire plus tard" en bas.
     el.innerHTML = `
