@@ -311,6 +311,11 @@
   .pl-add-form{display:flex; flex-direction:column; gap:5px;}
   .pl-add-form input, .pl-add-form select{font-family:inherit; font-size:0.76rem; border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--panel); color:var(--ink);}
   .pl-add-form input{border-color:var(--lavande);}
+  /* Plus aucun rond de couleur sur la page Todo ni dans le bas de page (demande du 23 octobre
+     2026) : titres de colonnes, groupes de catégories, projets, statut de synchro et de sauvegarde. */
+  #content-plan .dot, #content-plan .cat-group-dot, .todo-view-btn .proj-dot,
+  .footer-user-bar .dot-sync, .backup-footer .dot-sync{display:none;}
+  .proj-tag::before, .cat-project-head::before{display:none;}
   @media(max-width:640px){ .pl-grid{--pl-head:96px; --pl-col:190px;} .pl-row-head{padding:10px 8px;} .pl-target{font-size:0.64rem;} }
   .status-tag{font-size:0.66rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); background:var(--gris); border-radius:999px; padding:2px 8px;}
   .cat-project-head{font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); margin:14px 0 4px; display:flex; align-items:center; gap:6px;}
