@@ -320,6 +320,7 @@
   .todo-view-btn.active{color:var(--ink); border-bottom-color:var(--ink);}
   .todo-view-btn .count{background:transparent; color:var(--due-late); padding:0; font-size:0.8rem;}
   .todo-toolbar{margin-bottom:16px;}
+  .todo-toolbar:has(#todoViews[style*="none"]){display:none;}
   .todo-legend{display:flex; gap:16px; font-size:0.74rem; color:var(--ink-soft); margin:0 0 16px;}
   .lg-filter{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:7px;
     border:1px solid var(--line); background:var(--panel); color:var(--ink-soft); border-radius:999px; padding:5px 12px 5px 8px; cursor:pointer; transition:all .15s ease;}
@@ -1532,7 +1533,7 @@
       <img src="jkme.jpg" class="badge-mark" alt="JKME Logo">
       <div>
         <h1>JKME</h1>
-        <p>Aider les femmes sous violence psychologique</p>
+        <p>Porter la voix de millions de femmes dans le monde</p>
       </div>
     </div>
   </header>
@@ -3109,10 +3110,9 @@
   function projectById(id){ return PROJECTS.find(p=>p.id===id) || PROJECTS[1]; }
 
   // Vue du Todo mémorisée dans ce navigateur (préférence d'affichage, comme rg_active_tab).
-  let todoView = (function(){
-    try{ const v = localStorage.getItem('rg_todo_view'); if(TODO_VIEWS.some(x=>x.id===v)) return v; }catch(e){}
-    return 'all';
-  })();
+  // Depuis le 23 octobre 2026, seule la vue Planning est gardée (la vue Todo en colonnes est
+  // retirée de l'interface ; son code reste en place mais n'est plus affiché).
+  let todoView = 'planning';
   // Filtre projet : liste des projets affichés (mémorisée dans ce navigateur). Chaque pastille de
   // la légende s'allume / s'éteint ; on ne peut pas tout éteindre (le dernier clic rallume tout).
   let todoFilterSet = (function(){
@@ -3311,6 +3311,8 @@
 
   function renderTodoViews(){
     const el = document.getElementById('todoViews');
+    todoView = 'planning';
+    el.innerHTML = ''; el.style.display = 'none'; if(el.parentElement) el.parentElement.style.display = 'none'; return;
     el.innerHTML = TODO_VIEWS.map(v=>{
       const n = lateCount(tasks) + todayCount(tasks);
       const showCount = n>0 && v.id==='planning';
