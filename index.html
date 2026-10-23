@@ -1510,10 +1510,6 @@
     </div>
 
     <div id="todoPlanning" class="todo-planning" style="display:none"></div>
-
-    <div class="todo-footer">
-      <button type="button" id="manageCatsBtn" class="btn btn-ghost">⚙ Gérer les catégories</button>
-    </div>
   </div>
 
   <!-- CALENDRIER -->
@@ -3177,7 +3173,10 @@
     });
   }
 
-  document.getElementById('manageCatsBtn').addEventListener('click', ()=>{
+  // Plus de catégories dans le Todo (demande du 23 octobre 2026) : une étape n'est rattachée qu'à
+  // son projet (Instagram / Roman graphique). Le champ `category` des étapes existantes est
+  // conservé tel quel dans les données, simplement plus affiché ni demandé.
+  (document.getElementById('manageCatsBtn') || document.createElement('button')).addEventListener('click', ()=>{
     renderCatList();
     document.getElementById('catOverlay').classList.add('active');
   });
@@ -3303,12 +3302,10 @@
       : `<span class="tc-title">${escapeHtml(t.title)}</span>`;
     let details = '';
     if(isOpen){
-      let catOptions = catsOf(t.project);
-      if(!catOptions.some(c=>c.name===t.category)) catOptions = [{id:'orphan-'+t.id, name:t.category}, ...catOptions];
       details = `<div class="tc-details">
         <div class="tc-fields">
-          <select class="tc-field cat-select" data-id="${t.id}" title="Catégorie">
-            ${catOptions.map(c=>`<option value="${escapeHtml(c.name)}" ${c.name===t.category?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}
+          <select class="tc-field proj-select" data-id="${t.id}" title="Projet">
+            ${PROJECTS.map(p=>`<option value="${p.id}" ${p.id===t.project?'selected':''}>${escapeHtml(p.label)}</option>`).join('')}
           </select>
           <input type="date" class="tc-field tc-due-input" data-id="${t.id}" value="${t.due||''}" title="Deadline">
         </div>
@@ -3429,7 +3426,7 @@
           ${isTargetWeek ? `<div class="pl-flag">🏁 Arrivée le ${escapeHtml(formatShort(tg))}</div>` : (countdown!==null ? `<div class="pl-countdown">🏁 J-${countdown} sem.</div>` : '')}
           ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="Objectif de la semaine…">` : ''}
           ${items.map(plCardHtml).join('')}
-          ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"><select class="pl-add-cat">${catsOf(p.id).map(ct=>`<option value="${escapeHtml(ct.name)}" ${ct.name===quickAddCategory[p.id]?'selected':''}>${escapeHtml(ct.name)}</option>`).join('')}</select></div>`
+          ${adding ? `<div class="pl-add-form"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
                    : (c.key!=='before' && c.key!=='after' ? `<button type="button" class="pl-add" data-pl-add="${cellKey}">+</button>` : '')}
         </div>`;
       }).join('');
@@ -3540,21 +3537,18 @@
     el.querySelectorAll('[data-pl-add]').forEach(btn=> btn.addEventListener('click', ()=>{ plAddingCell = btn.dataset.plAdd; renderTasks(); }));
     el.querySelectorAll('.pl-add-input').forEach(inp=>{
       const form = inp.closest('.pl-add-form');
-      const catSel = form.querySelector('.pl-add-cat');
       const [project, colKey] = inp.dataset.cell.split('|');
       const col = cols.find(c=>c.key===colKey);
       inp.focus();
-      catSel.addEventListener('change', ()=>{ quickAddCategory[project] = catSel.value; inp.focus(); });
       inp.addEventListener('keydown', e=>{
         if(e.key==='Escape'){ plAddingCell = null; renderTasks(); return; }
         if(e.key!=='Enter') return;
         e.preventDefault();
         const title = inp.value.trim();
         if(!title) return;
-        quickAddCategory[project] = catSel.value;
         // Une étape ajoutée dans une semaine prend pour deadline le dernier jour de cette semaine.
         const due = col && col.week ? col.week.to : '';
-        tasks.push(newTask(title, 'todo', {project, category: catSel.value, due}));
+        tasks.push(newTask(title, 'todo', {project, due}));
         save(); // plAddingCell reste ouvert : on peut enchaîner les ajouts dans la même case
       });
       form.addEventListener('focusout', ()=> setTimeout(()=>{
@@ -3747,11 +3741,11 @@
         saveTasks(); renderTasks();
       });
     });
-    root.querySelectorAll('.cat-select').forEach(sel=>{
+    root.querySelectorAll('.proj-select').forEach(sel=>{
       sel.addEventListener('change', ()=>{
         const t = tasks.find(x=>String(x.id)===sel.dataset.id);
         if(!t) return;
-        t.category = sel.value;
+        t.project = sel.value;
         saveTasks();
         renderTasks();
       });
@@ -3855,25 +3849,15 @@
         <input type="text" class="kanban-quick-add-input" placeholder="Nouvelle étape, puis Entrée...">
         <div class="qa-row">
           ${vp ? '' : `<select class="qa-project" title="Projet">${PROJECTS.map(p=>`<option value="${p.id}">${escapeHtml(p.label)}</option>`).join('')}</select>`}
-          <select class="qa-category" title="Catégorie"></select>
           ${status==='done' ? '' : '<input type="date" class="qa-due" title="Deadline (facultative)">'}
         </div>
         <div class="qa-hint">Entrée pour ajouter · Échap pour fermer</div>`;
       btn.insertAdjacentElement('beforebegin', wrap);
       const input = wrap.querySelector('.kanban-quick-add-input');
       const projSel = wrap.querySelector('.qa-project');
-      const catSel = wrap.querySelector('.qa-category');
       const dueInp = wrap.querySelector('.qa-due');
       const curProject = ()=> vp || (projSel ? projSel.value : formProject());
-      function fillCats(){
-        const p = curProject();
-        const list = catsOf(p);
-        catSel.innerHTML = list.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
-        if(list.some(c=>c.name===quickAddCategory[p])) catSel.value = quickAddCategory[p];
-      }
-      if(projSel){ projSel.value = formProject(); projSel.addEventListener('change', ()=>{ quickAddProject = projSel.value; fillCats(); }); }
-      catSel.addEventListener('change', ()=>{ quickAddCategory[curProject()] = catSel.value; });
-      fillCats();
+      if(projSel){ projSel.value = formProject(); projSel.addEventListener('change', ()=>{ quickAddProject = projSel.value; }); }
       input.focus();
       function close(){
         wrap.remove();
@@ -3885,8 +3869,7 @@
         if(!title) return;
         const project = curProject();
         if(projSel) quickAddProject = project;
-        quickAddCategory[project] = catSel.value;
-        tasks.push(newTask(title, status, {project, category: catSel.value, due: dueInp ? dueInp.value : ''}));
+        tasks.push(newTask(title, status, {project, due: dueInp ? dueInp.value : ''}));
         saveTasks();
         renderTasks();
         // renderTasks() ne touche pas ce formulaire (il vit hors de #col-xxx) : on le garde ouvert,
