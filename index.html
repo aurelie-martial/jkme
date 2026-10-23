@@ -422,6 +422,12 @@
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
   .pl-vcell.addable{cursor:pointer;}
+  /* Statut "en cours" */
+  .card-doing{flex:0 0 auto; align-self:center; width:13px; height:13px; border-radius:50%; border:1.5px solid #94A3B8; background:transparent; padding:0; cursor:pointer; margin-right:2px;}
+  .card-doing:hover{border-color:var(--lavande);}
+  .card-doing.on{border-color:var(--lavande); background:linear-gradient(90deg, var(--lavande) 50%, transparent 50%);}
+  .pl-card.is-doing{box-shadow:inset 3px 0 0 var(--lavande);}
+  .pl-card .tc-main{gap:8px;}
   /* Téléphone : une case vide se réduit à une fine ligne avec le nom du projet (23 oct. 2026). */
   @media(max-width:640px){
     .pl-vcell.empty{min-height:0 !important; padding:7px 12px; gap:0;}
@@ -3168,8 +3174,11 @@
     else if(d.txt) due = `<span class="tc-due ${d.cls}" data-edit-due="${t.id}" title="Cliquer pour changer la date">${escapeHtml(d.txt)}</span>`;
     else due = `<span class="tc-due tc-due-empty" data-edit-due="${t.id}" title="Ajouter une date">+ date</span>`;
     const tools = `<button type="button" class="card-check" data-done="${t.id}" title="${isDone?'Remettre à faire':'Barrer (terminé)'}" aria-label="Barrer">${isDone?'↺':'✓'}</button><button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button>`;
-    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${editingT||editingD?' is-editing':''}" data-plcard="${t.id}" ${editingT||editingD?'':'draggable="true"'}>
-      <div class="tc-main">${title}${due}${tools}</div>
+    // Rond "en cours" (23 octobre 2026) : vide = à faire, à moitié bleu = en cours ; un clic bascule.
+    const isDoing = t.status === 'doing';
+    const statusDot = isDone ? '' : `<button type="button" class="card-doing${isDoing?' on':''}" data-doing="${t.id}" title="${isDoing?'En cours — cliquer pour repasser à faire':'À faire — cliquer pour passer en cours'}" aria-label="En cours"></button>`;
+    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${isDoing?' is-doing':''}${editingT||editingD?' is-editing':''}" data-plcard="${t.id}" ${editingT||editingD?'':'draggable="true"'}>
+      <div class="tc-main">${statusDot}${title}${due}${tools}</div>
     </div>`;
   }
 
@@ -3485,6 +3494,13 @@
     undoTimer = setTimeout(()=> bar.classList.remove('show'), 5000);
   }
   document.getElementById('content-plan').addEventListener('click', e=>{
+    const dg = e.target.closest('.card-doing');
+    if(dg){
+      e.stopPropagation();
+      const t = tasks.find(x=>String(x.id)===String(dg.dataset.doing));
+      if(t){ t.status = t.status === 'doing' ? 'todo' : 'doing'; saveTasks(); renderTasks(); }
+      return;
+    }
     const c = e.target.closest('.card-check');
     if(c){
       e.stopPropagation();
