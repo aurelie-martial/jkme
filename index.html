@@ -472,6 +472,21 @@
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
   .pl-vcell.addable{cursor:pointer;}
+  /* Séparateur vertical avant la colonne Projet */
+  .pl-vcell.pc-bg-projet, .pl-vproj-projet{position:relative;}
+  .pl-vcell.pc-bg-projet::before, .pl-vproj-projet::before{content:''; position:absolute; left:-6px; top:-6px; bottom:-6px; width:1px; background:#B8C2CF; z-index:1;}
+  .pl-vproj-projet::before{top:0; bottom:-6px;}
+  @media(max-width:640px){ .pl-vcell.pc-bg-projet::before, .pl-vproj-projet::before{display:none;} }
+  /* Tâche barrée dans la semaine en cours : fond blanc atténué, lisible sur le bleu */
+  .pl-vrow.current .pl-card.is-done{opacity:1; background:rgba(255,255,255,0.72) !important; border-color:transparent !important;}
+  .pl-vrow.current .pl-card.is-done .tc-title{color:#64748B;}
+  /* Message d'annulation de suppression */
+  .undo-toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%, 20px); opacity:0; pointer-events:none; transition:all .2s ease;
+    display:flex; align-items:center; gap:14px; background:#334155; color:#fff; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.85rem; font-weight:500;
+    padding:10px 12px 10px 16px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.18); z-index:9999;}
+  .undo-toast.show{opacity:1; transform:translate(-50%, 0); pointer-events:auto;}
+  .undo-toast button{font-family:inherit; font-size:0.82rem; font-weight:700; color:#fff; background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:5px 10px; cursor:pointer;}
+  .undo-toast button:hover{background:rgba(255,255,255,0.28);}
   .pl-vhead{align-items:end;}
   .pl-vhead-btns .pl-week-buttons{width:var(--pl-head, 130px); flex-direction:column; align-items:stretch; gap:6px; margin:0;}
   .pl-vhead-btns .pl-more{width:100%; box-sizing:border-box; font-size:0.68rem; padding:5px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;}
@@ -3427,7 +3442,7 @@
     if(!t.due || t.status==='done') return {txt:'', cls:''};
     const s = dueState(t);
     if(s==='late') return {txt:'En retard', cls:'late'};
-    if(s==='today') return {txt:"Aujourd'hui", cls:'late'};
+    if(s==='today') return {txt:'Today', cls:'late'};
     if(t.due === addDaysKey(todayKeyStr(), 1)) return {txt:'Demain', cls:'soon'};
     return {txt: formatShort(t.due), cls: s==='soon' ? 'soon' : ''};
   }
@@ -3712,6 +3727,10 @@
     if(colKey === 'nodate' || colKey === 'later') return '';
     const col = cols.find(c=>c.key===colKey);
     if(!col || !col.week) return null;
+    // Une tâche non terminée ne peut pas être déposée dans une semaine déjà passée (elle
+    // repartirait aussitôt dans "Plus ancien").
+    const curFrom = planningWeekAt(weekIndexOf(todayKeyStr())).from;
+    if(col.week.to < curFrom && t.status !== 'done') return null;
     if(!t.due) return col.week.to;
     const start = planning.start || DEFAULT_PLANNING_START;
     const offset = weeksBetween(start, t.due);
@@ -3962,6 +3981,30 @@
     });
   }
 
+  // Message "Tâche supprimée · Annuler" pendant 5 secondes après un ✕ (23 octobre 2026).
+  let undoTimer = null;
+  function showUndoDelete(task, index){
+    let bar = document.getElementById('undoToast');
+    if(!bar){
+      bar = document.createElement('div');
+      bar.id = 'undoToast';
+      bar.className = 'undo-toast';
+      document.body.appendChild(bar);
+    }
+    bar.innerHTML = `<span>Tâche supprimée</span><button type="button">Annuler</button>`;
+    bar.classList.add('show');
+    bar.querySelector('button').addEventListener('click', ()=>{
+      if(!tasks.some(t=>String(t.id)===String(task.id))){
+        tasks.splice(Math.min(index, tasks.length), 0, task);
+        saveTasks(); renderTasks();
+      }
+      bar.classList.remove('show');
+      clearTimeout(undoTimer);
+    });
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(()=> bar.classList.remove('show'), 5000);
+  }
+
   // Croix ✕ sur chaque carte (23 octobre 2026) : suppression en un clic, sans confirmation.
   document.getElementById('content-plan').addEventListener('click', e=>{
     // Coche ✓ : barre la tâche (terminée) ou la remet à faire, en un clic.
@@ -3976,6 +4019,8 @@
     if(!x) return;
     e.stopPropagation();
     const id = x.dataset.del;
+    const idx = tasks.findIndex(t=>String(t.id)===String(id));
+    if(idx >= 0) showUndoDelete(tasks[idx], idx);
     tasks = tasks.filter(t=>String(t.id)!==String(id));
     if(String(openTaskId)===String(id)) openTaskId = null;
     if(String(plOpenId)===String(id)) plOpenId = null;
