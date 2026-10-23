@@ -93,15 +93,10 @@
   }
 
   /* ADD TASK FORM */
-  .add-task-form{
-    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; align-items:stretch;
-  }
-  .add-task-form input[type=text], .add-task-form select{
-    font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.84rem;
-    border:1px solid var(--line); border-radius:9px; padding:7px 11px; background:var(--panel); color:var(--ink);
-  }
-  .add-task-form input[type=text]{flex:1; min-width:180px;}
-  .add-task-form .btn{font-size:0.8rem; padding:7px 14px;}
+  
+  
+  
+  
   .btn{
     font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.88rem;
     border:none; border-radius:12px; padding:10px 20px; cursor:pointer;
@@ -114,65 +109,40 @@
   .btn-ghost{background:var(--gris); color:var(--ink); box-shadow:none;}
 
   /* KANBAN */
-  .kanban{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
-  @media(max-width:800px){.kanban{grid-template-columns:1fr;}}
-  .kanban-col{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; min-height:160px;}
-  .kanban-col-sandbox{background:var(--gris); border-style:dashed;}
-  .kanban-sandbox-section{margin-top:16px;}
-  .kanban-sandbox-section #col-sandbox{display:flex; flex-wrap:wrap; gap:10px;}
-  .kanban-sandbox-section #col-sandbox .cat-group-label{flex:1 1 100%; margin:10px 0 0;}
-  .kanban-sandbox-section #col-sandbox .cat-group-label:first-child{margin-top:0;}
-  .kanban-sandbox-section #col-sandbox .task-card{flex:1 1 240px; max-width:340px; margin-bottom:0;}
-  .kanban-sandbox-section #col-sandbox .empty-msg{flex:1 1 100%;}
-  .kanban-col h3{font-family:'Plus Jakarta Sans', sans-serif; margin:0 0 14px; font-weight:600; font-size:1rem; display:flex; align-items:center; gap:8px; color:var(--ink);}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
 
   /* Ajout rapide direct dans une colonne du Todo (voir wireKanbanQuickAdd) : vit hors de #col-xxx,
      qui est entièrement vidé/reconstruit par renderTasks() à chaque changement. */
-  .kanban-quick-add{
-    display:block; width:100%; margin-top:10px; font-family:'Plus Jakarta Sans', sans-serif;
-    font-weight:600; font-size:0.78rem; padding:8px 10px; border:1px dashed var(--line);
-    border-radius:8px; background:transparent; color:var(--ink-soft); cursor:pointer;
-    transition:all .15s ease;
-  }
-  .kanban-quick-add:hover{border-color:var(--lavande); color:var(--lavande); background:var(--gris);}
-  .kanban-quick-add-form{margin-top:10px;}
-  .kanban-quick-add-input{
-    width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.83rem;
-    padding:8px 10px; border:1px solid var(--lavande); border-radius:8px; background:var(--panel);
-    color:var(--ink); box-sizing:border-box;
-  }
-  .kanban-quick-add-input:focus{outline:none; box-shadow:0 0 0 2px rgba(0,0,0,0.06);}
-  .task-card{
-    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px;
-    margin-bottom:10px; box-shadow:none; position:relative; overflow:hidden;
-    animation:fadeIn .3s ease; border-left:4px solid var(--cat-color);
-  }
-  .task-card.is-done{background:var(--gris); border-left-color:var(--ink-soft); opacity:0.72;}
-  .task-card.is-done p{text-decoration:line-through; color:var(--ink-soft);}
-  .task-card.is-done .chip{opacity:0.7;}
+  
+  
+  
+  
+  
+  
+  
+  
+  
   /* Bac à sable : cartes neutres, sans le code couleur par catégorie (pas encore prioritaire). */
-  #col-sandbox .task-card{border-left-color:var(--line); background:transparent;}
-  #col-sandbox .chip{background:var(--gris); color:var(--ink-soft);}
-  #col-sandbox .cat-group-dot{background:var(--ink-soft);}
-  .card-icons{position:absolute; top:10px; right:10px; display:flex; gap:4px;}
-  .card-icons button{
-    border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer;
-    font-size:0.72rem; padding:2px 7px; color:var(--ink-soft); line-height:1.5;
-  }
-  .card-icons button:hover{background:var(--gris); color:var(--ink);}
-  .edit-title-input{
-    display:block; width:100%; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.9rem;
-    border:1px solid var(--ink); border-radius:6px; padding:6px 8px; margin:0 0 10px; padding-right:56px;
-    background:var(--panel); color:var(--ink);
-  }
-  .chip{
-    display:inline-flex; align-items:center; gap:6px; font-size:0.66rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
-    color:var(--ink); background:var(--cat-color); border-radius:999px; padding:3px 10px; margin-bottom:8px;
-    border:none; cursor:pointer; -webkit-appearance:none; appearance:none;
-  }
-  .chip:focus{outline:2px solid var(--ink); outline-offset:1px;}
-  .task-card p{margin:0 0 10px; font-weight:500; font-size:0.9rem; line-height:1.35; color:var(--ink); padding-right:56px;}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   .card-actions{display:flex; gap:6px;}
   .card-actions button{
     border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer;
@@ -181,25 +151,19 @@
   .card-actions button:hover{background:var(--gris); color:var(--ink);}
   .card-actions .del{margin-left:auto;}
   .empty-msg{color:var(--ink-soft); font-weight:500; font-size:0.83rem; font-style:italic; padding:10px 4px;}
-  .cat-group-label{
-    display:flex; align-items:center; gap:6px; font-size:0.66rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:0.08em; color:var(--ink-soft); margin:14px 0 6px; padding-bottom:4px; border-bottom:1px dashed var(--line);
-  }
-  .cat-group-label:first-child{margin-top:0;}
-  .cat-group-dot{width:8px; height:8px; border-radius:50%; background:var(--cat-color); flex:0 0 auto;}
+  
+  
+  
 
 
   /* PROJETS + DEADLINES DU TODO (demande du 23 octobre 2026) */
-  .todo-toolbar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
-  .todo-views{display:inline-flex; gap:4px; background:var(--gris); padding:4px; border-radius:12px; flex-wrap:wrap;}
-  .todo-view-btn{
-    font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-size:0.8rem; border:none; background:transparent;
-    color:var(--ink-soft); padding:7px 14px; border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
-  }
-  .todo-view-btn:hover{color:var(--ink);}
-  .todo-view-btn.active{background:var(--panel); color:var(--ink); box-shadow:var(--shadow-sm);}
-  .todo-view-btn .proj-dot{width:8px; height:8px; border-radius:50%; background:var(--proj-color);}
-  .todo-view-btn .count{font-size:0.68rem; font-weight:700; background:var(--due-late); color:#fff; border-radius:999px; padding:1px 7px;}
+  
+  
+  
+  
+  
+  
+  
   /* Couleurs des projets (23 octobre 2026) : terracotta clair pour Instagram, vert sauge pour le
      roman — deux teintes chaudes/vertes bien distinctes du fond gris-bleu de l'appli. */
   :root{ --due-late:#C4574F; --due-soon:#C98A2E; --proj-insta:#B4664A; --proj-roman:#5E8A68;
@@ -207,189 +171,175 @@
     --proj-projet:#A07A22; --bg-projet:#FBF5E4; --line-projet:#EEDFB6; }
   /* Fond clair propre à chaque projet : blocs en vue Tout, colonnes entières en vue projet, et
      cartes isolées (groupe "En retard", vue Cette semaine). */
-  .proj-block{border-radius:12px; padding:10px 10px 2px; margin:0 -6px 12px;}
-  .proj-block-insta{background:var(--bg-insta); border:1px solid var(--line-insta);}
-  .proj-block-roman{background:var(--bg-roman); border:1px solid var(--line-roman);}
-  .proj-block-title{font-size:0.7rem; font-weight:700; letter-spacing:0.04em; margin:0 0 8px; display:flex; align-items:center; gap:6px;}
-  .proj-block-insta .proj-block-title{color:var(--proj-insta);}
-  .proj-block-roman .proj-block-title{color:var(--proj-roman);}
-  .proj-block .cat-group-label{border-bottom-color:rgba(0,0,0,0.07);}
-  .proj-block .cat-group-label:first-of-type{margin-top:0;}
-  .task-card.pc-insta:not(.is-done){background:var(--bg-insta);}
-  .task-card.pc-roman:not(.is-done){background:var(--bg-roman);}
-  .proj-block .task-card:not(.is-done){background:var(--panel);}
-  #todoBoard.view-insta .kanban-col{background:var(--bg-insta); border-color:var(--line-insta);}
-  #todoBoard.view-roman .kanban-col{background:var(--bg-roman); border-color:var(--line-roman);}
-  #todoBoard.view-insta .task-card:not(.is-done), #todoBoard.view-roman .task-card:not(.is-done){background:var(--panel);}
-  #todoBoard.view-insta .kanban-quick-add, #todoBoard.view-roman .kanban-quick-add{background:rgba(255,255,255,0.6);}
-  .add-task-form input[type=date]{
-    font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.84rem; border:1px solid var(--line);
-    border-radius:9px; padding:6px 9px; background:var(--panel); color:var(--ink);
-  }
-  #todoAlert:empty{display:none;}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   .todo-footer{display:flex; justify-content:center; margin-top:22px;}
   .todo-footer .btn{font-size:0.8rem; padding:7px 14px;}
   /* Formulaire d'ajout dans une colonne : titre + projet (vue Tout) + catégorie + deadline. */
-  .kanban-quick-add-form{display:flex; flex-direction:column; gap:6px;}
-  .qa-row{display:flex; gap:6px; flex-wrap:wrap;}
-  .qa-row select, .qa-row input[type=date]{
-    flex:1 1 110px; min-width:0; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; font-weight:500;
-    border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--panel); color:var(--ink);
-  }
-  .qa-hint{font-size:0.7rem; color:var(--ink-soft);}
-  .todo-alert{
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#FBF1EF; border:1px solid #EFD3CE;
-    color:var(--ink); border-radius:12px; padding:10px 14px; margin-bottom:14px; font-size:0.85rem; font-weight:500;
-  }
-  .todo-alert b{color:var(--due-late);}
-  .todo-alert button{margin-left:auto; font-family:inherit; font-weight:600; font-size:0.78rem; border:1px solid #EFD3CE; background:var(--panel); border-radius:8px; padding:5px 10px; cursor:pointer; color:var(--ink);}
+  
+  
+  
+  
+  
+  
+  
   .card-meta{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:-2px 0 8px;}
-  .proj-tag{display:inline-flex; align-items:center; gap:5px; font-size:0.68rem; font-weight:600; color:var(--ink-soft);}
-  .proj-tag::before{content:''; width:7px; height:7px; border-radius:50%; background:var(--proj-color);}
-  .due-chip{
-    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.72rem; font-weight:600; border:1px solid var(--line);
-    background:var(--panel); color:var(--ink-soft); border-radius:999px; padding:2px 9px; cursor:pointer; line-height:1.5;
-  }
-  .due-chip:hover{border-color:var(--ink-soft); color:var(--ink);}
-  .due-chip.empty{border-style:dashed; opacity:0; transition:opacity .15s ease;}
-  .task-card:hover .due-chip.empty, .due-chip.empty:focus{opacity:1;}
-  @media(hover:none){ .due-chip.empty{opacity:0.7;} }
-  .due-chip.soon{background:#FBF4E8; border-color:#EBD3A8; color:#8A5B12;}
-  .due-chip.late{background:#FBEDEB; border-color:#EBC0BA; color:#9C3B33;}
-  .due-chip.today{background:#FBEDEB; border-color:#EBC0BA; color:#9C3B33;}
+  
+  
+  
+  
+  
+  
+  
+  
+  
   .due-edit{display:inline-flex; gap:4px; align-items:center;}
   .due-edit input{font-family:inherit; font-size:0.75rem; border:1px solid var(--lavande); border-radius:7px; padding:2px 6px; background:var(--panel); color:var(--ink);}
   .due-edit button{font-size:0.7rem; border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:2px 6px; cursor:pointer; color:var(--ink-soft);}
-  .task-card.is-late{border-left-color:var(--due-late);}
-  .cat-group-label.late-label{color:var(--due-late); border-bottom-color:#EBC0BA;}
-  .cat-group-label.late-label .cat-group-dot{background:var(--due-late);}
+  
+  
+  
   /* PLANNING (vue semaine par semaine, remplace "Cette semaine") */
   .pl-settings{display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin-bottom:12px; font-size:0.8rem; font-weight:500; color:var(--ink-soft);}
   .pl-settings label{display:inline-flex; align-items:center; gap:8px;}
   .pl-settings input, .pl-settings select{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; border:1px solid var(--line); border-radius:8px; padding:5px 8px; background:var(--panel); color:var(--ink);}
-  .pl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel);}
-  .pl-grid{display:grid; min-width:max-content;}
-  .pl-corner, .pl-row-head{position:sticky; left:0; z-index:2;}
-  .pl-corner{background:var(--panel); border-bottom:1px solid var(--line); border-right:1px solid var(--line);}
-  .pl-col-head{padding:12px 12px 10px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); background:var(--panel);}
-  .pl-col-head.current{background:#F4F8FB;}
-  .pl-col-head.nodate{background:var(--gris);}
+  
+  
+  
+  
+  
+  
+  
   .pl-col-title{font-weight:700; font-size:0.86rem; color:var(--ink); display:flex; align-items:center; gap:6px;}
   .pl-col-sub{font-size:0.72rem; color:var(--ink-soft); margin-top:2px;}
   .pl-now{font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#fff; background:var(--lavande); border-radius:999px; padding:1px 7px;}
-  .pl-row-head{padding:12px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px;}
-  .pl-row-head.pl-row-insta{background:#F8E9ED;}
-  .pl-row-head.pl-row-roman{background:#E6EEF6;}
-  .pl-row-name{font-weight:700; font-size:0.85rem;}
-  .pl-row-insta .pl-row-name{color:var(--proj-insta);}
-  .pl-row-roman .pl-row-name{color:var(--proj-roman);}
-  .pl-target{font-family:inherit; font-size:0.7rem; font-weight:600; text-align:left; border:1px dashed rgba(0,0,0,0.15); background:rgba(255,255,255,0.6); color:var(--ink-soft); border-radius:8px; padding:4px 7px; cursor:pointer;}
-  .pl-target.set{border-style:solid; color:var(--ink); background:var(--panel);}
+  
+  
+  
+  
+  
+  
+  
+  
   .pl-cell{padding:10px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px; min-height:120px;}
-  .pl-cell.pl-row-insta{background:var(--bg-insta);}
-  .pl-cell.pl-row-roman{background:var(--bg-roman);}
+  
+  
   .pl-cell.current{box-shadow:inset 0 0 0 2px rgba(91,124,153,0.25);}
   .pl-cell.target{box-shadow:inset 0 0 0 2px var(--due-soon);}
-  .pl-flag{font-size:0.72rem; font-weight:700; color:#8A5B12;}
-  .pl-countdown{font-size:0.66rem; font-weight:600; color:var(--ink-soft); text-align:right;}
-  .pl-goal{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.74rem; font-weight:600; font-style:italic; color:var(--ink-soft); border:1px dashed transparent; background:transparent; border-radius:7px; padding:4px 6px; width:100%; box-sizing:border-box;}
-  .pl-goal:not(:placeholder-shown)::before{content:'';}
-  .pl-goal:not(:placeholder-shown){color:var(--lavande);}
-  .pl-goal::placeholder{color:var(--ink-soft); font-weight:500; opacity:0.7;}
-  .pl-goal:hover, .pl-goal:focus{border-color:rgba(0,0,0,0.15); background:rgba(255,255,255,0.7); outline:none;}
+  
+  
+  
+  
+  
+  
+  
   .pl-card{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--cat-color); border-radius:9px; padding:8px 9px;}
-  .pl-card.is-late{border-left-color:var(--due-late);}
+  
   .pl-card.is-done{opacity:0.6;}
   .pl-card.is-done .pl-title{text-decoration:line-through; color:var(--ink-soft);}
   .pl-top{display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:4px;}
   .pl-cat{font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .pl-card .status-tag{font-size:0.58rem; padding:1px 6px; white-space:nowrap;}
+  
   .pl-title{font-size:0.82rem; font-weight:500; line-height:1.3; color:var(--ink); margin-bottom:6px;}
   .pl-actions{display:flex; align-items:center; gap:4px; flex-wrap:wrap;}
-  .pl-actions > button:not(.due-chip){font-size:0.68rem; border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:1px 6px; cursor:pointer; color:var(--ink-soft); line-height:1.5;}
-  .pl-actions > button:not(.due-chip):hover{color:var(--ink); background:var(--gris);}
+  
+  
   .pl-actions .pl-done{margin-left:auto;}
-  .pl-actions .due-chip{font-size:0.66rem; padding:1px 7px;}
-  .pl-card:hover .due-chip.empty, .due-chip.empty.pl-show{opacity:1;}
+  
+  
   .pl-add{font-family:inherit; font-weight:700; font-size:0.85rem; border:1px dashed rgba(0,0,0,0.14); background:rgba(255,255,255,0.5); color:var(--ink-soft); border-radius:8px; padding:3px; cursor:pointer; margin-top:auto;}
   .pl-add:hover{background:var(--panel); color:var(--ink);}
   .pl-add-form{display:flex; flex-direction:column; gap:5px;}
   .pl-add-form input, .pl-add-form select{font-family:inherit; font-size:0.76rem; border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--panel); color:var(--ink);}
   .pl-add-form input{border-color:var(--lavande);}
   /* PISTE A "cartes simples" (23 octobre 2026) : une seule couche, titre + date, fond selon le projet. */
-  .todo-views{background:transparent; padding:0; border-radius:0; gap:22px; border-bottom:1px solid var(--line); display:flex; width:100%;}
-  .todo-view-btn{padding:0 0 10px; border-radius:0; font-size:0.88rem; background:transparent !important; box-shadow:none !important; border-bottom:2px solid transparent; margin-bottom:-1px;}
-  .todo-view-btn.active{color:var(--ink); border-bottom-color:var(--ink);}
-  .todo-view-btn .count{background:transparent; color:var(--due-late); padding:0; font-size:0.8rem;}
-  .todo-toolbar{margin-bottom:16px;}
-  .todo-toolbar:has(#todoViews[style*="none"]){display:none;}
-  .todo-legend{display:flex; gap:16px; font-size:0.74rem; color:var(--ink-soft); margin:0 0 16px;}
-  .lg-filter{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.78rem; font-weight:600; display:inline-flex; align-items:center; gap:7px;
-    border:1px solid var(--line); background:var(--panel); color:var(--ink-soft); border-radius:999px; padding:5px 12px 5px 8px; cursor:pointer; transition:all .15s ease;}
-  .lg-filter b{display:inline-block; width:18px; height:11px; border-radius:4px;}
-  .lg-filter.lg-insta b{background:var(--bg-insta); border:1px solid var(--line-insta);}
-  .lg-filter.lg-roman b{background:var(--bg-roman); border:1px solid var(--line-roman);}
-  .lg-filter.on.lg-insta{background:var(--bg-insta); border-color:var(--line-insta); color:var(--proj-insta);}
-  .lg-filter.on.lg-roman{background:var(--bg-roman); border-color:var(--line-roman); color:var(--proj-roman);}
-  .lg-filter:not(.on){opacity:0.55;}
-  .lg-filter:not(.on) b{filter:grayscale(1);}
-  .todo-legend{gap:8px;}
-  #content-plan .kanban{gap:28px;}
-  #content-plan .kanban-col{background:transparent; border:none; padding:0; min-height:0; box-shadow:none;}
-  #content-plan .kanban-col h3{justify-content:space-between; font-weight:700; font-size:0.95rem; margin-bottom:12px;}
-  .col-count{font-size:0.78rem; font-weight:500; color:var(--ink-soft);}
-  #content-plan .kanban-sandbox-section{margin-top:30px; padding-top:18px; border-top:1px dashed var(--line); border-radius:0;}
-  #content-plan .kanban-sandbox-section #col-sandbox .task-card{flex:0 1 auto; max-width:360px;}
-  #content-plan .task-card, .pl-card{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+   .pl-card{
     border:1px solid var(--line); border-left:1px solid var(--line); border-radius:10px; padding:10px 13px; margin-bottom:8px;
     background:var(--panel); cursor:pointer; animation:none; transition:box-shadow .15s ease;
   }
-  #content-plan .task-card.pc-insta, .pl-card.pc-insta, #col-sandbox .task-card.pc-insta{background:var(--bg-insta); border-color:var(--line-insta);}
-  #content-plan .task-card.pc-roman, .pl-card.pc-roman, #col-sandbox .task-card.pc-roman{background:var(--bg-roman); border-color:var(--line-roman);}
-  #content-plan .task-card:hover, .pl-card:hover{box-shadow:var(--shadow-sm);}
-  #content-plan .task-card.is-done, .pl-card.is-done{opacity:0.55;}
-  #content-plan .task-card.is-done .tc-title, .pl-card.is-done .tc-title{text-decoration:line-through;}
+   .pl-card.pc-insta{background:var(--bg-insta); border-color:var(--line-insta);}
+   .pl-card.pc-roman{background:var(--bg-roman); border-color:var(--line-roman);}
+   .pl-card:hover{box-shadow:var(--shadow-sm);}
+   .pl-card.is-done{opacity:0.55;}
+   .pl-card.is-done .tc-title{text-decoration:line-through;}
   .tc-main{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
   .tc-title{font-size:0.88rem; font-weight:500; line-height:1.35; color:var(--ink);}
   .tc-due{font-size:0.74rem; color:var(--ink-soft); white-space:nowrap;}
   .tc-due.soon{color:#B7791F; font-weight:600;}
   .tc-due.late{color:var(--due-late); font-weight:600;}
-  .tc-details{margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:8px; cursor:default;}
-  .tc-fields{display:flex; gap:6px; flex-wrap:wrap;}
-  .tc-field{flex:1 1 120px; min-width:0; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--panel); color:var(--ink);}
-  .tc-actions{display:flex; gap:5px; flex-wrap:wrap;}
-  .tc-actions button{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.74rem; font-weight:600; border:1px solid var(--line); background:var(--panel); border-radius:7px; padding:3px 9px; cursor:pointer; color:var(--ink-soft);}
-  .tc-actions button:hover{color:var(--ink); background:var(--gris);}
-  .tc-actions .del{margin-left:auto;}
-  #content-plan .edit-title-input{margin:0; padding-right:8px; font-size:0.88rem;}
-  #content-plan .kanban-quick-add{border:none; background:transparent; text-align:left; padding:6px 2px; margin-top:2px; font-size:0.82rem; font-weight:500;}
-  #content-plan .kanban-quick-add:hover{background:transparent; color:var(--ink);}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   #content-plan .empty-msg{padding:6px 2px;}
   .pl-card{margin-bottom:0; padding:8px 10px;}
   .pl-card .tc-title{font-size:0.8rem;}
-  .pl-cell.pl-row-insta, .pl-cell.pl-row-roman{background:var(--panel);}
-  .pl-row-head.pl-row-insta, .pl-row-head.pl-row-roman{background:var(--panel);}
-  .pl-scroll{border-radius:12px;}
+  
+  
+  
   .pl-card[draggable="true"]{cursor:grab;}
   .pl-card[draggable="true"]:active{cursor:grabbing;}
   .pl-card.dragging{opacity:0.35;}
   .pl-cell.drop-over{background:#E9F1F7 !important; box-shadow:inset 0 0 0 2px var(--lavande);}
-  .pl-col-head.nodate, .pl-cell[data-cell$="|nodate"]{background:var(--gris) !important;}
-  #content-plan .task-card[draggable="true"]{cursor:grab;}
-  #content-plan .task-card.dragging{opacity:0.35;}
-  #content-plan .task-card:focus-visible{outline:2px solid var(--lavande); outline-offset:2px;}
-  #content-plan .kanban-col.drop-over h3{color:var(--lavande);}
-  .drop-marker{height:3px; border-radius:2px; background:var(--lavande); margin:-2px 0 6px;}
-  .drop-marker.horizontal{width:3px; height:auto; align-self:stretch; margin:0;}
+   .pl-cell[data-cell$="|nodate"]{background:var(--gris) !important;}
+  
+  
+  
+  
+  
+  
   /* Planning vertical */
-  .pl-settings .pl-target{font-size:0.76rem; padding:5px 10px;}
-  .pl-target.set.pl-target-insta{background:var(--bg-insta); border-color:var(--line-insta); color:var(--proj-insta);}
-  .pl-target.set.pl-target-roman{background:var(--bg-roman); border-color:var(--line-roman); color:var(--proj-roman);}
-  .pl-sandbox{border:1px dashed var(--line); border-radius:12px; padding:14px 16px; margin-bottom:22px; min-height:0; background:var(--panel);}
-  .pl-sandbox-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
-  .pl-sandbox-head h3{margin:0; font-size:0.95rem; font-weight:700; color:var(--ink);}
-  .pl-sandbox-cards{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;}
-  .pl-sandbox-cards .pl-card{flex:0 1 260px;}
+  
+  
+  
+  
+  
+  
+  
+  
   .pl-vgrid{display:flex; flex-direction:column; gap:10px;}
   .pl-vhead, .pl-vrow{display:grid; gap:10px;}
   .pl-vproj{font-size:1rem; font-weight:700; padding:0 4px; text-align:center;} /* +25 % et centrés (23 oct. 2026) */
@@ -407,25 +357,25 @@
     background:repeating-linear-gradient(135deg, rgba(51,65,85,0.07) 0, rgba(51,65,85,0.07) 1px, transparent 1px, transparent 7px), var(--panel) !important;
   }
   .pl-vrow.past .pl-vlabel{opacity:0.55;}
-  .pl-vrow.past .pl-goal, .pl-vrow.past .pl-add{opacity:0.6;}
-  .pl-sandbox-head h3{display:flex; align-items:baseline; gap:8px;}
-  .pl-select-btn{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; font-weight:600; border:1px solid var(--line); background:var(--panel); color:var(--ink-soft); border-radius:8px; padding:4px 10px; cursor:pointer;}
-  .pl-select-btn:hover{color:var(--ink);}
-  .pl-select-bar{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:10px; font-size:0.78rem; color:var(--ink-soft);}
-  .pl-select-bar .sep{flex:1;}
-  .pl-select-bar button{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; font-weight:600; border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:8px; padding:4px 10px; cursor:pointer;}
-  .pl-select-bar button:disabled{opacity:0.45; cursor:default;}
-  .pl-select-bar .pl-move-insta{background:var(--bg-insta); border-color:var(--line-insta); color:var(--proj-insta);}
-  .pl-select-bar .pl-move-roman{background:var(--bg-roman); border-color:var(--line-roman); color:var(--proj-roman);}
-  .pl-card.selectable{cursor:pointer;}
-  .pl-title-inline{flex:0 0 auto !important; width:100%; box-sizing:border-box; font-size:0.82rem !important; font-weight:500;}
-  .tc-actions .del.confirm, .pl-select-bar .pl-bulk-del.confirm{background:#FBEDEB; border-color:#EBC0BA; color:#9C3B33;}
-  .pl-card .tc-actions .del{margin-left:auto;}
-  .pl-card.selected{box-shadow:0 0 0 2px var(--lavande);}
-  .pl-check{flex:0 0 auto; width:16px; height:16px; border:1.5px solid #CBD5E1; border-radius:4px; background:var(--panel); font-size:0.7rem; line-height:13px; text-align:center; color:#fff; align-self:center;}
-  .pl-card.selected .pl-check{background:var(--lavande); border-color:var(--lavande);}
-  .pl-card.selectable .tc-main{justify-content:flex-start;}
-  .pl-card.selectable .tc-due{margin-left:auto;}
+   .pl-vrow.past .pl-add{opacity:0.6;}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   .pl-more{align-self:flex-start; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; font-weight:600; border:1px dashed var(--line); background:transparent; color:var(--ink-soft); border-radius:10px; padding:7px 14px; cursor:pointer;}
   .pl-more:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
   .pl-week-buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; justify-content:center;}
@@ -435,16 +385,16 @@
   .pl-vgrid > .pl-week-buttons{align-items:stretch;}
   .pl-vgrid > .pl-week-buttons .pl-more{width:100%; box-sizing:border-box; font-size:0.68rem; padding:5px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center;}
   @media(max-width:640px){ .pl-vgrid > .pl-week-buttons{width:auto; flex-direction:row;} }
-  #content-plan .task-card, .pl-card{position:relative;}
+   .pl-card{position:relative;}
   .card-x{position:absolute; top:8px; right:6px; border:none; background:var(--panel); color:var(--ink-soft); font-size:0.72rem; line-height:1; width:22px; height:22px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease, background .12s ease; padding:0; box-shadow:0 0 0 1px rgba(0,0,0,0.06);}
-  .task-card:hover .tc-main, .pl-card:hover .tc-main{padding-right:22px;}
-  .task-card:hover .card-x, .pl-card:hover .card-x, .card-x:focus-visible, .task-card:focus .card-x{opacity:1;}
+   .pl-card:hover .tc-main{padding-right:22px;}
+   .pl-card:hover .card-x, .card-x:focus-visible{opacity:1;}
   .card-x:hover{background:var(--gris); color:var(--ink);}
   .card-check{position:absolute; top:8px; right:32px; border:none; background:var(--panel); color:var(--ink-soft); font-size:0.74rem; line-height:1; width:22px; height:22px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease; padding:0; box-shadow:0 0 0 1px rgba(0,0,0,0.06);}
   .card-check:hover{background:#E8F3EC; color:#3F7A52;}
-  .task-card:hover .card-check, .pl-card:hover .card-check, .card-check:focus-visible{opacity:1;}
+   .pl-card:hover .card-check, .card-check:focus-visible{opacity:1;}
   @media(hover:none){ .card-check{opacity:0.7;} }
-  .task-card:hover .tc-main, .pl-card:hover .tc-main{padding-right:50px !important;}
+   .pl-card:hover .tc-main{padding-right:50px !important;}
   .pl-card.is-done .tc-title{text-decoration:line-through; color:var(--ink-soft);}
   /* ✓ et ✕ toujours visibles sur les cartes du planning (23 octobre 2026). */
   .pl-card .card-check, .pl-card .card-x{opacity:1;}
@@ -454,11 +404,11 @@
   @media(hover:none){ .card-x{opacity:0.7;} }
   .tc-main .tc-title{flex:1;}
   /* 3e projet "Projet" (miel) */
-  #content-plan .task-card.pc-projet, .pl-card.pc-projet, #col-sandbox .task-card.pc-projet{background:var(--bg-projet); border-color:var(--line-projet);}
-  .lg-filter.lg-projet b{background:var(--bg-projet); border:1px solid var(--line-projet);}
-  .lg-filter.on.lg-projet{background:var(--bg-projet); border-color:var(--line-projet); color:var(--proj-projet);}
+   .pl-card.pc-projet{background:var(--bg-projet); border-color:var(--line-projet);}
+  
+  
   .pl-vproj-projet, .pc-bg-projet .pl-vcell-proj{color:var(--proj-projet);}
-  .pl-select-bar .pl-move-projet{background:var(--bg-projet); border-color:var(--line-projet); color:var(--proj-projet);}
+  
   /* Semaine en cours ~25 % plus haute */
   .pl-vrow.current .pl-vcell{min-height:110px;}
   /* Semaine en cours mise en avant : fond du même bleu que son titre (23 octobre 2026). */
@@ -472,6 +422,12 @@
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
   .pl-vcell.addable{cursor:pointer;}
+  /* Téléphone : une case vide se réduit à une fine ligne avec le nom du projet (23 oct. 2026). */
+  @media(max-width:640px){
+    .pl-vcell.empty{min-height:0 !important; padding:7px 12px; gap:0;}
+    .pl-vcell.empty::after{display:none !important;}
+    .pl-vrow.current .pl-vcell.empty{min-height:0 !important;}
+  }
   /* Séparateur vertical avant la colonne Projet */
   .pl-vcell.pc-bg-projet, .pl-vproj-projet{position:relative;}
   .pl-vcell.pc-bg-projet::before, .pl-vproj-projet::before{content:''; position:absolute; left:-6px; top:-6px; bottom:-6px; width:1px; background:#B8C2CF; z-index:1;}
@@ -515,7 +471,7 @@
   .pl-draft.pd-projet{background:var(--bg-projet); border-color:var(--line-projet);}
   .pl-draft .pl-add-input, .pl-vrow.current .pl-vcell .pl-draft .pl-add-input{border:none !important; background:transparent !important; box-shadow:none; outline:none; width:100%; box-sizing:border-box; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.8rem; font-weight:500; color:var(--ink); padding:6px 6px;}
   .pl-vrow.current .pl-draft{box-shadow:0 0 0 2px rgba(255,255,255,0.7);}
-  .pl-sandbox.drop-over{background:#E9F1F7 !important;}
+  
   @media(max-width:640px){
     .pl-vhead{display:none;}
     .pl-vrow{grid-template-columns:1fr !important; gap:6px;}
@@ -524,16 +480,15 @@
   }
   /* Plus aucun rond de couleur sur la page Todo ni dans le bas de page (demande du 23 octobre
      2026) : titres de colonnes, groupes de catégories, projets, statut de synchro et de sauvegarde. */
-  #content-plan .dot, #content-plan .cat-group-dot, .todo-view-btn .proj-dot,
+  #content-plan .dot,
   .footer-user-bar .dot-sync, .backup-footer .dot-sync{display:none;}
-  .proj-tag::before, .cat-project-head::before{display:none;}
-  @media(max-width:640px){ .pl-grid{--pl-head:96px; --pl-col:190px;} .pl-row-head{padding:10px 8px;} .pl-target{font-size:0.64rem;} }
-  .status-tag{font-size:0.66rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); background:var(--gris); border-radius:999px; padding:2px 8px;}
-  .cat-project-head{font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); margin:14px 0 4px; display:flex; align-items:center; gap:6px;}
-  .cat-project-head:first-child{margin-top:0;}
-  .cat-project-head::before{content:''; width:8px; height:8px; border-radius:50%; background:var(--proj-color);}
-  #addCatForm{flex-direction:row; flex-wrap:wrap;}
-  #addCatForm select{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.84rem; border:1px solid var(--line); border-radius:8px; padding:8px; background:var(--panel); color:var(--ink);}
+  
+  
+  
+  
+  
+  
+  
   .ev-preview.ev-deadline, .ev-item.ev-deadline{font-weight:600;}
   .tab-btn .tab-alert{font-size:0.62rem; font-weight:700; background:var(--due-late); color:#fff; border-radius:999px; padding:1px 6px; line-height:1.4;}
 
@@ -821,15 +776,15 @@
   }
 
   /* CATEGORY MANAGEMENT */
-  .cat-row{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
-  .cat-row:last-child{border-bottom:none;}
-  .cat-row input[type=color]{width:36px; height:36px; border:1px solid var(--line); border-radius:8px; padding:2px; cursor:pointer; background:var(--panel); flex:0 0 auto;}
-  .cat-row input[type=text]{flex:1; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.88rem; border:1px solid var(--line); border-radius:8px; padding:7px 10px; background:var(--panel); color:var(--ink);}
-  .cat-row .cat-del{border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer; font-weight:600; padding:4px 9px; color:var(--ink-soft); flex:0 0 auto;}
-  .cat-row .cat-del:hover{color:var(--ink); border-color:var(--ink);}
-  #addCatForm{display:flex; gap:8px; align-items:center; margin-top:14px;}
-  #addCatForm input[type=color]{width:44px; height:38px; border:1px solid var(--line); border-radius:8px; padding:2px; cursor:pointer; background:var(--panel); flex:0 0 auto;}
-  #addCatForm input[type=text]{flex:1; font-family:'Plus Jakarta Sans', sans-serif; font-weight:500; font-size:0.88rem; border:1px solid var(--line); border-radius:8px; padding:9px 11px; background:var(--panel); color:var(--ink);}
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   /* LOGIN SCREEN */
   #loginScreen{
@@ -1616,45 +1571,9 @@
     </div>
   </div>
 
-  <!-- TODO -->
+  <!-- TODO : planning par semaine (voir renderPlanning) -->
   <div class="tab-content" id="content-plan">
-    <!-- Sélecteur de projet (demande du 23 octobre 2026) : JKME porte deux projets menés en
-         parallèle, le compte Instagram et le roman graphique, chacun avec ses propres catégories.
-         "Tout" les montre ensemble, "Cette semaine" ne garde que les deadlines des 7 prochains jours. -->
-    <div class="todo-toolbar">
-      <div class="todo-views" id="todoViews"></div>
-    </div>
-    <div id="todoAlert"></div>
-    <div class="todo-legend" id="todoLegend"></div>
-
-
-    <div id="todoBoard">
-      <div class="kanban">
-        <div class="kanban-col">
-          <h3>À faire <span class="col-count" id="count-todo"></span></h3>
-          <div id="col-todo"></div>
-          <button type="button" class="kanban-quick-add" data-status="todo">+ Ajouter</button>
-        </div>
-        <div class="kanban-col">
-          <h3>En cours <span class="col-count" id="count-doing"></span></h3>
-          <div id="col-doing"></div>
-          <button type="button" class="kanban-quick-add" data-status="doing">+ Ajouter</button>
-        </div>
-        <div class="kanban-col">
-          <h3>Terminé <span class="col-count" id="count-done"></span></h3>
-          <div id="col-done"></div>
-          <button type="button" class="kanban-quick-add" data-status="done">+ Ajouter</button>
-        </div>
-      </div>
-
-      <div class="kanban-col kanban-col-sandbox kanban-sandbox-section">
-        <h3>Bac à sable <span class="col-count" id="count-sandbox"></span></h3>
-        <div id="col-sandbox"></div>
-        <button type="button" class="kanban-quick-add" data-status="sandbox">+ Ajouter</button>
-      </div>
-    </div>
-
-    <div id="todoPlanning" class="todo-planning" style="display:none"></div>
+    <div id="todoPlanning" class="todo-planning"></div>
   </div>
 
   <!-- CALENDRIER -->
@@ -2087,20 +2006,6 @@
   </div>
 </div>
 
-<!-- MODAL CATEGORIES -->
-<div class="overlay" id="catOverlay">
-  <div class="modal">
-    <button class="close-x" id="closeCatModal">✕</button>
-    <h3>Catégories</h3>
-    <div id="catList"></div>
-    <form id="addCatForm">
-      <select id="newCatProject" title="Projet"></select>
-      <input type="color" id="newCatColor" value="#6366F1">
-      <input type="text" id="newCatName" placeholder="Nouvelle catégorie" required>
-      <button type="submit" class="btn">+ Ajouter</button>
-    </form>
-  </div>
-</div>
 
 <!-- MODAL AJOUT DE SOUS-ONGLET (Scènes) -->
 <div class="overlay" id="subTabOverlay">
@@ -3051,10 +2956,6 @@
   enableImageEditing(postitContentInput, ()=>{});
   enableDashToBulletList(postitContentInput);
 
-  function getCategoryColor(name){
-    const c = categories.find(x=>x.name===name);
-    return c ? c.color : '#C7CBD1';
-  }
 
   // ---------- RENDER TABS SYSTEM ----------
   const BASE_TABS = [
@@ -3152,96 +3053,45 @@
   enableDashToBulletList(mecanismeContentInput);
 
 
-  // ---------- PROJETS (demande du 23 octobre 2026) ----------
-  // JKME porte deux projets menés en parallèle. Chaque étape (task) et chaque catégorie appartient
-  // à un projet (champ `project`). Les données d'avant cette date n'ont pas ce champ : elles sont
-  // rattachées au roman graphique (leurs catégories par défaut — Scénario, Storyboard... — sont
-  // celles du roman) par migrateTodoData(), sans sauvegarde forcée : le champ est simplement écrit
-  // à la prochaine modification. Les ids des catégories Instagram ajoutées par défaut sont fixes
-  // ('insta-1'...) pour que deux appareils qui migrent chacun de leur côté obtiennent la même chose.
+  // ---------- TODO / PLANNING (refondu le 23 octobre 2026) ----------
+  // L'onglet "Todo" n'affiche plus qu'un planning : une ligne par semaine (numéro ISO du
+  // calendrier), une colonne par projet, une ligne "Plus ancien" (tâches non terminées des
+  // semaines passées) et une ligne fixe "À faire plus tard" (tâches sans date). Une tâche :
+  // {id, title, project, due, status ('todo' | 'doing' | 'done' | 'sandbox'), later, category}.
+  // `category` et `status: 'doing' | 'sandbox'` viennent de l'ancienne vue en colonnes : ils sont
+  // conservés tels quels dans les données mais ne sont plus affichés ni demandés.
   const PROJECTS = [
-    {id:'insta', label:'Instagram', color:'var(--proj-insta)'},
-    {id:'roman', label:'Roman graphique', color:'var(--proj-roman)'},
-    // Étapes générales de JKME, hors Instagram et roman (demande du 23 octobre 2026).
-    {id:'projet', label:'Projet', color:'var(--proj-projet)'}
+    {id:'insta', label:'Instagram'},
+    {id:'roman', label:'Roman graphique'},
+    {id:'projet', label:'Projet'} // étapes générales de JKME, hors Instagram et roman
   ];
-  const DEFAULT_INSTA_CATS = [
-    {id:'insta-1', project:'insta', name:'Stratégie & compte', color:'#9DB4C8'},
-    {id:'insta-2', project:'insta', name:'Idées de posts', color:'#E8C9A0'},
-    {id:'insta-3', project:'insta', name:'Rédaction', color:'#B9D3C2'},
-    {id:'insta-4', project:'insta', name:'Visuels', color:'#E3B7BE'},
-    {id:'insta-5', project:'insta', name:'Voix off / Reels', color:'#C9BFE0'},
-    {id:'insta-6', project:'insta', name:'Publication', color:'#A9CFD8'},
-    {id:'insta-7', project:'insta', name:'Communauté', color:'#D9D2A6'}
-  ];
-  // Deux vues seulement (23 octobre 2026) ; le choix du projet se fait avec le filtre (la légende
-  // Instagram / Roman graphique, cliquable), commun aux deux vues.
-  const TODO_VIEWS = [
-    {id:'all', label:'Vue Todo'},
-    {id:'planning', label:'Vue Planning'}
-  ];
-  function projectById(id){ return PROJECTS.find(p=>p.id===id) || PROJECTS[1]; }
 
-  // Vue du Todo mémorisée dans ce navigateur (préférence d'affichage, comme rg_active_tab).
-  // Depuis le 23 octobre 2026, seule la vue Planning est gardée (la vue Todo en colonnes est
-  // retirée de l'interface ; son code reste en place mais n'est plus affiché).
-  let todoView = 'planning';
-  // Filtre projet : liste des projets affichés (mémorisée dans ce navigateur). Chaque pastille de
-  // la légende s'allume / s'éteint ; on ne peut pas tout éteindre (le dernier clic rallume tout).
-  let todoFilterSet = (function(){
-    try{
-      const v = JSON.parse(localStorage.getItem('rg_todo_filter_set') || 'null');
-      if(Array.isArray(v)){ const ok = v.filter(id=>PROJECTS.some(p=>p.id===id)); if(ok.length) return ok; }
-    }catch(e){}
-    return PROJECTS.map(p=>p.id);
-  })();
-  function viewProject(){ return todoFilterSet.length === 1 ? todoFilterSet[0] : null; }
-  function shownProjects(){ return PROJECTS.filter(p=>todoFilterSet.includes(p.id)); }
-  function renderTodoFilter(){
-    const el = document.getElementById('todoLegend');
-    // Filtre retiré (23 octobre 2026) : les trois projets sont toujours affichés.
-    todoFilterSet = PROJECTS.map(p=>p.id);
-    el.innerHTML = ''; el.style.display = 'none'; return;
-    el.innerHTML = PROJECTS.map(p=>{
-      const on = todoFilterSet.includes(p.id);
-      return `<button type="button" class="lg-filter lg-${p.id}${on?' on':''}" data-filter="${p.id}" aria-pressed="${on}"><b></b>${escapeHtml(p.label)}</button>`;
-    }).join('');
-    el.querySelectorAll('.lg-filter').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const id = btn.dataset.filter;
-        if(todoFilterSet.includes(id)){
-          todoFilterSet = todoFilterSet.filter(x=>x!==id);
-          if(!todoFilterSet.length) todoFilterSet = PROJECTS.map(p=>p.id);
-        } else {
-          todoFilterSet = PROJECTS.map(p=>p.id).filter(x=>x===id || todoFilterSet.includes(x));
-        }
-        try{ localStorage.setItem('rg_todo_filter_set', JSON.stringify(todoFilterSet)); }catch(e){}
-        editingTaskId = null; openTaskId = null;
-        renderTasks();
-      });
-    });
-  }
-
+  // Les tâches d'avant le 23 octobre 2026 n'ont pas de projet : on le déduit de leur catégorie
+  // (les catégories par défaut étaient celles du roman). Rien n'est sauvegardé ici : le champ est
+  // simplement écrit à la prochaine modification.
   function migrateTodoData(){
-    categories.forEach(c=>{ if(!c.project) c.project = 'roman'; });
-    if(!categories.some(c=>c.project==='insta')) categories = categories.concat(DEFAULT_INSTA_CATS.map(c=>({...c})));
     tasks.forEach(t=>{
       if(!t.project){
         const c = categories.find(x=>x.name===t.category);
-        t.project = c ? c.project : 'roman';
+        t.project = (c && c.project) || 'roman';
       }
     });
   }
-  function catsOf(project){ return categories.filter(c=>c.project===project); }
+  // Appelé par renderAll() (ancien sélecteur de catégories) : ne fait plus que la migration.
+  function renderCategorySelect(){ migrateTodoData(); }
 
-  // ---------- DEADLINES ----------
+  // ---------- DATES ----------
   function todayKeyStr(){ const d = new Date(); return fmtKey(d.getFullYear(), d.getMonth(), d.getDate()); }
   function addDaysKey(key, n){
     const [y,m,d] = key.split('-').map(Number);
     const dt = new Date(y, m-1, d+n);
     return fmtKey(dt.getFullYear(), dt.getMonth(), dt.getDate());
   }
-  // 'late' (dépassée), 'today', 'soon' (dans les 3 jours), 'later', ou '' (pas de deadline / terminé)
+  function weeksBetween(fromKey, toKey){ // en jours, malgré le nom historique
+    const [y1,m1,d1] = fromKey.split('-').map(Number), [y2,m2,d2] = toKey.split('-').map(Number);
+    return Math.round((new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / 86400000);
+  }
+  // 'late' (dépassée), 'today', 'soon' (dans les 3 jours), 'later', ou '' (sans date / terminée)
   function dueState(t){
     if(!t.due || t.status==='done') return '';
     const today = todayKeyStr();
@@ -3250,194 +3100,6 @@
     if(t.due <= addDaysKey(today, 3)) return 'soon';
     return 'later';
   }
-  function dueLabel(t){
-    const s = dueState(t);
-    const today = todayKeyStr();
-    if(s==='today') return "Aujourd'hui";
-    if(t.due === addDaysKey(today, 1)) return 'Demain';
-    if(s==='late'){
-      const [y,m,d] = t.due.split('-').map(Number);
-      const [ty,tm,td] = today.split('-').map(Number);
-      const days = Math.round((new Date(ty,tm-1,td) - new Date(y,m-1,d)) / 86400000);
-      return `En retard (${formatShort(t.due)}${days>1?` · ${days} j`:''})`;
-    }
-    return formatShort(t.due);
-  }
-  function lateCount(list){ return list.filter(t=>dueState(t)==='late').length; }
-  function todayCount(list){ return list.filter(t=>dueState(t)==='today').length; }
-
-  // ---------- CATEGORIES ----------
-  // Plus de formulaire en haut du Todo (demande du 23 octobre 2026) : on ajoute une étape
-  // directement dans sa colonne. Le dernier projet / la dernière catégorie choisis y sont retenus
-  // pour enchaîner plusieurs ajouts sans tout resélectionner.
-  let quickAddProject = 'insta';
-  let quickAddCategory = {};
-  function formProject(){ return viewProject() || (todoFilterSet.includes(quickAddProject) ? quickAddProject : todoFilterSet[0]) || 'insta'; }
-  function renderCategorySelect(){ migrateTodoData(); }
-  
-  function renderCatList(){
-    const container = document.getElementById('catList');
-    const vp = viewProject();
-    const shown = vp ? PROJECTS.filter(p=>p.id===vp) : PROJECTS;
-    container.innerHTML = shown.map(p=>{
-      const list = catsOf(p.id);
-      return `<div class="cat-project-head" style="--proj-color:${p.color}">${escapeHtml(p.label)}</div>` +
-        (list.length ? list.map(c => `
-        <div class="cat-row" data-id="${c.id}">
-          <input type="color" class="cat-color-input" value="${c.color}">
-          <input type="text" class="cat-name-input" value="${escapeHtml(c.name)}">
-          <button type="button" class="cat-del" data-id="${c.id}">✕</button>
-        </div>`).join('') : `<div class="modal-empty">Aucune catégorie pour l'instant.</div>`);
-    }).join('');
-    const projSel = document.getElementById('newCatProject');
-    projSel.innerHTML = PROJECTS.map(p=>`<option value="${p.id}">${escapeHtml(p.label)}</option>`).join('');
-    projSel.value = vp || formProject();
-    projSel.style.display = vp ? 'none' : '';
-
-    container.querySelectorAll('.cat-color-input').forEach(inp=>{
-      inp.addEventListener('input', ()=>{
-        const id = inp.closest('.cat-row').dataset.id;
-        const cat = categories.find(c=>String(c.id)===id);
-        if(cat){ cat.color = inp.value; saveCategories(); renderTasks(); }
-      });
-    });
-    container.querySelectorAll('.cat-name-input').forEach(inp=>{
-      inp.addEventListener('change', ()=>{
-        const id = inp.closest('.cat-row').dataset.id;
-        const cat = categories.find(c=>String(c.id)===id);
-        if(!cat) return;
-        const oldName = cat.name;
-        const newName = inp.value.trim() || oldName;
-        if(newName !== oldName){
-          tasks.forEach(t=>{ if(t.category === oldName && t.project === cat.project) t.category = newName; });
-          saveTasks();
-          cat.name = newName;
-          saveCategories();
-          renderCategorySelect();
-          renderTasks();
-        }
-      });
-    });
-    container.querySelectorAll('.cat-del').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        categories = categories.filter(c=>String(c.id)!==btn.dataset.id);
-        saveCategories();
-        renderCatList();
-        renderCategorySelect();
-        renderTasks();
-      });
-    });
-  }
-
-  // Plus de catégories dans le Todo (demande du 23 octobre 2026) : une étape n'est rattachée qu'à
-  // son projet (Instagram / Roman graphique). Le champ `category` des étapes existantes est
-  // conservé tel quel dans les données, simplement plus affiché ni demandé.
-  (document.getElementById('manageCatsBtn') || document.createElement('button')).addEventListener('click', ()=>{
-    renderCatList();
-    document.getElementById('catOverlay').classList.add('active');
-  });
-  document.getElementById('closeCatModal').addEventListener('click', ()=>{
-    document.getElementById('catOverlay').classList.remove('active');
-  });
-  document.getElementById('catOverlay').addEventListener('click', e=>{
-    if(e.target.id === 'catOverlay') e.target.classList.remove('active');
-  });
-  document.getElementById('addCatForm').addEventListener('submit', e=>{
-    e.preventDefault();
-    const name = document.getElementById('newCatName').value.trim();
-    const color = document.getElementById('newCatColor').value;
-    const project = document.getElementById('newCatProject').value || formProject();
-    if(!name) return;
-    categories.push({id: Date.now()+Math.random(), project, name, color});
-    saveCategories();
-    document.getElementById('newCatName').value = '';
-    renderCatList();
-    renderCategorySelect();
-  });
-
-  // ---------- TASKS ----------
-  let editingTaskId = null;
-  let editingDueId = null;
-
-  function getTaskCatColor(t){
-    const c = categories.find(x=>x.name===t.category && x.project===t.project) || categories.find(x=>x.name===t.category);
-    return c ? c.color : '#C7CBD1';
-  }
-
-  function catIndexIn(t){
-    const i = categories.findIndex(c=>c.name===t.category && c.project===t.project);
-    return i===-1 ? categories.length : i;
-  }
-  function projIndex(p){ const i = PROJECTS.findIndex(x=>x.id===p); return i===-1 ? 99 : i; }
-
-  // Les cartes en retard remontent en tête de colonne dans un groupe "En retard" ; le reste est
-  // groupé par projet (en vue "Tout") puis par catégorie. groupKey sert aussi à ▲▼ : on ne
-  // permute que deux cartes du même groupe.
-  // Piste A "cartes simples" (23 octobre 2026) : plus de sous-groupes par catégorie ni de blocs par
-  // projet. Les étapes en retard passent en tête (par date), le reste garde l'ordre manuel (▲▼).
-  function groupKey(t){ return dueState(t)==='late' ? 'late' : 'normal'; }
-  function visibleTasks(){
-    return tasks.filter(t=>todoFilterSet.includes(t.project));
-  }
-  function groupedList(status){
-    const list = visibleTasks().filter(t=>t.status===status);
-    const late = list.filter(t=>groupKey(t)==='late').sort((a,b)=>(a.due||'').localeCompare(b.due||''));
-    return late.concat(list.filter(t=>groupKey(t)!=='late'));
-  }
-
-  function renderTodoViews(){
-    const el = document.getElementById('todoViews');
-    todoView = 'planning';
-    el.innerHTML = ''; el.style.display = 'none'; if(el.parentElement) el.parentElement.style.display = 'none'; return;
-    el.innerHTML = TODO_VIEWS.map(v=>{
-      const n = lateCount(tasks) + todayCount(tasks);
-      const showCount = n>0 && v.id==='planning';
-      return `<button type="button" class="todo-view-btn ${todoView===v.id?'active':''}" data-view="${v.id}">
-        ${escapeHtml(v.label)}${showCount?`<span class="count" title="En retard ou pour aujourd'hui">${n}</span>`:''}
-      </button>`;
-    }).join('');
-    el.querySelectorAll('.todo-view-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        todoView = btn.dataset.view;
-        try{ localStorage.setItem('rg_todo_view', todoView); }catch(e){}
-        editingTaskId = null; editingDueId = null;
-        renderCategorySelect();
-        renderTasks();
-      });
-    });
-  }
-
-  function renderTodoAlert(){
-    const el = document.getElementById('todoAlert');
-    el.innerHTML = ''; return;
-    const pool = visibleTasks();
-    const late = lateCount(pool), today = todayCount(pool);
-    if(!late && !today){ el.innerHTML = ''; return; }
-    const parts = [];
-    if(today) parts.push(`<b>${today}</b> deadline${today>1?'s':''} aujourd'hui`);
-    if(late) parts.push(`<b>${late}</b> en retard`);
-    el.innerHTML = `<div class="todo-alert">⏰ ${parts.join(' · ')}${todoView!=='planning'?'<button type="button" id="todoAlertGo">Voir le planning</button>':''}</div>`;
-    const go = document.getElementById('todoAlertGo');
-    if(go) go.addEventListener('click', ()=>{ document.querySelector('.todo-view-btn[data-view="planning"]').click(); });
-  }
-
-  // Pastille rouge sur l'onglet "Todo" quand une deadline tombe aujourd'hui ou est dépassée :
-  // visible depuis n'importe quel onglet, dès l'ouverture de l'appli.
-  function updateTodoTabBadge(){
-    const btn = document.querySelector('.tab-btn[data-tab="plan"]');
-    if(!btn) return;
-    const old = btn.querySelector('.tab-alert');
-    if(old) old.remove();
-    const n = lateCount(tasks) + todayCount(tasks);
-    if(n>0) btn.insertAdjacentHTML('beforeend', `<span class="tab-alert" title="Deadlines aujourd'hui ou en retard">${n}</span>`);
-  }
-
-  const STATUS_LABELS = {sandbox:'Bac à sable', todo:'À faire', doing:'En cours', done:'Terminé'};
-
-  let focusTaskId = null; // carte à refocaliser après un déplacement au clavier
-  let todoDragId = null;
-  let openTaskId = null; // carte dépliée (catégorie, date, boutons) — une seule à la fois
-
   function shortDue(t){
     if(!t.due || t.status==='done') return {txt:'', cls:''};
     const s = dueState(t);
@@ -3446,63 +3108,11 @@
     if(t.due === addDaysKey(todayKeyStr(), 1)) return {txt:'Demain', cls:'soon'};
     return {txt: formatShort(t.due), cls: s==='soon' ? 'soon' : ''};
   }
-
-  function taskCardHtml(t, opts){
-    const {isFirstInRun=true, isLastInRun=true} = opts || {};
-    const statusOrder = ['sandbox','todo','doing','done'];
-    const isEditing = String(editingTaskId) === String(t.id);
-    const isOpen = isEditing || String(openTaskId) === String(t.id);
-    const idx = statusOrder.indexOf(t.status);
-    const d = shortDue(t);
-    const titleHtml = isEditing
-      ? `<input type="text" class="edit-title-input" data-id="${t.id}" value="${escapeHtml(t.title)}">`
-      : `<span class="tc-title">${escapeHtml(t.title)}</span>`;
-    let details = '';
-    if(isOpen){
-      details = `<div class="tc-details">
-        <div class="tc-fields">
-          <select class="tc-field proj-select" data-id="${t.id}" title="Projet">
-            ${PROJECTS.map(p=>`<option value="${p.id}" ${p.id===t.project?'selected':''}>${escapeHtml(p.label)}</option>`).join('')}
-          </select>
-          <input type="date" class="tc-field tc-due-input" data-id="${t.id}" value="${t.due||''}" title="Deadline">
-        </div>
-        <div class="tc-actions">
-          ${isEditing
-            ? `<button data-act="save-edit" data-id="${t.id}" title="Enregistrer">✓ Enregistrer</button>`
-            : `<button data-act="edit" data-id="${t.id}" title="Renommer">✎</button>`}
-          ${!isFirstInRun ? `<button data-act="up" data-id="${t.id}" title="Monter">▲</button>` : ''}
-          ${!isLastInRun ? `<button data-act="down" data-id="${t.id}" title="Descendre">▼</button>` : ''}
-          ${idx>0 ? `<button data-act="prev" data-id="${t.id}" title="Colonne précédente">◀</button>` : ''}
-          ${idx<statusOrder.length-1 ? `<button data-act="next" data-id="${t.id}" title="Colonne suivante">▶</button>` : ''}
-          <button class="del" data-act="del" data-id="${t.id}" title="Supprimer">✕</button>
-        </div>
-      </div>`;
-    }
-    return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${isOpen ? ' is-open' : ''}" data-card="${t.id}" tabindex="0" ${isOpen ? '' : 'draggable="true"'} title="Glisser pour déplacer · au clavier : flèches ←→ change de colonne, ↑↓ change l'ordre, Entrée ouvre">
-      <div class="tc-main">${titleHtml}${d.txt ? `<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>` : ''}<button type="button" class="card-check" data-done="${t.id}" title="${t.status==='done'?'Remettre à faire':'Barrer (terminé)'}" aria-label="Barrer">${t.status==='done'?'↺':'✓'}</button><button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button></div>
-      ${details}
-    </div>`;
-  }
-
-  // ---------- PLANNING (demande du 23 octobre 2026, remplace la vue "Cette semaine") ----------
-  // Une colonne par semaine (Semaine 1 = semaine de reprise, 7 jours à partir de planning.start),
-  // une bande par projet. Chaque étape se place dans la semaine de sa deadline. Chaque case peut
-  // porter un objectif (planning.goals["projet|début de semaine"]) et chaque projet une date
-  // d'arrivée 🏁 (planning.targets[projet]) pour le rétroplanning. Tout est stocké dans Firestore
-  // avec le reste de l'état (voir __rg_getState / __rg_setState).
-  let plEditingDue = null;   // id de l'étape dont on change la date dans le planning
-  let plAddingCell = null;   // "projet|début de semaine" où un ajout est en cours
-  let plEditingTarget = null; // projet dont on change la date d'arrivée
-
-  // Semaines d'avant la semaine précédente : repliées par défaut ; chaque clic sur "Semaine
-  // précédente" en fait réapparaître une de plus (23 octobre 2026).
-  let plPastShown = 0;
-  // Semaines affichées : par défaut la semaine précédente (hachurée), la semaine en cours et les
-  // 3 suivantes (5 au total), plus celles ajoutées avec "+". Index 0 = Semaine 1 (planning.start) ;
-  // les semaines d'avant ont un index négatif et sont nommées par leurs dates.
-  function planningWeekAt(i){
-    const start = planning.start || DEFAULT_PLANNING_START;
-    return {i, from:addDaysKey(start, 7*i), to:addDaysKey(start, 7*i+6)};
+  function fmtRange(a, b){
+    const [ya,ma,da] = a.split('-').map(Number), [yb,mb,db] = b.split('-').map(Number);
+    const A = new Date(ya,ma-1,da), B = new Date(yb,mb-1,db);
+    const mo = d => d.toLocaleDateString('fr-FR',{month:'short'});
+    return ma===mb ? `${da} – ${db} ${mo(B)}` : `${da} ${mo(A)} – ${db} ${mo(B)}`;
   }
   function isoWeekNumber(key){
     const [y,m,d] = key.split('-').map(Number);
@@ -3512,43 +3122,41 @@
     const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
     return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
   }
+
+  // Pastille rouge sur l'onglet "Todo" : tâches en retard ou pour aujourd'hui.
+  function updateTodoTabBadge(){
+    const btn = document.querySelector('.tab-btn[data-tab="plan"]');
+    if(!btn) return;
+    const old = btn.querySelector('.tab-alert');
+    if(old) old.remove();
+    const n = tasks.filter(t=>{ const s = dueState(t); return s==='late' || s==='today'; }).length;
+    if(n>0) btn.insertAdjacentHTML('beforeend', `<span class="tab-alert" title="Tâches en retard ou pour aujourd'hui">${n}</span>`);
+  }
+
+  function newTask(title, project, due){
+    return {id: Date.now()+Math.random(), title, category:'', status:'todo', project, due: due || ''};
+  }
+
+  // ---------- SEMAINES ----------
+  // Semaines du lundi au dimanche ; index 0 = planning.start (lundi 5 octobre 2026). Par défaut on
+  // affiche la semaine en cours et les 3 suivantes (+ celles ajoutées avec "+ Ajouter une semaine") ;
+  // "Semaine précédente" en déplie une de plus à chaque clic.
+  let plPastShown = 0;
+  function planningWeekAt(i){
+    const start = planning.start || DEFAULT_PLANNING_START;
+    return {i, from:addDaysKey(start, 7*i), to:addDaysKey(start, 7*i+6)};
+  }
   function weekIndexOf(key){
     return Math.floor(weeksBetween(planning.start || DEFAULT_PLANNING_START, key) / 7);
   }
-  function planningRange(){
-    const cur = weekIndexOf(todayKeyStr());
-    const lo = cur; // la semaine précédente est aussi repliée derrière "Semaine précédente" (23 oct. 2026)
-    const hi = cur + 3 + (Number(planning.extraWeeks) || 0);
-    const earliestTask = tasks.filter(t=>t.due && t.status!=='sandbox').reduce((m,t)=>Math.min(m, weekIndexOf(t.due)), lo);
-    const firstHidden = Math.min(0, earliestTask);
-    return {cur, lo, hi, firstHidden};
-  }
-  function fmtRange(a, b){
-    const [ya,ma,da] = a.split('-').map(Number), [yb,mb,db] = b.split('-').map(Number);
-    const A = new Date(ya,ma-1,da), B = new Date(yb,mb-1,db);
-    const mo = d => d.toLocaleDateString('fr-FR',{month:'short'});
-    return ma===mb ? `${da} – ${db} ${mo(B)}` : `${da} ${mo(A)} – ${db} ${mo(B)}`;
-  }
-  function weeksBetween(fromKey, toKey){
-    const [y1,m1,d1] = fromKey.split('-').map(Number), [y2,m2,d2] = toKey.split('-').map(Number);
-    return Math.round((new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / 86400000);
-  }
 
-  let plOpenId = null;
-  // Mode sélection du bac à sable (23 octobre 2026) : cocher plusieurs étapes pour changer leur
-  // projet d'un coup (utile pour les anciennes étapes, toutes rangées par défaut dans le roman).
-  let plDelConfirm = null;      // carte dont la suppression attend un 2e clic de confirmation
-  let plBulkDelConfirm = false; // idem pour la suppression groupée du bac à sable
-  let plSelectMode = false;
-  let plSelected = new Set();
-  // Carte du planning réduite au minimum (23 octobre 2026) : un clic sur le titre le modifie, un
-  // clic sur la date la modifie ; ✓ barre, ✕ supprime ; le projet suit la colonne où l'on dépose.
+  // ---------- CARTE ----------
+  // Un clic sur le titre le modifie, un clic sur la date la modifie ; ✓ barre, ✕ supprime ; on
+  // glisse la carte pour changer de semaine, de projet (colonne) ou d'ordre.
   let plEditTitle = null, plEditDue = null;
-  function plCardHtml(t, opts){
-    const selectable = opts && opts.selectable;
+  function plCardHtml(t){
     const isDone = t.status === 'done';
     const d = shortDue(t);
-    const sel = selectable && plSelected.has(String(t.id));
     const editingT = String(plEditTitle) === String(t.id);
     const editingD = String(plEditDue) === String(t.id);
     const title = editingT
@@ -3559,150 +3167,91 @@
     else if(isDone) due = '';
     else if(d.txt) due = `<span class="tc-due ${d.cls}" data-edit-due="${t.id}" title="Cliquer pour changer la date">${escapeHtml(d.txt)}</span>`;
     else due = `<span class="tc-due tc-due-empty" data-edit-due="${t.id}" title="Ajouter une date">+ date</span>`;
-    const tools = selectable ? '' : `<button type="button" class="card-check" data-done="${t.id}" title="${isDone?'Remettre à faire':'Barrer (terminé)'}" aria-label="Barrer">${isDone?'↺':'✓'}</button><button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button>`;
-    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${selectable?' selectable':''}${sel?' selected':''}${editingT||editingD?' is-editing':''}" data-plcard="${t.id}" ${selectable||editingT||editingD?'':'draggable="true"'}>
-      <div class="tc-main">${selectable?`<span class="pl-check">${sel?'✓':''}</span>`:''}${title}${due}${tools}</div>
+    const tools = `<button type="button" class="card-check" data-done="${t.id}" title="${isDone?'Remettre à faire':'Barrer (terminé)'}" aria-label="Barrer">${isDone?'↺':'✓'}</button><button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button>`;
+    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${editingT||editingD?' is-editing':''}" data-plcard="${t.id}" ${editingT||editingD?'':'draggable="true"'}>
+      <div class="tc-main">${title}${due}${tools}</div>
     </div>`;
   }
 
-  // Disposition verticale (demande du 23 octobre 2026) : un bloc "Bac à sable" en haut avec toutes
-  // les étapes sans date, puis une ligne par semaine (les unes sous les autres, sans scroll
-  // horizontal), avec une case par projet affiché. Les dates d'arrivée 🏁 se règlent dans la barre
-  // du haut ; la semaine qui la contient est marquée dans la case du projet.
+  // ---------- RENDU DU PLANNING ----------
+  let plAddingCell = null;     // "projet|clé de ligne" où un ajout est en cours
+  let plPendingCommit = null;  // ajoute l'étape en cours de saisie (s'il y en a une)
+  let plDragId = null;
+
   function renderPlanning(){
     const el = document.getElementById('todoPlanning');
-    const start = planning.start || DEFAULT_PLANNING_START;
-    const range = planningRange();
-    const from = range.lo - plPastShown;
-    const weeks = [];
-    for(let i=from; i<=range.hi; i++) weeks.push(planningWeekAt(i));
-    const firstDay = weeks[0].from;
-    const lastDay = weeks[weeks.length-1].to;
-    const hiddenCount = Math.max(0, from - range.firstHidden);
     const today = todayKeyStr();
-    const projs = shownProjects();
-    const visible = tasks.filter(t=>projs.some(p=>p.id===t.project));
-    const dated = visible.filter(t=>t.due && t.status !== 'sandbox');
-    const rows = [];
-    // Toute tâche non terminée d'une semaine passée est rangée dans "Plus ancien", juste au-dessus
-    // de la semaine en cours (23 octobre 2026) ; les semaines passées ne gardent que les tâches
-    // terminées (barrées). Numéros de semaine du calendrier (ISO 8601).
-    const curFrom = planningWeekAt(range.cur).from;
-    const weekRow = w=>({key:w.from, title:`Semaine ${isoWeekNumber(w.from)}`, sub: fmtRange(w.from, w.to), week:w, current: today>=w.from && today<=w.to,
+    const cur = weekIndexOf(today);
+    const from = cur - plPastShown;
+    const hi = cur + 3 + (Number(planning.extraWeeks) || 0);
+    const weeks = [];
+    for(let i=from; i<=hi; i++) weeks.push(planningWeekAt(i));
+    const curFrom = planningWeekAt(cur).from;
+    const lastDay = weeks[weeks.length-1].to;
+    const dated = tasks.filter(t=>t.due && t.status !== 'sandbox');
+
+    // Lignes : semaines passées dépliées (tâches terminées seulement), "Plus ancien" (tâches non
+    // terminées des semaines passées), semaine en cours et suivantes, "Plus loin" si besoin.
+    const weekRow = w=>({key:w.from, title:`Semaine ${isoWeekNumber(w.from)}`, sub: fmtRange(w.from, w.to), week:w,
+      current: today>=w.from && today<=w.to, past: w.to < today,
       test: w.to < curFrom ? (t=>t.due>=w.from && t.due<=w.to && t.status==='done') : (t=>t.due>=w.from && t.due<=w.to)});
+    const rows = [];
     weeks.filter(w=>w.to < curFrom).forEach(w=>rows.push(weekRow(w)));
     if(dated.some(t=>t.due < curFrom && t.status!=='done')) rows.push({key:'before', title:'Plus ancien', sub:'non terminées', test:t=>t.due < curFrom && t.status!=='done'});
     weeks.filter(w=>w.to >= curFrom).forEach(w=>rows.push(weekRow(w)));
     if(dated.some(t=>t.due > lastDay && t.status!=='done')) rows.push({key:'after', title:'Plus loin', sub:`après le ${formatShort(lastDay)}`, test:t=>t.due > lastDay && t.status!=='done'});
-
-    // Ordre manuel (glisser-déposer, 23 octobre 2026) : l'ordre du tableau tasks, tâches barrées en bas.
-    const sortCards = (a,b)=> (a.status==='done') - (b.status==='done');
-    // Bac à sable = étapes sans date qui ne sont pas rangées dans "À faire plus tard".
-    const undated = visible.filter(t=>!t.due && !t.later && t.status !== 'done');
-    // Ligne fixe "À faire plus tard" (23 octobre 2026), tout en bas : étapes à traiter un jour,
-    // sans date (champ t.later).
     const laterRow = {key:'later', title:'À faire plus tard', sub:'sans date', later:true};
-    const sandboxHtml = `<div class="pl-sandbox pl-cell" data-cell="any|nodate">
-      <div class="pl-sandbox-head"><h3>Bac à sable <span class="col-count">${undated.length || ''}</span></h3>
-        ${undated.length ? (plSelectMode ? '' : `<button type="button" class="pl-select-btn" id="plSelectStart">Sélectionner…</button>`) : ''}</div>
-      ${plSelectMode ? `<div class="pl-select-bar">
-        <span>${plSelected.size} sélectionnée${plSelected.size>1?'s':''}</span>
-        <button type="button" id="plSelectAll">${plSelected.size === undated.length ? 'Tout désélectionner' : 'Tout sélectionner'}</button>
-        <span class="sep"></span>
-        ${PROJECTS.map(p=>`<button type="button" class="pl-move-to pl-move-${p.id}" data-move="${p.id}" ${plSelected.size?'':'disabled'}>→ ${escapeHtml(p.label)}</button>`).join('')}
-        <button type="button" id="plBulkDelete" class="pl-bulk-del${plBulkDelConfirm?' confirm':''}" ${plSelected.size?'':'disabled'}>✕ Supprimer</button>
-        <button type="button" id="plSelectCancel">Terminer</button>
-      </div>` : ''}
-      <div class="pl-sandbox-cards">${undated.length ? undated.map(t=>plCardHtml(t, {selectable: plSelectMode})).join('') : `<div class="empty-msg">Toutes tes étapes ont une date.</div>`}</div>
-      ${plSelectMode ? '<div class="qa-hint">Clique sur les cartes à modifier, puis change leur projet ou supprime-les.</div>' : ''}
-    </div>`;
 
-    const gridCols = `var(--pl-head, 130px) ${projs.map(p=>p.id==='projet' ? 'minmax(0, 0.6fr)' : 'minmax(0, 1fr)').join(' ')}`;
-    // Le bouton "Semaine précédente" vit dans la 1re case de la ligne des titres (pas d'espace en plus).
-    const headRow = () => `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div class="pl-vhead-btns">${pastToggle}</div>${projs.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
+    // Ordre manuel (celui du tableau tasks), tâches barrées en bas.
+    const sortCards = (a,b)=> (a.status==='done') - (b.status==='done');
+    const gridCols = `var(--pl-head, 130px) ${PROJECTS.map(p=>p.id==='projet' ? 'minmax(0, 0.6fr)' : 'minmax(0, 1fr)').join(' ')}`;
+
     const renderRow = r=>{
-      const cells = projs.map(p=>{
+      const cells = PROJECTS.map(p=>{
         const items = r.later
-          ? visible.filter(t=>t.project===p.id && !t.due && (t.status!=='done' || t.later)).sort(sortCards)
+          ? tasks.filter(t=>t.project===p.id && !t.due && (t.status!=='done' || t.later)).sort(sortCards)
           : dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
         const cellKey = `${p.id}|${r.key}`;
-        // Champ "Objectif de la semaine" retiré (23 octobre 2026) : les objectifs déjà saisis restent
-        // dans planning.goals mais ne sont plus affichés.
-        const goal = null;
-        const adding = plAddingCell === cellKey;
-        return `<div class="pl-cell pl-vcell pc-bg-${p.id}${(r.week || r.later) ? ' addable' : ''}" data-cell="${cellKey}" ${(r.week || r.later) ? 'title="Clique sur le fond pour ajouter une étape"' : ''}>
+        const addable = !!(r.week || r.later);
+        return `<div class="pl-cell pl-vcell pc-bg-${p.id}${addable ? ' addable' : ''}${items.length || plAddingCell === cellKey ? '' : ' empty'}" data-cell="${cellKey}" ${addable ? 'title="Clique sur le fond pour ajouter une étape"' : ''}>
           <div class="pl-vcell-proj">${escapeHtml(p.label)}</div>
-          ${goal!==null ? `<input type="text" class="pl-goal" data-cell="${cellKey}" value="${escapeHtml(goal)}" placeholder="🎯 Objectif (facultatif)" title="Objectif de la semaine — pour ajouter une étape, utilise « + Ajouter »">` : ''}
           ${items.map(plCardHtml).join('')}
-          ${adding ? `<div class="pl-add-form pl-draft pd-${p.id}"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>`
-                   : ''}
+          ${plAddingCell === cellKey ? `<div class="pl-add-form pl-draft pd-${p.id}"><input type="text" class="pl-add-input" data-cell="${cellKey}" placeholder="Nouvelle étape, puis Entrée"></div>` : ''}
         </div>`;
       }).join('');
-      // Semaine entièrement passée (son dernier jour est avant aujourd'hui) : hachurée automatiquement.
-      const isPast = r.week ? r.week.to < today : false; // "Plus ancien" reste à traiter : pas hachuré
-      return `<div class="pl-vrow${r.week?' is-week':''}${r.current?' current':''}${isPast?' past':''}${r.later?' later':''}" style="grid-template-columns:${gridCols}">
+      return `<div class="pl-vrow${r.week?' is-week':''}${r.current?' current':''}${r.past?' past':''}${r.later?' later':''}" style="grid-template-columns:${gridCols}">
         <div class="pl-vlabel"><div class="pl-col-title">${escapeHtml(r.title)}</div><div class="pl-col-sub">${escapeHtml(r.sub)}</div>${r.current?'<span class="pl-now">en cours</span>':''}</div>
         ${cells}
       </div>`;
     };
-    const rowsHtml = rows.map(renderRow).join('');
 
-    const pastToggle = `<div class="pl-week-buttons">
+    const pastButtons = `<div class="pl-week-buttons">
         <button type="button" class="pl-more" id="plTogglePast">▴ Semaine précédente</button>
         ${plPastShown > 0 ? `<button type="button" class="pl-more" id="plHidePast">▾ Masquer</button>` : ''}
       </div>`;
-    // Bloc "Bac à sable" du haut retiré (23 octobre 2026) : toutes les étapes sans date vont dans la
-    // ligne "À faire plus tard" en bas.
+    const headRow = `<div class="pl-vhead" style="grid-template-columns:${gridCols}"><div class="pl-vhead-btns">${pastButtons}</div>${PROJECTS.map(p=>`<div class="pl-vproj pl-vproj-${p.id}">${escapeHtml(p.label)}</div>`).join('')}</div>`;
+
     el.innerHTML = `
-      <div class="pl-vgrid">${headRow()}${rowsHtml}
+      <div class="pl-vgrid">${headRow}${rows.map(renderRow).join('')}
         <div class="pl-week-buttons">
-          <button type="button" class="pl-more pl-add-week" id="plAddWeek">+ Ajouter une semaine</button>
+          <button type="button" class="pl-more" id="plAddWeek">+ Ajouter une semaine</button>
           ${(Number(planning.extraWeeks)||0) > 0 ? `<button type="button" class="pl-more" id="plRemoveWeek" title="Retirer la dernière semaine ajoutée">− Retirer une semaine</button>` : ''}
         </div>
         ${renderRow(laterRow)}
       </div>`;
+
     el.querySelector('#plAddWeek').addEventListener('click', ()=>{ planning.extraWeeks = (Number(planning.extraWeeks)||0) + 1; saveTasks(); renderTasks(); });
     if(el.querySelector('#plRemoveWeek')) el.querySelector('#plRemoveWeek').addEventListener('click', ()=>{ planning.extraWeeks = Math.max(0, (Number(planning.extraWeeks)||0) - 1); saveTasks(); renderTasks(); });
     el.querySelector('#plTogglePast').addEventListener('click', ()=>{ plPastShown++; renderTasks(); });
     if(el.querySelector('#plHidePast')) el.querySelector('#plHidePast').addEventListener('click', ()=>{ plPastShown = 0; renderTasks(); });
-    const cols = rows.concat([{key:'nodate'}, laterRow]);
+
+    wirePlanning(el, rows.concat([laterRow]), curFrom);
     requestAnimationFrame(adjustCurrentWeekHeight);
-    wirePlanning(el, cols);
-    // Mode sélection
-    const q = id => el.querySelector('#'+id);
-    if(q('plSelectStart')) q('plSelectStart').addEventListener('click', ()=>{ plSelectMode = true; plSelected = new Set(); plOpenId = null; renderTasks(); });
-    if(q('plSelectCancel')) q('plSelectCancel').addEventListener('click', ()=>{ plSelectMode = false; plSelected = new Set(); plBulkDelConfirm = false; renderTasks(); });
-    if(q('plBulkDelete')) q('plBulkDelete').addEventListener('click', ()=>{
-      if(!plSelected.size) return;
-      tasks = tasks.filter(t=>!plSelected.has(String(t.id)));
-      plSelected = new Set(); plBulkDelConfirm = false;
-      saveTasks(); renderTasks();
-    });
-    if(q('plSelectAll')) q('plSelectAll').addEventListener('click', ()=>{
-      plSelected = plSelected.size === undated.length ? new Set() : new Set(undated.map(t=>String(t.id)));
-      plBulkDelConfirm = false;
-      renderTasks();
-    });
-    el.querySelectorAll('.pl-card.selectable').forEach(card=>{
-      card.addEventListener('click', ()=>{
-        const id = card.dataset.plcard;
-        if(plSelected.has(id)) plSelected.delete(id); else plSelected.add(id);
-        plBulkDelConfirm = false;
-        renderTasks();
-      });
-    });
-    el.querySelectorAll('.pl-move-to').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        tasks.forEach(t=>{ if(plSelected.has(String(t.id))) t.project = btn.dataset.move; });
-        plSelected = new Set();
-        saveTasks(); renderTasks();
-      });
-    });
   }
 
   // La semaine en cours fait 25 % de plus que la plus haute des autres semaines (mesurée après
-  // affichage, donc selon leur contenu réel). Recalculé à chaque rendu, au redimensionnement et
-  // quand on revient sur l'onglet Todo (le planning caché n'a pas de hauteur mesurable).
+  // affichage). Recalculé à chaque rendu, au redimensionnement et au retour sur l'onglet Todo (un
+  // planning caché n'a pas de hauteur mesurable).
   function adjustCurrentWeekHeight(){
     const el = document.getElementById('todoPlanning');
     if(!el || !el.offsetParent) return;
@@ -3719,28 +3268,21 @@
     if(e.target.closest('.tab-btn[data-tab="plan"]')) requestAnimationFrame(adjustCurrentWeekHeight);
   });
 
-  // Glisser-déposer dans le planning : on attrape une carte et on la lâche dans une case de la même
-  // bande (même projet). Dans une semaine : une étape sans date prend le dernier jour de la semaine ;
-  // une étape déjà datée garde son jour de la semaine et se décale d'autant de semaines. Dans
-  // "Sans date" : la deadline est retirée.
-  function plDropDue(t, colKey, cols){
-    if(colKey === 'nodate' || colKey === 'later') return '';
-    const col = cols.find(c=>c.key===colKey);
-    if(!col || !col.week) return null;
-    // Une tâche non terminée ne peut pas être déposée dans une semaine déjà passée (elle
-    // repartirait aussitôt dans "Plus ancien").
-    const curFrom = planningWeekAt(weekIndexOf(todayKeyStr())).from;
-    if(col.week.to < curFrom && t.status !== 'done') return null;
-    if(!t.due) return col.week.to;
-    const start = planning.start || DEFAULT_PLANNING_START;
-    const offset = weeksBetween(start, t.due);
-    const oldFrom = addDaysKey(start, Math.floor(offset/7)*7);
-    return addDaysKey(t.due, weeksBetween(oldFrom, col.week.from));
+  // Date que prend une tâche déposée dans une ligne ; null = dépôt refusé. Semaine : une tâche sans
+  // date prend le dernier jour de la semaine, une tâche datée garde son jour et change de semaine.
+  // "À faire plus tard" : plus de date. Pas de tâche non terminée dans une semaine passée.
+  function plDropDue(t, rowKey, rows, curFrom){
+    if(rowKey === 'later') return '';
+    const row = rows.find(r=>r.key===rowKey);
+    if(!row || !row.week) return null;
+    if(row.week.to < curFrom && t.status !== 'done') return null;
+    if(!t.due) return row.week.to;
+    const oldFrom = planningWeekAt(weekIndexOf(t.due)).from;
+    return addDaysKey(t.due, weeksBetween(oldFrom, row.week.from));
   }
-  let plDragId = null;
-  let plPendingCommit = null; // ajoute l'étape en cours de saisie (s'il y en a une)
 
-  function wirePlanning(el, cols){
+  function wirePlanning(el, rows, curFrom){
+    // --- glisser-déposer : semaine, projet (colonne) et ordre dans la case ---
     el.querySelectorAll('.pl-card[draggable="true"]').forEach(card=>{
       card.addEventListener('dragstart', e=>{
         plDragId = card.dataset.plcard;
@@ -3754,18 +3296,15 @@
         el.querySelectorAll('.pl-cell.drop-over').forEach(c=>c.classList.remove('drop-over'));
       });
     });
-    el.querySelectorAll('.pl-cell').forEach(cell=>{
-      const [project, colKey] = cell.dataset.cell.split('|');
-      const canDrop = ()=>{
-        const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
-        return t && plDropDue(t, colKey, cols) !== null;
-      };
-      // Carte devant laquelle on dépose (selon la hauteur du pointeur), null = en fin de case.
+    el.querySelectorAll('.pl-vcell').forEach(cell=>{
+      const [project, rowKey] = cell.dataset.cell.split('|');
+      const dragged = ()=> plDragId && tasks.find(x=>String(x.id)===String(plDragId));
       const beforeCard = y => [...cell.querySelectorAll('.pl-card:not(.dragging)')].find(c=>{
         const r = c.getBoundingClientRect(); return y < r.top + r.height/2;
       }) || null;
       cell.addEventListener('dragover', e=>{
-        if(!canDrop()) return;
+        const t = dragged();
+        if(!t || plDropDue(t, rowKey, rows, curFrom) === null) return;
         e.preventDefault();
         try{ e.dataTransfer.dropEffect = 'move'; }catch(err){}
         cell.classList.add('drop-over');
@@ -3776,8 +3315,7 @@
         else {
           const cards = cell.querySelectorAll('.pl-card:not(.dragging)');
           const last = cards[cards.length-1];
-          const anchor = last ? last.nextSibling : null;
-          if(last){ if(marker.previousSibling !== last) cell.insertBefore(marker, anchor); }
+          if(last){ if(marker.previousSibling !== last) cell.insertBefore(marker, last.nextSibling); }
           else if(marker.parentNode !== cell) cell.appendChild(marker);
         }
       });
@@ -3789,15 +3327,17 @@
       cell.addEventListener('drop', e=>{
         e.preventDefault();
         cell.classList.remove('drop-over');
-        const t = plDragId && tasks.find(x=>String(x.id)===String(plDragId));
+        const t = dragged();
         if(!t) return;
-        // Nouvelle position dans l'ordre manuel : juste avant la carte visée, sinon après la
-        // dernière carte de la case.
+        const due = plDropDue(t, rowKey, rows, curFrom);
+        if(due === null) return;
+        plDragId = null;
+        // Nouvelle place dans l'ordre manuel : avant la carte visée, sinon après la dernière carte.
         const b = beforeCard(e.clientY);
         const beforeId = b ? b.dataset.plcard : null;
         const cellIds = [...cell.querySelectorAll('.pl-card:not(.dragging)')].map(c=>c.dataset.plcard);
-        const reorder = ()=>{
-          if(String(beforeId) === String(t.id)) return false;
+        let changed = false;
+        if(String(beforeId) !== String(t.id)){
           const before = beforeId ? tasks.find(x=>String(x.id)===String(beforeId)) : null;
           tasks = tasks.filter(x=>x!==t);
           if(before) tasks.splice(tasks.indexOf(before), 0, t);
@@ -3805,20 +3345,13 @@
             const idxs = cellIds.map(id=>tasks.findIndex(x=>String(x.id)===String(id))).filter(i=>i>=0);
             if(idxs.length) tasks.splice(Math.max(...idxs)+1, 0, t); else tasks.push(t);
           }
-          return true;
-        };
-        const due = plDropDue(t, colKey, cols);
-        if(due === null) return;
-        plDragId = null;
-        const later = colKey === 'later';
-        // Déposée dans la colonne d'un autre projet : elle en prend le projet (et donc la couleur).
-        const newProject = project !== 'any' ? project : t.project;
-        let changed = reorder();
-        if(due !== (t.due||'') || later !== !!t.later || newProject !== t.project){
-          t.project = newProject;
+          changed = true;
+        }
+        const later = rowKey === 'later';
+        if(due !== (t.due||'') || later !== !!t.later || project !== t.project){
+          t.project = project; // déposée dans une autre colonne : elle prend ce projet (et sa couleur)
           t.due = due;
           t.later = later;
-          // une idée qu'on planifie (ou qu'on garde pour plus tard) devient une étape à faire
           if((due || later) && t.status === 'sandbox') t.status = 'todo';
           changed = true;
         }
@@ -3826,6 +3359,8 @@
         renderTasks();
       });
     });
+
+    // --- modifier le titre / la date directement sur la carte ---
     el.querySelectorAll('[data-edit-title]').forEach(sp=> sp.addEventListener('click', e=>{
       e.stopPropagation(); plEditDue = null; plEditTitle = sp.dataset.editTitle; renderTasks();
     }));
@@ -3834,7 +3369,7 @@
     }));
     el.querySelectorAll('.pl-title-edit').forEach(inp=>{
       let done = false;
-      const finish = (save)=>{
+      const finish = save=>{
         if(done) return; done = true;
         const t = tasks.find(x=>String(x.id)===inp.dataset.id);
         const v = inp.value.trim();
@@ -3849,7 +3384,7 @@
     });
     el.querySelectorAll('.pl-due-edit').forEach(inp=>{
       let done = false;
-      const finish = (save)=>{
+      const finish = save=>{
         if(done) return; done = true;
         const t = tasks.find(x=>String(x.id)===inp.dataset.id);
         plEditDue = null;
@@ -3866,54 +3401,11 @@
       inp.addEventListener('blur', ()=> setTimeout(()=> finish(true), 150));
       inp.addEventListener('click', e=> e.stopPropagation());
     });
-    el.querySelectorAll('.pl-title-inline').forEach(inp=>{
-      const commit = ()=>{
-        const t = tasks.find(x=>String(x.id)===inp.dataset.id);
-        const v = inp.value.trim();
-        if(t && v && v !== t.title){ t.title = v; saveTasks(); renderTasks(); }
-      };
-      inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); commit(); } if(e.key==='Escape'){ plOpenId = null; renderTasks(); } });
-      inp.addEventListener('change', commit);
-    });
-    el.querySelectorAll('.pl-proj-inline').forEach(sel=>{
-      sel.addEventListener('change', ()=>{
-        const t = tasks.find(x=>String(x.id)===sel.dataset.id);
-        if(t){ t.project = sel.value; saveTasks(); renderTasks(); }
-      });
-    });
-    el.querySelectorAll('.pl-due-inline').forEach(inp=>{
-      inp.addEventListener('change', ()=>{
-        const t = tasks.find(x=>String(x.id)===inp.dataset.id);
-        if(t){ t.due = inp.value || ''; if(t.due) t.later = false; saveTasks(); renderTasks(); }
-      });
-    });
-    const save = ()=>{ saveTasks(); renderTasks(); };
-    el.querySelectorAll('.pl-goal').forEach(inp=>{
-      inp.addEventListener('change', ()=>{
-        planning.goals = planning.goals || {};
-        const v = inp.value.trim();
-        if(v) planning.goals[inp.dataset.cell] = v; else delete planning.goals[inp.dataset.cell];
-        saveTasks();
-      });
-      inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
-    });
-    el.querySelectorAll('[data-pl-target]').forEach(btn=> btn.addEventListener('click', ()=>{ plEditingTarget = btn.dataset.plTarget; renderTasks(); }));
-    el.querySelectorAll('.pl-target-input').forEach(inp=>{
-      let done = false;
-      const commit = ()=>{ if(done) return; done = true; planning.targets = planning.targets || {}; if(inp.value) planning.targets[inp.dataset.project] = inp.value; plEditingTarget = null; save(); };
-      inp.focus(); try{ inp.showPicker && inp.showPicker(); }catch(e){}
-      inp.addEventListener('change', commit);
-      inp.addEventListener('keydown', e=>{ if(e.key==='Escape'){ done = true; plEditingTarget = null; renderTasks(); } });
-      inp.addEventListener('blur', ()=> setTimeout(()=>{ if(!done && document.activeElement!==inp){ done = true; plEditingTarget = null; renderTasks(); } }, 200));
-    });
-    el.querySelectorAll('[data-pl-target-clear]').forEach(btn=>{
-      btn.addEventListener('mousedown', e=>e.preventDefault());
-      btn.addEventListener('click', ()=>{ delete planning.targets[btn.dataset.plTargetClear]; plEditingTarget = null; save(); });
-    });
-    // Plus de bouton "+ Ajouter" (23 octobre 2026) : un clic sur le fond d'une case ouvre l'ajout.
+
+    // --- ajouter : clic sur le fond d'une case ---
     el.querySelectorAll('.pl-vcell.addable').forEach(cell=>{
       cell.addEventListener('click', e=>{
-        if(e.target.closest('.pl-card, .pl-add-form, button, input, select')) return;
+        if(e.target.closest('.pl-card, .pl-add-form, button, input')) return;
         if(plAddingCell === cell.dataset.cell) return;
         // Une étape tapée dans une autre case (sans Entrée) est enregistrée avant de changer de case.
         if(plPendingCommit && plPendingCommit()) saveTasks();
@@ -3923,65 +3415,53 @@
     });
     el.querySelectorAll('.pl-add-input').forEach(inp=>{
       const form = inp.closest('.pl-add-form');
-      const [project, colKey] = inp.dataset.cell.split('|');
-      const col = cols.find(c=>c.key===colKey);
+      const myCell = inp.dataset.cell;
+      const [project, rowKey] = myCell.split('|');
+      const row = rows.find(r=>r.key===rowKey);
       inp.focus();
       const addFromInput = ()=>{
         const title = inp.value.trim();
         if(!title) return false;
-        // Une étape ajoutée dans une semaine prend pour deadline le dernier jour de cette semaine.
-        const due = col && col.week ? col.week.to : '';
-        const nt = newTask(title, 'todo', {project, due});
-        if(colKey === 'later') nt.later = true;
+        // Une étape ajoutée dans une semaine prend pour date le dernier jour de cette semaine.
+        const nt = newTask(title, project, row && row.week ? row.week.to : '');
+        if(rowKey === 'later') nt.later = true;
         tasks.push(nt);
         inp.value = '';
         return true;
       };
+      plPendingCommit = addFromInput;
       inp.addEventListener('keydown', e=>{
         if(e.key==='Escape'){ inp.value = ''; plPendingCommit = null; plAddingCell = null; renderTasks(); return; }
         if(e.key!=='Enter') return;
         e.preventDefault();
-        if(addFromInput()) save(); // plAddingCell reste ouvert : on peut enchaîner les ajouts dans la même case
+        if(addFromInput()){ saveTasks(); renderTasks(); } // le champ reste ouvert pour enchaîner
       });
-      // Cliquer ailleurs sans appuyer sur Entrée ajoute quand même l'étape tapée (23 octobre 2026),
-      // puis referme le champ.
-      const myCell = inp.dataset.cell;
-      plPendingCommit = addFromInput;
+      // Cliquer ailleurs sans Entrée ajoute quand même l'étape tapée, puis referme le champ.
       form.addEventListener('focusout', ()=> setTimeout(()=>{
         if(!form.isConnected || form.contains(document.activeElement)) return;
         const added = addFromInput();
-        // Si un clic a déjà ouvert l'ajout dans une autre case, on ne le referme pas.
         if(plAddingCell === myCell) plAddingCell = null;
         if(added) saveTasks();
         renderTasks();
       }, 150));
     });
-    el.querySelectorAll('.pl-due-input').forEach(inp=>{
-      let done = false;
-      const commit = ()=>{ if(done) return; done = true; const t = tasks.find(x=>String(x.id)===inp.dataset.id); plEditingDue = null; if(t && inp.value !== (t.due||'')){ t.due = inp.value || ''; saveTasks(); } renderTasks(); };
-      inp.focus(); try{ inp.showPicker && inp.showPicker(); }catch(e){}
-      inp.addEventListener('change', commit);
-      inp.addEventListener('keydown', e=>{ if(e.key==='Escape'){ done = true; plEditingDue = null; renderTasks(); } });
-      inp.addEventListener('blur', ()=> setTimeout(()=>{ if(!done && document.activeElement!==inp) commit(); }, 200));
-    });
-    el.querySelectorAll('[data-pl]').forEach(btn=>{
-      if(btn.dataset.pl==='due-clear') btn.addEventListener('mousedown', e=>e.preventDefault());
-      btn.addEventListener('click', ()=>{
-        const t = tasks.find(x=>String(x.id)===btn.dataset.id);
-        if(!t) return;
-        const act = btn.dataset.pl;
-        if(act==='due'){ plEditingDue = t.id; renderTasks(); return; }
-        if(act==='due-clear'){ plEditingDue = null; t.due = ''; }
-        if(act==='prev' && t.due) t.due = addDaysKey(t.due, -7);
-        if(act==='next' && t.due) t.due = addDaysKey(t.due, 7);
-        if(act==='done') t.status = t.status==='done' ? 'todo' : 'done';
-        if(act==='del'){ tasks = tasks.filter(x=>x!==t); plOpenId = null; }
-        save();
-      });
-    });
   }
 
-  // Message "Tâche supprimée · Annuler" pendant 5 secondes après un ✕ (23 octobre 2026).
+  // Clic en dehors d'un champ d'ajout encore vide : on annule l'ajout (le bloc vide disparaît).
+  // Un clic ailleurs dans la même case le laisse ouvert ; un clic dans une autre case l'ouvre là-bas.
+  document.addEventListener('mousedown', e=>{
+    if(plAddingCell === null) return;
+    if(e.target.closest('.pl-add-form')) return;
+    const inp = document.querySelector('.pl-add-input');
+    if(!inp || inp.value.trim()) return;
+    const cell = e.target.closest('.pl-vcell');
+    if(cell && cell.dataset.cell === plAddingCell) return;
+    plPendingCommit = null;
+    plAddingCell = null;
+    if(!(cell && cell.classList.contains('addable'))) renderTasks();
+  }, true);
+
+  // ---------- ✓ BARRER / ✕ SUPPRIMER (avec "Annuler" pendant 5 s) ----------
   let undoTimer = null;
   function showUndoDelete(task, index){
     let bar = document.getElementById('undoToast');
@@ -4004,10 +3484,7 @@
     clearTimeout(undoTimer);
     undoTimer = setTimeout(()=> bar.classList.remove('show'), 5000);
   }
-
-  // Croix ✕ sur chaque carte (23 octobre 2026) : suppression en un clic, sans confirmation.
   document.getElementById('content-plan').addEventListener('click', e=>{
-    // Coche ✓ : barre la tâche (terminée) ou la remet à faire, en un clic.
     const c = e.target.closest('.card-check');
     if(c){
       e.stopPropagation();
@@ -4018,335 +3495,25 @@
     const x = e.target.closest('.card-x');
     if(!x) return;
     e.stopPropagation();
-    const id = x.dataset.del;
-    const idx = tasks.findIndex(t=>String(t.id)===String(id));
-    if(idx >= 0) showUndoDelete(tasks[idx], idx);
-    tasks = tasks.filter(t=>String(t.id)!==String(id));
-    if(String(openTaskId)===String(id)) openTaskId = null;
-    if(String(plOpenId)===String(id)) plOpenId = null;
+    const idx = tasks.findIndex(t=>String(t.id)===String(x.dataset.del));
+    if(idx < 0) return;
+    showUndoDelete(tasks[idx], idx);
+    tasks.splice(idx, 1);
     saveTasks(); renderTasks();
   }, true);
 
   function renderTasks(){
     migrateTodoData();
-    renderTodoViews();
-    renderTodoAlert();
     updateTodoTabBadge();
-    const isWeek = todoView === 'planning';
-    const board = document.getElementById('todoBoard');
-    board.style.display = isWeek ? 'none' : '';
-    renderTodoFilter();
-    document.getElementById('todoPlanning').style.display = isWeek ? '' : 'none';
-    if(isWeek){
-      renderPlanning();
-    } else {
-      const cols = {sandbox: document.getElementById('col-sandbox'), todo: document.getElementById('col-todo'), doing: document.getElementById('col-doing'), done: document.getElementById('col-done')};
-      Object.values(cols).forEach(c=>c.innerHTML='');
-      const empties = {sandbox:"Rien de côté pour l'instant.", todo:"Rien pour l'instant, ajoute ta première étape !", doing:"Aucune étape en cours.", done:"Rien de terminé pour le moment."};
-      ['sandbox','todo','doing','done'].forEach(status=>{
-        const grouped = groupedList(status);
-        const cnt = document.getElementById('count-'+status);
-        if(cnt) cnt.textContent = grouped.length ? grouped.length : '';
-        if(grouped.length===0){
-          cols[status].innerHTML = `<div class="empty-msg">${empties[status]}</div>`;
-          return;
-        }
-        cols[status].innerHTML = grouped.map((t, i)=> taskCardHtml(t, {
-          isFirstInRun: i===0 || groupKey(grouped[i-1]) !== groupKey(t),
-          isLastInRun: i===grouped.length-1 || groupKey(grouped[i+1]) !== groupKey(t)
-        })).join('');
-      });
-    }
-    wireTaskCards(document.getElementById('content-plan'));
-    if(focusTaskId !== null){
-      const c = document.querySelector(`#todoBoard .task-card[data-card="${focusTaskId}"]`);
-      if(c) c.focus({preventScroll:false});
-      focusTaskId = null;
-    }
+    renderPlanning();
     // Les deadlines apparaissent aussi dans l'Agenda (voir combinedDayEvents) : on le redessine.
     try{ renderCalendarView(); }catch(e){}
   }
 
-  // Déplacement d'une étape : vers une colonne (status) et, si beforeId est donné, juste avant
-  // cette carte dans l'ordre manuel ; sinon à la fin de la colonne.
-  function moveTask(t, status, beforeId){
-    t.status = status;
-    tasks = tasks.filter(x=>x!==t);
-    const before = beforeId != null ? tasks.find(x=>String(x.id)===String(beforeId)) : null;
-    if(before) tasks.splice(tasks.indexOf(before), 0, t);
-    else {
-      // fin de colonne : juste après la dernière étape (visible) de cette colonne
-      const inCol = groupedList(status);
-      const last = inCol[inCol.length-1];
-      if(last) tasks.splice(tasks.indexOf(last)+1, 0, t); else tasks.push(t);
-    }
-  }
-
-  function wireTodoDragAndKeys(root){
-    const STATUS_BY_COL = {'col-todo':'todo','col-doing':'doing','col-done':'done','col-sandbox':'sandbox'};
-    const ORDER = ['sandbox','todo','doing','done'];
-    root.querySelectorAll('#todoBoard .task-card').forEach(card=>{
-      card.addEventListener('dragstart', e=>{
-        todoDragId = card.dataset.card;
-        try{ e.dataTransfer.setData('text/plain', todoDragId); e.dataTransfer.effectAllowed = 'move'; }catch(err){}
-        setTimeout(()=>card.classList.add('dragging'), 0);
-      });
-      card.addEventListener('dragend', ()=>{
-        todoDragId = null;
-        card.classList.remove('dragging');
-        root.querySelectorAll('.drop-marker').forEach(m=>m.remove());
-        root.querySelectorAll('.kanban-col.drop-over').forEach(c=>c.classList.remove('drop-over'));
-      });
-      // Clavier : la carte doit avoir le focus (Tab), pas un de ses champs.
-      card.addEventListener('keydown', e=>{
-        if(e.target !== card) return;
-        const t = tasks.find(x=>String(x.id)===card.dataset.card);
-        if(!t) return;
-        const k = e.key;
-        if(k==='Enter' || k===' '){ e.preventDefault(); openTaskId = String(openTaskId)===card.dataset.card ? null : card.dataset.card; focusTaskId = card.dataset.card; renderTasks(); return; }
-        if(k==='Escape' && openTaskId !== null){ e.preventDefault(); openTaskId = null; focusTaskId = card.dataset.card; renderTasks(); return; }
-        if(k==='ArrowLeft' || k==='ArrowRight'){
-          e.preventDefault();
-          const i = ORDER.indexOf(t.status) + (k==='ArrowRight' ? 1 : -1);
-          if(i < 0 || i >= ORDER.length) return;
-          moveTask(t, ORDER[i], null);
-        } else if(k==='ArrowUp' || k==='ArrowDown'){
-          e.preventDefault();
-          const list = groupedList(t.status);
-          const gi = list.indexOf(t);
-          const nb = list[k==='ArrowUp' ? gi-1 : gi+1];
-          if(!nb || groupKey(nb) !== groupKey(t)) return;
-          const i1 = tasks.indexOf(t), i2 = tasks.indexOf(nb);
-          tasks[i1] = nb; tasks[i2] = t;
-        } else return;
-        focusTaskId = t.id;
-        saveTasks(); renderTasks();
-      });
-    });
-    // Zones de dépôt : chaque colonne entière (titre compris).
-    root.querySelectorAll('#todoBoard .kanban-col').forEach(colEl=>{
-      const list = colEl.querySelector('#col-todo, #col-doing, #col-done, #col-sandbox');
-      if(!list) return;
-      const status = STATUS_BY_COL[list.id];
-      const horizontal = list.id === 'col-sandbox';
-      const beforeCard = (x, y)=>{
-        const cards = [...list.querySelectorAll('.task-card:not(.dragging)')];
-        return cards.find(c=>{
-          const r = c.getBoundingClientRect();
-          if(horizontal) return y < r.top || (y <= r.bottom && x < r.left + r.width/2);
-          return y < r.top + r.height/2;
-        }) || null;
-      };
-      colEl.addEventListener('dragover', e=>{
-        if(!todoDragId) return;
-        e.preventDefault();
-        try{ e.dataTransfer.dropEffect = 'move'; }catch(err){}
-        colEl.classList.add('drop-over');
-        let marker = root.querySelector('.drop-marker');
-        if(!marker){ marker = document.createElement('div'); marker.className = 'drop-marker'; }
-        const b = beforeCard(e.clientX, e.clientY);
-        if(b) list.insertBefore(marker, b); else list.appendChild(marker);
-        marker.classList.toggle('horizontal', horizontal);
-      });
-      colEl.addEventListener('dragleave', e=>{
-        if(colEl.contains(e.relatedTarget)) return;
-        colEl.classList.remove('drop-over');
-        const m = list.querySelector('.drop-marker'); if(m) m.remove();
-      });
-      colEl.addEventListener('drop', e=>{
-        e.preventDefault();
-        const t = todoDragId && tasks.find(x=>String(x.id)===String(todoDragId));
-        colEl.classList.remove('drop-over');
-        if(!t) return;
-        const b = beforeCard(e.clientX, e.clientY);
-        const beforeId = b ? b.dataset.card : null;
-        todoDragId = null;
-        if(String(beforeId) === String(t.id)) return;
-        moveTask(t, status, beforeId);
-        saveTasks(); renderTasks();
-      });
-    });
-  }
-
-  function wireTaskCards(root){
-    wireTodoDragAndKeys(root);
-    // Un clic sur une carte la déplie / replie (sauf sur ses champs et boutons).
-    root.querySelectorAll('#todoBoard .task-card').forEach(card=>{
-      card.addEventListener('click', e=>{
-        if(e.target.closest('button, select, input')) return;
-        const id = card.dataset.card;
-        openTaskId = String(openTaskId) === String(id) ? null : id;
-        if(openTaskId === null) editingTaskId = null;
-        renderTasks();
-      });
-    });
-    root.querySelectorAll('.tc-due-input').forEach(inp=>{
-      inp.addEventListener('change', ()=>{
-        const t = tasks.find(x=>String(x.id)===inp.dataset.id);
-        if(!t) return;
-        t.due = inp.value || '';
-        saveTasks(); renderTasks();
-      });
-    });
-    root.querySelectorAll('.proj-select').forEach(sel=>{
-      sel.addEventListener('change', ()=>{
-        const t = tasks.find(x=>String(x.id)===sel.dataset.id);
-        if(!t) return;
-        t.project = sel.value;
-        saveTasks();
-        renderTasks();
-      });
-    });
-
-    function commitEdit(id){
-      const input = root.querySelector(`.edit-title-input[data-id="${id}"]`);
-      if(!input) return;
-      const t = tasks.find(x=>String(x.id)===String(id));
-      const newTitle = input.value.trim();
-      if(t && newTitle) t.title = newTitle;
-      editingTaskId = null;
-      saveTasks();
-      renderTasks();
-    }
-
-    root.querySelectorAll('.edit-title-input').forEach(inp=>{
-      inp.focus();
-      inp.setSelectionRange(inp.value.length, inp.value.length);
-      inp.addEventListener('keydown', e=>{
-        if(e.key === 'Enter'){ e.preventDefault(); commitEdit(inp.dataset.id); }
-        if(e.key === 'Escape'){ e.preventDefault(); editingTaskId = null; renderTasks(); }
-      });
-    });
-
-    root.querySelectorAll('.due-input').forEach(inp=>{
-      let done = false;
-      const commit = ()=>{
-        if(done) return; done = true;
-        const t = tasks.find(x=>String(x.id)===inp.dataset.id);
-        editingDueId = null;
-        if(t && (inp.value||'') !== (t.due||'')){ t.due = inp.value || ''; saveTasks(); }
-        renderTasks();
-      };
-      inp.focus();
-      try{ inp.showPicker && inp.showPicker(); }catch(e){}
-      inp.addEventListener('change', commit);
-      inp.addEventListener('keydown', e=>{
-        if(e.key === 'Enter'){ e.preventDefault(); commit(); }
-        if(e.key === 'Escape'){ e.preventDefault(); done = true; editingDueId = null; renderTasks(); }
-      });
-      // Petit délai : laisse le clic sur "Retirer" s'exécuter avant que la perte de focus ne referme.
-      inp.addEventListener('blur', ()=> setTimeout(()=>{ if(!done && document.activeElement !== inp){ commit(); } }, 200));
-    });
-
-    root.querySelectorAll('.tc-actions button').forEach(btn=>{
-      btn.addEventListener('mousedown', e=>{ if(btn.dataset.act==='due-clear') e.preventDefault(); });
-      btn.addEventListener('click', ()=>{
-        const id = btn.dataset.id;
-        const t = tasks.find(x=>String(x.id)===id);
-        if(!t) return;
-        const statusOrder2 = ['sandbox','todo','doing','done'];
-        const act = btn.dataset.act;
-        if(act==='edit'){ editingTaskId = id; renderTasks(); return; }
-        if(act==='save-edit'){ commitEdit(id); return; }
-        if(act==='cancel-edit'){ editingTaskId = null; renderTasks(); return; }
-        if(act==='due'){ editingDueId = id; renderTasks(); return; }
-        if(act==='due-clear'){ editingDueId = null; t.due = ''; saveTasks(); renderTasks(); return; }
-        if(act==='next') t.status = statusOrder2[Math.min(statusOrder2.indexOf(t.status)+1,statusOrder2.length-1)];
-        if(act==='prev') t.status = statusOrder2[Math.max(statusOrder2.indexOf(t.status)-1,0)];
-        if(act==='del'){ tasks = tasks.filter(x=>String(x.id)!==id); openTaskId = null; }
-        if(act==='up' || act==='down'){
-          const list = groupedList(t.status);
-          const gIdx = list.findIndex(x=>String(x.id)===String(t.id));
-          const neighbor = list[act==='up' ? gIdx-1 : gIdx+1];
-          if(neighbor && groupKey(neighbor) === groupKey(t)){
-            const i1 = tasks.indexOf(t);
-            const i2 = tasks.indexOf(neighbor);
-            const tmp = tasks[i1]; tasks[i1] = tasks[i2]; tasks[i2] = tmp;
-          }
-        }
-        saveTasks(); renderTasks();
-      });
-    });
-  }
-
-  function newTask(title, status, opts){
-    const project = (opts && opts.project) || formProject();
-    let category = opts && opts.category;
-    if(!catsOf(project).some(c=>c.name===category)){ const first = catsOf(project)[0]; category = first ? first.name : ''; }
-    const due = (opts && opts.due) || '';
-    return {id: Date.now()+Math.random(), title, category, status, project, due};
-  }
-
-  // Ajout direct dans une colonne du Todo (demande du 4 octobre 2026) : jusqu'ici, seuls "À faire"
-  // et "Bac à sable" étaient atteignables depuis le formulaire du haut — "En cours" et "Terminé"
-  // n'étaient accessibles qu'en faisant avancer une étape existante avec ▶. Le bouton "+ Ajouter" vit
-  // à dessein HORS de #col-xxx (voir le HTML), que renderTasks() vide et reconstruit entièrement à
-  // chaque rendu : le placer dedans l'aurait fait disparaître/réapparaître à chaque ajout.
-  // L'étape prend le projet de la vue affichée (ou celui choisi dans le formulaire en vue "Tout").
-  function wireKanbanQuickAdd(btn){
-    const status = btn.dataset.status;
-    btn.addEventListener('click', ()=>{
-      if(btn.classList.contains('is-editing')) return;
-      btn.classList.add('is-editing');
-      btn.style.display = 'none';
-      const wrap = document.createElement('div');
-      wrap.className = 'kanban-quick-add-form';
-      const vp = viewProject();
-      wrap.innerHTML = `
-        <input type="text" class="kanban-quick-add-input" placeholder="Nouvelle étape, puis Entrée...">
-        <div class="qa-row">
-          ${vp ? '' : `<select class="qa-project" title="Projet">${shownProjects().map(p=>`<option value="${p.id}">${escapeHtml(p.label)}</option>`).join('')}</select>`}
-          ${status==='done' ? '' : '<input type="date" class="qa-due" title="Deadline (facultative)">'}
-        </div>
-        <div class="qa-hint">Entrée pour ajouter · Échap pour fermer</div>`;
-      btn.insertAdjacentElement('beforebegin', wrap);
-      const input = wrap.querySelector('.kanban-quick-add-input');
-      const projSel = wrap.querySelector('.qa-project');
-      const dueInp = wrap.querySelector('.qa-due');
-      const curProject = ()=> vp || (projSel ? projSel.value : formProject());
-      if(projSel){ projSel.value = formProject(); projSel.addEventListener('change', ()=>{ quickAddProject = projSel.value; }); }
-      input.focus();
-      function close(){
-        wrap.remove();
-        btn.style.display = '';
-        btn.classList.remove('is-editing');
-      }
-      function add(){
-        const title = input.value.trim();
-        if(!title) return;
-        const project = curProject();
-        if(projSel) quickAddProject = project;
-        tasks.push(newTask(title, status, {project, due: dueInp ? dueInp.value : ''}));
-        saveTasks();
-        renderTasks();
-        // renderTasks() ne touche pas ce formulaire (il vit hors de #col-xxx) : on le garde ouvert,
-        // titre et date vidés, pour enchaîner plusieurs ajouts de suite dans la même colonne.
-        input.value = '';
-        if(dueInp) dueInp.value = '';
-        input.focus();
-      }
-      wrap.addEventListener('keydown', e=>{
-        if(e.key === 'Enter'){ e.preventDefault(); add(); }
-        else if(e.key === 'Escape'){ e.preventDefault(); close(); }
-      });
-      // Ferme quand le focus quitte tout le formulaire (pas en passant du titre à la catégorie ou
-      // à la date) et que rien n'a été tapé ; petit délai pour laisser le nouveau focus s'installer.
-      wrap.addEventListener('focusout', ()=>{
-        setTimeout(()=>{
-          if(!wrap.isConnected || wrap.contains(document.activeElement)) return;
-          if(input.value.trim()) return;
-          close();
-        }, 200);
-      });
-    });
-  }
-  document.querySelectorAll('.kanban-quick-add').forEach(wireKanbanQuickAdd);
-
-  // Les deadlines passent de "bientôt" à "aujourd'hui" puis "en retard" toutes seules avec le
-  // temps : on rafraîchit l'affichage quand l'appli revient au premier plan (Mac sorti de veille,
-  // onglet rouvert le lendemain...), sans rien sauvegarder.
+  // Les dates passent toutes seules de "Demain" à "Today" puis "En retard" : on rafraîchit quand
+  // l'appli revient au premier plan (sans rien sauvegarder), sauf pendant une saisie.
   document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState === 'visible' && editingTaskId === null && editingDueId === null && plAddingCell === null && plEditingDue === null && plEditingTarget === null && !(document.activeElement && document.activeElement.classList.contains('pl-goal'))){ renderTasks(); }
+    if(document.visibilityState === 'visible' && plAddingCell === null && plEditTitle === null && plEditDue === null){ renderTasks(); }
   });
 
   // ---------- CALENDAR ----------
@@ -4452,12 +3619,9 @@
   }
 
   function goToTodoPlanning(){
-    try{ localStorage.setItem('rg_todo_view', 'planning'); }catch(e){}
     document.getElementById('dayOverlay') && document.getElementById('dayOverlay').classList.remove('active');
     const tabBtn = document.querySelector('.tab-btn[data-tab="plan"]');
     if(tabBtn) tabBtn.click();
-    const vb = document.querySelector('.todo-view-btn[data-view="planning"]');
-    if(vb) vb.click();
   }
 
   function migrateEvents(){
