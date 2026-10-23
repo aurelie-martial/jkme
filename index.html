@@ -430,14 +430,21 @@
   .pl-more:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
   .pl-week-buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; justify-content:center;}
   .pl-week-buttons .pl-more{align-self:auto;}
-  /* Centrés sous les 3 colonnes de projets, pas sous toute la page (colonne des semaines + écart). */
-  .pl-vgrid > .pl-week-buttons{margin-left:calc(var(--pl-head, 130px) + 10px);}
-  @media(max-width:640px){ .pl-vgrid > .pl-week-buttons{margin-left:0;} }
+  /* Dans la colonne des semaines, à gauche (23 octobre 2026). */
+  .pl-vgrid > .pl-week-buttons{justify-content:flex-start; width:var(--pl-head, 130px); flex-direction:column; align-items:flex-start; gap:6px;}
+  .pl-vgrid > .pl-week-buttons .pl-more{font-size:0.74rem; padding:5px 10px; white-space:nowrap;}
+  @media(max-width:640px){ .pl-vgrid > .pl-week-buttons{width:auto; flex-direction:row;} }
   #content-plan .task-card, .pl-card{position:relative;}
   .card-x{position:absolute; top:8px; right:6px; border:none; background:var(--panel); color:var(--ink-soft); font-size:0.72rem; line-height:1; width:22px; height:22px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease, background .12s ease; padding:0; box-shadow:0 0 0 1px rgba(0,0,0,0.06);}
   .task-card:hover .tc-main, .pl-card:hover .tc-main{padding-right:22px;}
   .task-card:hover .card-x, .pl-card:hover .card-x, .card-x:focus-visible, .task-card:focus .card-x{opacity:1;}
   .card-x:hover{background:var(--gris); color:var(--ink);}
+  .card-check{position:absolute; top:8px; right:32px; border:none; background:var(--panel); color:var(--ink-soft); font-size:0.74rem; line-height:1; width:22px; height:22px; border-radius:6px; cursor:pointer; opacity:0; transition:opacity .12s ease; padding:0; box-shadow:0 0 0 1px rgba(0,0,0,0.06);}
+  .card-check:hover{background:#E8F3EC; color:#3F7A52;}
+  .task-card:hover .card-check, .pl-card:hover .card-check, .card-check:focus-visible{opacity:1;}
+  @media(hover:none){ .card-check{opacity:0.7;} }
+  .task-card:hover .tc-main, .pl-card:hover .tc-main{padding-right:50px !important;}
+  .pl-card.is-done .tc-title{text-decoration:line-through; color:var(--ink-soft);}
   @media(hover:none){ .card-x{opacity:0.7;} }
   .tc-main .tc-title{flex:1;}
   /* 3e projet "Projet" (miel) */
@@ -459,6 +466,8 @@
   .pl-vrow.later{margin-top:18px; padding-top:18px; border-top:1px dashed var(--line);}
   .pl-vrow.later .pl-vcell{background:var(--gris) !important; border-style:dashed;}
   .pl-vcell.addable{cursor:pointer;}
+  /* Toujours un espace libre de la hauteur d'une tâche sous les cartes, pour cliquer et ajouter. */
+  .pl-vcell.addable::after{content:''; display:block; flex:0 0 36px;}
   .pl-vcell.addable:hover{box-shadow:inset 0 0 0 1px var(--ink-soft);}
   .pl-vrow.current .pl-vcell.addable:hover{box-shadow:inset 0 0 0 2px rgba(255,255,255,0.6);}
   .pl-vcell .pl-card{cursor:pointer;}
@@ -3433,7 +3442,7 @@
       </div>`;
     }
     return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${isOpen ? ' is-open' : ''}" data-card="${t.id}" tabindex="0" ${isOpen ? '' : 'draggable="true"'} title="Glisser pour déplacer · au clavier : flèches ←→ change de colonne, ↑↓ change l'ordre, Entrée ouvre">
-      <div class="tc-main">${titleHtml}${d.txt ? `<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>` : ''}<button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button></div>
+      <div class="tc-main">${titleHtml}${d.txt ? `<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>` : ''}<button type="button" class="card-check" data-done="${t.id}" title="${t.status==='done'?'Remettre à faire':'Barrer (terminé)'}" aria-label="Barrer">${t.status==='done'?'↺':'✓'}</button><button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button></div>
       ${details}
     </div>`;
   }
@@ -3502,7 +3511,7 @@
     const open = !selectable && String(plOpenId) === String(t.id);
     const sel = selectable && plSelected.has(String(t.id));
     return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}${selectable?' selectable':''}${sel?' selected':''}" data-plcard="${t.id}" ${open||selectable?'':'draggable="true"'}>
-      <div class="tc-main">${selectable?`<span class="pl-check">${sel?'✓':''}</span>`:''}<span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}${selectable?'':`<button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button>`}</div>
+      <div class="tc-main">${selectable?`<span class="pl-check">${sel?'✓':''}</span>`:''}<span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}${selectable?'':`<button type="button" class="card-check" data-done="${t.id}" title="${t.status==='done'?'Remettre à faire':'Barrer (terminé)'}" aria-label="Barrer">${t.status==='done'?'↺':'✓'}</button><button type="button" class="card-x" data-del="${t.id}" title="Supprimer" aria-label="Supprimer">✕</button>`}</div>
       ${open ? `<div class="tc-details">
         <input type="text" class="tc-field pl-title-inline" data-id="${t.id}" value="${escapeHtml(t.title)}" title="Texte de l'étape (Entrée pour enregistrer)">
         <div class="tc-fields">
@@ -3570,7 +3579,7 @@
     const renderRow = r=>{
       const cells = projs.map(p=>{
         const items = r.later
-          ? visible.filter(t=>t.project===p.id && !t.due && t.status!=='done')
+          ? visible.filter(t=>t.project===p.id && !t.due && (t.status!=='done' || t.later)).sort((a,b)=>(a.status==='done')-(b.status==='done'))
           : dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
         const cellKey = `${p.id}|${r.key}`;
         // Champ "Objectif de la semaine" retiré (23 octobre 2026) : les objectifs déjà saisis restent
@@ -3853,6 +3862,14 @@
 
   // Croix ✕ sur chaque carte (23 octobre 2026) : suppression en un clic, sans confirmation.
   document.getElementById('content-plan').addEventListener('click', e=>{
+    // Coche ✓ : barre la tâche (terminée) ou la remet à faire, en un clic.
+    const c = e.target.closest('.card-check');
+    if(c){
+      e.stopPropagation();
+      const t = tasks.find(x=>String(x.id)===String(c.dataset.done));
+      if(t){ t.status = t.status === 'done' ? 'todo' : 'done'; saveTasks(); renderTasks(); }
+      return;
+    }
     const x = e.target.closest('.card-x');
     if(!x) return;
     e.stopPropagation();
