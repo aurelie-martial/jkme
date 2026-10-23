@@ -311,6 +311,52 @@
   .pl-add-form{display:flex; flex-direction:column; gap:5px;}
   .pl-add-form input, .pl-add-form select{font-family:inherit; font-size:0.76rem; border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--panel); color:var(--ink);}
   .pl-add-form input{border-color:var(--lavande);}
+  /* PISTE A "cartes simples" (23 octobre 2026) : une seule couche, titre + date, fond selon le projet. */
+  .todo-views{background:transparent; padding:0; border-radius:0; gap:22px; border-bottom:1px solid var(--line); display:flex; width:100%;}
+  .todo-view-btn{padding:0 0 10px; border-radius:0; font-size:0.88rem; background:transparent !important; box-shadow:none !important; border-bottom:2px solid transparent; margin-bottom:-1px;}
+  .todo-view-btn.active{color:var(--ink); border-bottom-color:var(--ink);}
+  .todo-view-btn .count{background:transparent; color:var(--due-late); padding:0; font-size:0.8rem;}
+  .todo-toolbar{margin-bottom:16px;}
+  .todo-legend{display:flex; gap:16px; font-size:0.74rem; color:var(--ink-soft); margin:0 0 16px;}
+  .todo-legend b{display:inline-block; width:20px; height:11px; border-radius:4px; vertical-align:-1px; margin-right:6px;}
+  .todo-legend .lg-insta{background:var(--bg-insta); border:1px solid var(--line-insta);}
+  .todo-legend .lg-roman{background:var(--bg-roman); border:1px solid var(--line-roman);}
+  #content-plan .kanban{gap:28px;}
+  #content-plan .kanban-col{background:transparent; border:none; padding:0; min-height:0; box-shadow:none;}
+  #content-plan .kanban-col h3{justify-content:space-between; font-weight:700; font-size:0.95rem; margin-bottom:12px;}
+  .col-count{font-size:0.78rem; font-weight:500; color:var(--ink-soft);}
+  #content-plan .kanban-sandbox-section{margin-top:30px; padding-top:18px; border-top:1px dashed var(--line); border-radius:0;}
+  #content-plan .kanban-sandbox-section #col-sandbox .task-card{flex:0 1 auto; max-width:360px;}
+  #content-plan .task-card, .pl-card{
+    border:1px solid var(--line); border-left:1px solid var(--line); border-radius:10px; padding:10px 13px; margin-bottom:8px;
+    background:var(--panel); cursor:pointer; animation:none; transition:box-shadow .15s ease;
+  }
+  #content-plan .task-card.pc-insta, .pl-card.pc-insta, #col-sandbox .task-card.pc-insta{background:var(--bg-insta); border-color:var(--line-insta);}
+  #content-plan .task-card.pc-roman, .pl-card.pc-roman, #col-sandbox .task-card.pc-roman{background:var(--bg-roman); border-color:var(--line-roman);}
+  #content-plan .task-card:hover, .pl-card:hover{box-shadow:var(--shadow-sm);}
+  #content-plan .task-card.is-done, .pl-card.is-done{opacity:0.55;}
+  #content-plan .task-card.is-done .tc-title, .pl-card.is-done .tc-title{text-decoration:line-through;}
+  .tc-main{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .tc-title{font-size:0.88rem; font-weight:500; line-height:1.35; color:var(--ink);}
+  .tc-due{font-size:0.74rem; color:var(--ink-soft); white-space:nowrap;}
+  .tc-due.soon{color:#B7791F; font-weight:600;}
+  .tc-due.late{color:var(--due-late); font-weight:600;}
+  .tc-details{margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:8px; cursor:default;}
+  .tc-fields{display:flex; gap:6px; flex-wrap:wrap;}
+  .tc-field{flex:1 1 120px; min-width:0; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.76rem; border:1px solid var(--line); border-radius:7px; padding:5px 7px; background:var(--panel); color:var(--ink);}
+  .tc-actions{display:flex; gap:5px; flex-wrap:wrap;}
+  .tc-actions button{font-family:'Plus Jakarta Sans', sans-serif; font-size:0.74rem; font-weight:600; border:1px solid var(--line); background:var(--panel); border-radius:7px; padding:3px 9px; cursor:pointer; color:var(--ink-soft);}
+  .tc-actions button:hover{color:var(--ink); background:var(--gris);}
+  .tc-actions .del{margin-left:auto;}
+  #content-plan .edit-title-input{margin:0; padding-right:8px; font-size:0.88rem;}
+  #content-plan .kanban-quick-add{border:none; background:transparent; text-align:left; padding:6px 2px; margin-top:2px; font-size:0.82rem; font-weight:500;}
+  #content-plan .kanban-quick-add:hover{background:transparent; color:var(--ink);}
+  #content-plan .empty-msg{padding:6px 2px;}
+  .pl-card{margin-bottom:0; padding:8px 10px;}
+  .pl-card .tc-title{font-size:0.8rem;}
+  .pl-cell.pl-row-insta, .pl-cell.pl-row-roman{background:var(--panel);}
+  .pl-row-head.pl-row-insta, .pl-row-head.pl-row-roman{background:var(--panel);}
+  .pl-scroll{border-radius:12px;}
   /* Plus aucun rond de couleur sur la page Todo ni dans le bas de page (demande du 23 octobre
      2026) : titres de colonnes, groupes de catégories, projets, statut de synchro et de sauvegarde. */
   #content-plan .dot, #content-plan .cat-group-dot, .todo-view-btn .proj-dot,
@@ -1414,29 +1460,30 @@
       <div class="todo-views" id="todoViews"></div>
     </div>
     <div id="todoAlert"></div>
+    <div class="todo-legend" id="todoLegend"><span><b class="lg-insta"></b>Instagram</span><span><b class="lg-roman"></b>Roman graphique</span></div>
 
 
     <div id="todoBoard">
       <div class="kanban">
         <div class="kanban-col">
-          <h3><span class="dot" style="background:var(--ink-soft)"></span>À faire</h3>
+          <h3>À faire <span class="col-count" id="count-todo"></span></h3>
           <div id="col-todo"></div>
           <button type="button" class="kanban-quick-add" data-status="todo">+ Ajouter</button>
         </div>
         <div class="kanban-col">
-          <h3><span class="dot" style="background:var(--ciel)"></span>En cours</h3>
+          <h3>En cours <span class="col-count" id="count-doing"></span></h3>
           <div id="col-doing"></div>
           <button type="button" class="kanban-quick-add" data-status="doing">+ Ajouter</button>
         </div>
         <div class="kanban-col">
-          <h3><span class="dot" style="background:var(--menthe)"></span>Terminé</h3>
+          <h3>Terminé <span class="col-count" id="count-done"></span></h3>
           <div id="col-done"></div>
           <button type="button" class="kanban-quick-add" data-status="done">+ Ajouter</button>
         </div>
       </div>
 
       <div class="kanban-col kanban-col-sandbox kanban-sandbox-section">
-        <h3><span class="dot" style="background:var(--peche)"></span>Bac à sable</h3>
+        <h3>Bac à sable <span class="col-count" id="count-sandbox"></span></h3>
         <div id="col-sandbox"></div>
         <button type="button" class="kanban-quick-add" data-status="sandbox">+ Ajouter</button>
       </div>
@@ -3124,21 +3171,17 @@
   // Les cartes en retard remontent en tête de colonne dans un groupe "En retard" ; le reste est
   // groupé par projet (en vue "Tout") puis par catégorie. groupKey sert aussi à ▲▼ : on ne
   // permute que deux cartes du même groupe.
-  function groupKey(t){
-    if(dueState(t)==='late') return '__late__';
-    return t.project + '::' + t.category;
-  }
+  // Piste A "cartes simples" (23 octobre 2026) : plus de sous-groupes par catégorie ni de blocs par
+  // projet. Les étapes en retard passent en tête (par date), le reste garde l'ordre manuel (▲▼).
+  function groupKey(t){ return dueState(t)==='late' ? 'late' : 'normal'; }
   function visibleTasks(){
     const vp = viewProject();
     return vp ? tasks.filter(t=>t.project===vp) : tasks;
   }
   function groupedList(status){
-    const late = (t)=> dueState(t)==='late' ? 0 : 1;
-    return visibleTasks().filter(t=>t.status===status).sort((a,b)=>
-      (late(a)-late(b)) ||
-      (late(a)===0 ? (a.due||'').localeCompare(b.due||'') : 0) ||
-      (projIndex(a.project)-projIndex(b.project)) ||
-      (catIndexIn(a)-catIndexIn(b)));
+    const list = visibleTasks().filter(t=>t.status===status);
+    const late = list.filter(t=>groupKey(t)==='late').sort((a,b)=>(a.due||'').localeCompare(b.due||''));
+    return late.concat(list.filter(t=>groupKey(t)!=='late'));
   }
 
   function renderTodoViews(){
@@ -3149,7 +3192,7 @@
       const n = lateCount(pool) + todayCount(pool);
       const showCount = n>0 && (v.id==='planning' || v.project);
       return `<button type="button" class="todo-view-btn ${todoView===v.id?'active':''}" data-view="${v.id}" ${p?`style="--proj-color:${p.color}"`:''}>
-        ${p?'<span class="proj-dot"></span>':''}${escapeHtml(v.label)}${showCount?`<span class="count" title="En retard ou pour aujourd'hui">${n}</span>`:''}
+        ${escapeHtml(v.label)}${showCount?`<span class="count" title="En retard ou pour aujourd'hui">${n}</span>`:''}
       </button>`;
     }).join('');
     el.querySelectorAll('.todo-view-btn').forEach(btn=>{
@@ -3165,6 +3208,7 @@
 
   function renderTodoAlert(){
     const el = document.getElementById('todoAlert');
+    el.innerHTML = ''; return;
     const pool = visibleTasks();
     const late = lateCount(pool), today = todayCount(pool);
     if(!late && !today){ el.innerHTML = ''; return; }
@@ -3189,48 +3233,53 @@
 
   const STATUS_LABELS = {sandbox:'Bac à sable', todo:'À faire', doing:'En cours', done:'Terminé'};
 
+  let openTaskId = null; // carte dépliée (catégorie, date, boutons) — une seule à la fois
+
+  function shortDue(t){
+    if(!t.due || t.status==='done') return {txt:'', cls:''};
+    const s = dueState(t);
+    if(s==='late') return {txt:'En retard', cls:'late'};
+    if(s==='today') return {txt:"Aujourd'hui", cls:'late'};
+    if(t.due === addDaysKey(todayKeyStr(), 1)) return {txt:'Demain', cls:'soon'};
+    return {txt: formatShort(t.due), cls: s==='soon' ? 'soon' : ''};
+  }
+
   function taskCardHtml(t, opts){
-    const {isFirstInRun=true, isLastInRun=true, showProject=false, showStatus=false} = opts || {};
+    const {isFirstInRun=true, isLastInRun=true} = opts || {};
     const statusOrder = ['sandbox','todo','doing','done'];
     const isEditing = String(editingTaskId) === String(t.id);
-    const ds = dueState(t);
+    const isOpen = isEditing || String(openTaskId) === String(t.id);
     const idx = statusOrder.indexOf(t.status);
-    let catOptions = catsOf(t.project);
-    if(!catOptions.some(c=>c.name===t.category)){
-      catOptions = [{id:'orphan-'+t.id, name:t.category}, ...catOptions];
-    }
+    const d = shortDue(t);
     const titleHtml = isEditing
       ? `<input type="text" class="edit-title-input" data-id="${t.id}" value="${escapeHtml(t.title)}">`
-      : `<p>${escapeHtml(t.title)}</p>`;
-    const iconsHtml = isEditing
-      ? `<button data-act="save-edit" data-id="${t.id}" title="Enregistrer">✓</button>
-         <button data-act="cancel-edit" data-id="${t.id}" title="Annuler">✕</button>`
-      : `<button data-act="edit" data-id="${t.id}" title="Modifier">✎</button>
-         <button class="del" data-act="del" data-id="${t.id}" title="Supprimer">✕</button>`;
-    let dueHtml;
-    if(String(editingDueId) === String(t.id)){
-      dueHtml = `<span class="due-edit"><input type="date" class="due-input" data-id="${t.id}" value="${t.due||''}">${t.due?`<button type="button" data-act="due-clear" data-id="${t.id}" title="Retirer la deadline">Retirer</button>`:''}</span>`;
-    } else if(t.due){
-      dueHtml = `<button type="button" class="due-chip ${ds}" data-act="due" data-id="${t.id}" title="Changer la deadline">📅 ${escapeHtml(t.status==='done' ? formatShort(t.due) : dueLabel(t))}</button>`;
-    } else if(t.status !== 'done'){
-      dueHtml = `<button type="button" class="due-chip empty" data-act="due" data-id="${t.id}" title="Ajouter une deadline">📅 + deadline</button>`;
-    } else dueHtml = '';
-    const proj = projectById(t.project);
-    const metaHtml = (showProject ? `<span class="proj-tag" style="--proj-color:${proj.color}">${escapeHtml(proj.label)}</span>` : '') +
-      (showStatus ? `<span class="status-tag">${STATUS_LABELS[t.status]}</span>` : '') + dueHtml;
-    return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${ds==='late' ? ' is-late' : ''}" style="--cat-color:${getTaskCatColor(t)}">
-      <div class="card-icons">${iconsHtml}</div>
-      <select class="chip cat-select" data-id="${t.id}">
-        ${catOptions.map(c=>`<option value="${escapeHtml(c.name)}" ${c.name===t.category?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}
-      </select>
-      ${titleHtml}
-      ${metaHtml ? `<div class="card-meta">${metaHtml}</div>` : ''}
-      <div class="card-actions">
-        ${!isFirstInRun ? `<button data-act="up" data-id="${t.id}" title="Monter">▲</button>` : ''}
-        ${!isLastInRun ? `<button data-act="down" data-id="${t.id}" title="Descendre">▼</button>` : ''}
-        ${idx>0 ? `<button data-act="prev" data-id="${t.id}">◀</button>` : ''}
-        ${idx<statusOrder.length-1 ? `<button data-act="next" data-id="${t.id}">▶</button>` : ''}
-      </div>
+      : `<span class="tc-title">${escapeHtml(t.title)}</span>`;
+    let details = '';
+    if(isOpen){
+      let catOptions = catsOf(t.project);
+      if(!catOptions.some(c=>c.name===t.category)) catOptions = [{id:'orphan-'+t.id, name:t.category}, ...catOptions];
+      details = `<div class="tc-details">
+        <div class="tc-fields">
+          <select class="tc-field cat-select" data-id="${t.id}" title="Catégorie">
+            ${catOptions.map(c=>`<option value="${escapeHtml(c.name)}" ${c.name===t.category?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}
+          </select>
+          <input type="date" class="tc-field tc-due-input" data-id="${t.id}" value="${t.due||''}" title="Deadline">
+        </div>
+        <div class="tc-actions">
+          ${isEditing
+            ? `<button data-act="save-edit" data-id="${t.id}" title="Enregistrer">✓ Enregistrer</button>`
+            : `<button data-act="edit" data-id="${t.id}" title="Renommer">✎</button>`}
+          ${!isFirstInRun ? `<button data-act="up" data-id="${t.id}" title="Monter">▲</button>` : ''}
+          ${!isLastInRun ? `<button data-act="down" data-id="${t.id}" title="Descendre">▼</button>` : ''}
+          ${idx>0 ? `<button data-act="prev" data-id="${t.id}" title="Colonne précédente">◀</button>` : ''}
+          ${idx<statusOrder.length-1 ? `<button data-act="next" data-id="${t.id}" title="Colonne suivante">▶</button>` : ''}
+          <button class="del" data-act="del" data-id="${t.id}" title="Supprimer">✕</button>
+        </div>
+      </div>`;
+    }
+    return `<div class="task-card pc-${t.project}${t.status === 'done' ? ' is-done' : ''}${isOpen ? ' is-open' : ''}" data-card="${t.id}">
+      <div class="tc-main">${titleHtml}${d.txt ? `<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>` : ''}</div>
+      ${details}
     </div>`;
   }
 
@@ -3268,24 +3317,20 @@
     return Math.round((new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / 86400000);
   }
 
+  let plOpenId = null;
   function plCardHtml(t){
-    const ds = dueState(t);
     const isDone = t.status === 'done';
-    let due;
-    if(String(plEditingDue) === String(t.id)){
-      due = `<span class="due-edit"><input type="date" class="pl-due-input" data-id="${t.id}" value="${t.due||''}">${t.due?`<button type="button" data-pl="due-clear" data-id="${t.id}">Retirer</button>`:''}</span>`;
-    } else {
-      due = `<button type="button" class="due-chip ${t.due?ds:'empty pl-show'}" data-pl="due" data-id="${t.id}" title="Changer la deadline">📅 ${t.due ? escapeHtml(isDone ? formatShort(t.due) : dueLabel(t)) : '+ deadline'}</button>`;
-    }
-    return `<div class="pl-card${isDone?' is-done':''}${ds==='late'?' is-late':''}" style="--cat-color:${getTaskCatColor(t)}">
-      <div class="pl-top"><span class="pl-cat">${escapeHtml(t.category)}</span><span class="status-tag">${STATUS_LABELS[t.status]}</span></div>
-      <div class="pl-title">${escapeHtml(t.title)}</div>
-      <div class="pl-actions">
-        ${t.due ? `<button type="button" data-pl="prev" data-id="${t.id}" title="Une semaine plus tôt">◀</button>` : ''}
-        ${due}
-        ${t.due ? `<button type="button" data-pl="next" data-id="${t.id}" title="Une semaine plus tard">▶</button>` : ''}
-        <button type="button" class="pl-done" data-pl="done" data-id="${t.id}" title="${isDone?'Remettre à faire':'Marquer comme terminé'}">${isDone?'↺':'✓'}</button>
-      </div>
+    const d = shortDue(t);
+    const open = String(plOpenId) === String(t.id);
+    return `<div class="pl-card pc-${t.project}${isDone?' is-done':''}${open?' is-open':''}" data-plcard="${t.id}">
+      <div class="tc-main"><span class="tc-title">${escapeHtml(t.title)}</span>${d.txt?`<span class="tc-due ${d.cls}">${escapeHtml(d.txt)}</span>`:''}</div>
+      ${open ? `<div class="tc-details">
+        <div class="tc-fields"><input type="date" class="tc-field pl-due-inline" data-id="${t.id}" value="${t.due||''}" title="Deadline"></div>
+        <div class="tc-actions">
+          ${t.due ? `<button type="button" data-pl="prev" data-id="${t.id}" title="Une semaine plus tôt">◀ sem.</button><button type="button" data-pl="next" data-id="${t.id}" title="Une semaine plus tard">sem. ▶</button>` : ''}
+          <button type="button" data-pl="done" data-id="${t.id}">${isDone?'↺ À refaire':'✓ Terminé'}</button>
+        </div>
+      </div>` : ''}
     </div>`;
   }
 
@@ -3353,6 +3398,19 @@
   }
 
   function wirePlanning(el, cols){
+    el.querySelectorAll('.pl-card').forEach(card=>{
+      card.addEventListener('click', e=>{
+        if(e.target.closest('button, select, input')) return;
+        plOpenId = String(plOpenId) === card.dataset.plcard ? null : card.dataset.plcard;
+        renderTasks();
+      });
+    });
+    el.querySelectorAll('.pl-due-inline').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const t = tasks.find(x=>String(x.id)===inp.dataset.id);
+        if(t){ t.due = inp.value || ''; saveTasks(); renderTasks(); }
+      });
+    });
     const save = ()=>{ saveTasks(); renderTasks(); };
     el.querySelector('#plStart').addEventListener('change', e=>{ if(e.target.value){ planning.start = e.target.value; save(); } });
     el.querySelector('#plWeeks').addEventListener('change', e=>{ planning.weeks = Number(e.target.value); save(); });
@@ -3435,50 +3493,26 @@
     const isWeek = todoView === 'planning';
     const board = document.getElementById('todoBoard');
     board.style.display = isWeek ? 'none' : '';
-    board.classList.toggle('view-insta', todoView==='insta');
-    board.classList.toggle('view-roman', todoView==='roman');
+    document.getElementById('todoLegend').style.display = (todoView==='all') ? '' : 'none';
     document.getElementById('todoPlanning').style.display = isWeek ? '' : 'none';
     if(isWeek){
       renderPlanning();
     } else {
-      const showProject = !viewProject();
       const cols = {sandbox: document.getElementById('col-sandbox'), todo: document.getElementById('col-todo'), doing: document.getElementById('col-doing'), done: document.getElementById('col-done')};
       Object.values(cols).forEach(c=>c.innerHTML='');
       const empties = {sandbox:"Rien de côté pour l'instant.", todo:"Rien pour l'instant, ajoute ta première étape !", doing:"Aucune étape en cours.", done:"Rien de terminé pour le moment."};
       ['sandbox','todo','doing','done'].forEach(status=>{
         const grouped = groupedList(status);
+        const cnt = document.getElementById('count-'+status);
+        if(cnt) cnt.textContent = grouped.length ? grouped.length : '';
         if(grouped.length===0){
           cols[status].innerHTML = `<div class="empty-msg">${empties[status]}</div>`;
           return;
         }
-        let lastGroup = null;
-        // En vue "Tout", les étapes de chaque projet sont regroupées dans un bloc au fond clair qui
-        // lui est propre (rose pâle Instagram, bleu pâle roman — demande du 23 octobre 2026).
-        let openBlock = null;
-        let html = '';
-        grouped.forEach((t, i)=>{
-          const g = groupKey(t);
-          if(g !== lastGroup){
-            if(g === '__late__'){
-              html += `<div class="cat-group-label late-label"><span class="cat-group-dot"></span>En retard</div>`;
-            } else {
-              if(showProject && openBlock !== t.project){
-                if(openBlock) html += `</div>`;
-                html += `<div class="proj-block proj-block-${t.project}"><div class="proj-block-title">${escapeHtml(projectById(t.project).label)}</div>`;
-                openBlock = t.project;
-              }
-              html += `<div class="cat-group-label" style="--cat-color:${getTaskCatColor(t)}"><span class="cat-group-dot"></span>${escapeHtml(t.category)}</div>`;
-            }
-            lastGroup = g;
-          }
-          html += taskCardHtml(t, {
-            isFirstInRun: i===0 || groupKey(grouped[i-1]) !== g,
-            isLastInRun: i===grouped.length-1 || groupKey(grouped[i+1]) !== g,
-            showProject: showProject && g==='__late__'
-          });
-        });
-        if(openBlock) html += `</div>`;
-        cols[status].innerHTML = html;
+        cols[status].innerHTML = grouped.map((t, i)=> taskCardHtml(t, {
+          isFirstInRun: i===0 || groupKey(grouped[i-1]) !== groupKey(t),
+          isLastInRun: i===grouped.length-1 || groupKey(grouped[i+1]) !== groupKey(t)
+        })).join('');
       });
     }
     wireTaskCards(document.getElementById('content-plan'));
@@ -3487,6 +3521,24 @@
   }
 
   function wireTaskCards(root){
+    // Un clic sur une carte la déplie / replie (sauf sur ses champs et boutons).
+    root.querySelectorAll('#todoBoard .task-card').forEach(card=>{
+      card.addEventListener('click', e=>{
+        if(e.target.closest('button, select, input')) return;
+        const id = card.dataset.card;
+        openTaskId = String(openTaskId) === String(id) ? null : id;
+        if(openTaskId === null) editingTaskId = null;
+        renderTasks();
+      });
+    });
+    root.querySelectorAll('.tc-due-input').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const t = tasks.find(x=>String(x.id)===inp.dataset.id);
+        if(!t) return;
+        t.due = inp.value || '';
+        saveTasks(); renderTasks();
+      });
+    });
     root.querySelectorAll('.cat-select').forEach(sel=>{
       sel.addEventListener('change', ()=>{
         const t = tasks.find(x=>String(x.id)===sel.dataset.id);
@@ -3537,7 +3589,7 @@
       inp.addEventListener('blur', ()=> setTimeout(()=>{ if(!done && document.activeElement !== inp){ commit(); } }, 200));
     });
 
-    root.querySelectorAll('.card-icons button, .card-actions button, .due-chip, .due-edit button').forEach(btn=>{
+    root.querySelectorAll('.tc-actions button').forEach(btn=>{
       btn.addEventListener('mousedown', e=>{ if(btn.dataset.act==='due-clear') e.preventDefault(); });
       btn.addEventListener('click', ()=>{
         const id = btn.dataset.id;
@@ -3552,7 +3604,7 @@
         if(act==='due-clear'){ editingDueId = null; t.due = ''; saveTasks(); renderTasks(); return; }
         if(act==='next') t.status = statusOrder2[Math.min(statusOrder2.indexOf(t.status)+1,statusOrder2.length-1)];
         if(act==='prev') t.status = statusOrder2[Math.max(statusOrder2.indexOf(t.status)-1,0)];
-        if(act==='del') tasks = tasks.filter(x=>String(x.id)!==id);
+        if(act==='del'){ tasks = tasks.filter(x=>String(x.id)!==id); openTaskId = null; }
         if(act==='up' || act==='down'){
           const list = groupedList(t.status);
           const gIdx = list.findIndex(x=>String(x.id)===String(t.id));
