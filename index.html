@@ -232,9 +232,6 @@
   .task-card.is-late{border-left-color:var(--due-late);}
   .cat-group-label.late-label{color:var(--due-late); border-bottom-color:#EBC0BA;}
   .cat-group-label.late-label .cat-group-dot{background:var(--due-late);}
-  .wip-count{margin-left:auto; font-size:0.72rem; font-weight:600; color:var(--ink-soft); display:inline-flex; gap:8px;}
-  .wip-count .over{color:var(--due-soon);}
-  .kanban-col.wip-over{border-color:#EBD3A8; background:#FFFBF4;}
   .todo-week{display:flex; flex-direction:column; gap:16px;}
   .todo-week-day{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px;}
   .todo-week-day h3{margin:0 0 12px; font-size:0.95rem; font-weight:700; color:var(--ink); display:flex; gap:8px; align-items:baseline;}
@@ -1361,8 +1358,8 @@
           <div id="col-todo"></div>
           <button type="button" class="kanban-quick-add" data-status="todo">+ Ajouter</button>
         </div>
-        <div class="kanban-col" id="kanbanColDoing">
-          <h3><span class="dot" style="background:var(--ciel)"></span>En cours <span class="wip-count" id="wipCount"></span></h3>
+        <div class="kanban-col">
+          <h3><span class="dot" style="background:var(--ciel)"></span>En cours</h3>
           <div id="col-doing"></div>
           <button type="button" class="kanban-quick-add" data-status="doing">+ Ajouter</button>
         </div>
@@ -2885,7 +2882,6 @@
     {id:'insta-6', project:'insta', name:'Publication', color:'#A9CFD8'},
     {id:'insta-7', project:'insta', name:'Communauté', color:'#D9D2A6'}
   ];
-  const WIP_LIMIT = 2; // cartes "En cours" max par projet avant que la colonne passe en orange
   const TODO_VIEWS = [
     {id:'all', label:'Tout'},
     {id:'insta', label:'Instagram', project:'insta'},
@@ -3173,22 +3169,6 @@
     </div>`;
   }
 
-  function renderWip(){
-    const el = document.getElementById('wipCount');
-    const col = document.getElementById('kanbanColDoing');
-    const vp = viewProject();
-    const shown = vp ? PROJECTS.filter(p=>p.id===vp) : PROJECTS;
-    let over = false;
-    el.innerHTML = shown.map(p=>{
-      const n = tasks.filter(t=>t.project===p.id && t.status==='doing').length;
-      if(n > WIP_LIMIT) over = true;
-      const label = vp ? '' : (p.id==='insta' ? 'Insta ' : 'Roman ');
-      return `<span class="${n>WIP_LIMIT?'over':''}" title="${escapeHtml(p.label)} : ${n} en cours (limite conseillée : ${WIP_LIMIT})">${label}${n}/${WIP_LIMIT}</span>`;
-    }).join('');
-    col.classList.toggle('wip-over', over);
-    col.title = over ? `Plus de ${WIP_LIMIT} étapes en cours sur un projet : finis-en une avant d'en commencer une autre.` : '';
-  }
-
   function renderTodoWeekView(){
     const el = document.getElementById('todoWeek');
     const today = todayKeyStr();
@@ -3228,7 +3208,6 @@
     if(isWeek){
       renderTodoWeekView();
     } else {
-      renderWip();
       const showProject = !viewProject();
       const cols = {sandbox: document.getElementById('col-sandbox'), todo: document.getElementById('col-todo'), doing: document.getElementById('col-doing'), done: document.getElementById('col-done')};
       Object.values(cols).forEach(c=>c.innerHTML='');
