@@ -3522,7 +3522,7 @@
     const undated = visible.filter(t=>!t.due && !t.later && t.status !== 'done');
     // Ligne fixe "À faire plus tard" (23 octobre 2026), tout en bas : étapes à traiter un jour,
     // sans date (champ t.later).
-    const laterRow = {key:'later', title:'À faire plus tard', sub:'sans date précise', later:true};
+    const laterRow = {key:'later', title:'À faire plus tard', sub:'sans date', later:true};
     const sandboxHtml = `<div class="pl-sandbox pl-cell" data-cell="any|nodate">
       <div class="pl-sandbox-head"><h3>Bac à sable <span class="col-count">${undated.length || ''}</span></h3>
         ${undated.length ? (plSelectMode ? '' : `<button type="button" class="pl-select-btn" id="plSelectStart">Sélectionner…</button>`) : ''}</div>
@@ -3543,7 +3543,7 @@
     const renderRow = r=>{
       const cells = projs.map(p=>{
         const items = r.later
-          ? visible.filter(t=>t.project===p.id && t.later && !t.due && t.status!=='done')
+          ? visible.filter(t=>t.project===p.id && !t.due && t.status!=='done')
           : dated.filter(t=>t.project===p.id && r.test(t)).sort(sortCards);
         const cellKey = `${p.id}|${r.key}`;
         // Champ "Objectif de la semaine" retiré (23 octobre 2026) : les objectifs déjà saisis restent
@@ -3569,8 +3569,9 @@
 
     const pastToggle = (hiddenCount || plShowPast)
       ? `<button type="button" class="pl-more" id="plTogglePast">${plShowPast ? '▾ Masquer les semaines précédentes' : `▴ Afficher les semaines précédentes (${hiddenCount})`}</button>` : '';
+    // Bloc "Bac à sable" du haut retiré (23 octobre 2026) : toutes les étapes sans date vont dans la
+    // ligne "À faire plus tard" en bas.
     el.innerHTML = `
-      ${sandboxHtml}
       <div class="pl-vgrid">${headRow}${pastToggle}${rowsHtml}
         <div class="pl-week-buttons">
           <button type="button" class="pl-more pl-add-week" id="plAddWeek">+ Ajouter une semaine</button>
