@@ -602,7 +602,12 @@
       transparent calc(var(--week-hour-h) * 6), transparent calc(var(--week-hour-h) * 11),
       var(--week-band-color) calc(var(--week-hour-h) * 11), var(--week-band-color) calc(var(--week-hour-h) * 14));
   }
-  .week-cols{display:grid; grid-template-columns:52px repeat(7,1fr); gap:0;}
+  /* minmax(0,1fr) (7 novembre 2026) : avec un simple 1fr, une colonne s'élargissait pour faire
+     tenir un long titre dans la ligne "journée entière", et les 3 zones (en-tête, journée, heures)
+     ne tombaient plus sur les mêmes jours. Les 7 colonnes ont maintenant toujours la même largeur. */
+  .week-cols{display:grid; grid-template-columns:52px repeat(7,minmax(0,1fr)); gap:0;}
+  .week-allday-cell{min-width:0; overflow:hidden;}
+  .week-allday-cell > *{min-width:0; max-width:100%; white-space:normal; overflow-wrap:anywhere; height:auto;}
   .week-header{border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:4px;}
   .week-day-head{text-align:center; padding:4px 2px; border-left:1px solid var(--line); cursor:pointer;}
   .week-day-head:hover{background:var(--gris);}
@@ -629,7 +634,7 @@
      dessous de 640px (voir @media(max-width:640px) plus haut dans le fichier, même seuil que le
      reste des ajustements mobiles) où la grille horaire complète dépasserait trop la hauteur visible. */
   .week-body-scroll{border-top:1px solid var(--line);}
-  .week-body{display:grid; grid-template-columns:52px repeat(7,1fr); position:relative;}
+  .week-body{display:grid; grid-template-columns:52px repeat(7,minmax(0,1fr)); position:relative;}
   /* 14 heures affichées (8h-22h, voir WEEK_VIEW_START_HOUR/END_HOUR en JS), pas 24. */
   .week-hours-col{position:relative; height:calc(var(--week-hour-h) * 14);}
   .week-hour-label{
@@ -4151,6 +4156,13 @@
         </div>
       </div>
     `;
+    // Si la grille des heures a une barre de défilement (mobile), elle mange un peu de largeur :
+    // on décale d'autant l'en-tête et la ligne "journée entière" pour que les jours restent alignés.
+    (function alignWeekHeaderWithScrollbar(){
+      const sc = document.getElementById('weekBodyScroll');
+      const sbw = sc ? (sc.offsetWidth - sc.clientWidth) : 0;
+      grid.querySelectorAll('.week-header, .week-allday').forEach(el=>{ el.style.paddingRight = sbw > 0 ? sbw + 'px' : ''; });
+    })();
     grid.querySelectorAll('.week-day-head, .week-allday-cell').forEach(el=>{
       el.addEventListener('click', (e)=>{
         // Juste après un glisser-déposer d'événement, on ignore ce clic (voir suppressWeekDayClick
