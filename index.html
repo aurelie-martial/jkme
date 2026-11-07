@@ -1537,6 +1537,124 @@
     #printExportRoot table{ border-collapse:collapse; }
     #printExportRoot table td, #printExportRoot table th{ border:1px solid #999; padding:4px 8px; }
   }
+  /* =====================================================================================
+     BLOC-NOTES — NOUVELLE APPARENCE (demande du 7 novembre 2026)
+     Reprend le style de la page Todo : colonne de gauche sobre façon "Semaine 45" (titres en
+     gras, petits sous-titres gris), note ouverte en bleu plein comme la semaine en cours, notes
+     colorées en teinte claire comme les cartes des projets, boutons pointillés discrets façon
+     "+ Ajouter une semaine", zone d'écriture en case blanche arrondie sans ombre. Tout est ciblé
+     sur #content-blocnotes : l'onglet Post, qui partage les mêmes classes, ne change pas.
+     ===================================================================================== */
+  #content-blocnotes .scenes-layout{gap:26px;}
+  #content-blocnotes .scene-sidebar{flex-basis:230px; gap:14px;}
+  #content-blocnotes .scene-pills{gap:2px;}
+
+  /* Notes : plus de contour coloré, une ligne simple qui s'éclaire au survol. */
+  #content-blocnotes .scene-pill,
+  #content-blocnotes .scene-pill.global,
+  #content-blocnotes .scene-pill.partipris,
+  #content-blocnotes .scene-pill.mecanisme,
+  #content-blocnotes .scene-pill.custom{
+    border:1px solid transparent; background:transparent; color:var(--ink);
+    font-weight:500; font-size:0.86rem; padding:8px 12px; border-radius:10px;
+  }
+  #content-blocnotes .scene-pill:hover{background:var(--panel); border-color:var(--line); color:var(--ink);}
+  /* Note ouverte : bleu plein, comme la semaine en cours du Todo. */
+  #content-blocnotes .scene-pill.active,
+  #content-blocnotes .scene-pill.global.active,
+  #content-blocnotes .scene-pill.partipris.active,
+  #content-blocnotes .scene-pill.mecanisme.active,
+  #content-blocnotes .scene-pill.custom.active{
+    background:var(--lavande); border-color:var(--lavande); color:#fff; font-weight:600;
+    box-shadow:var(--shadow-sm);
+  }
+  /* Couleur choisie via "Organiser" : version claire de la couleur (comme les cartes Instagram /
+     Roman du Todo), la couleur pleine étant réservée à la note ouverte. */
+  #content-blocnotes .scene-pill.has-custom-color{
+    background:color-mix(in srgb, var(--pill-color) 14%, #fff);
+    border-color:color-mix(in srgb, var(--pill-color) 30%, #fff);
+    color:var(--ink);
+  }
+  #content-blocnotes .scene-pill.has-custom-color:hover{
+    background:color-mix(in srgb, var(--pill-color) 22%, #fff);
+    border-color:color-mix(in srgb, var(--pill-color) 45%, #fff); color:var(--ink);
+  }
+  #content-blocnotes .scene-pill.has-custom-color.active{
+    background:var(--pill-color); border-color:var(--pill-color); color:var(--pill-text-color, #fff);
+  }
+
+  /* Étoile d'épinglage plus discrète, dorée une fois épinglée. */
+  #content-blocnotes .scene-pill-pin{width:18px; font-size:0.85rem; opacity:0.28;}
+  #content-blocnotes .scene-pill-row:hover .scene-pill-pin{opacity:0.6;}
+  #content-blocnotes .scene-pill-pin.active{opacity:1; color:var(--due-soon);}
+
+  /* Dossiers : titre en gras comme "Semaine 45", sans bandeau foncé ; le dossier de la note
+     ouverte passe en bleu, comme le titre de la semaine en cours. */
+  #content-blocnotes .scene-folder-row{margin:16px 0 4px;}
+  #content-blocnotes .scene-folder-row:first-child{margin-top:0;}
+  #content-blocnotes .scene-folder-toggle,
+  #content-blocnotes .scene-folder-row.collapsed .scene-folder-toggle{
+    background:transparent; color:var(--ink); opacity:1;
+    font-size:0.86rem; font-weight:700; text-transform:none; letter-spacing:0; padding:4px 4px;
+  }
+  #content-blocnotes .scene-folder-toggle:hover{background:transparent; color:var(--lavande);}
+  #content-blocnotes .scene-folder-icon{display:none;}
+  #content-blocnotes .scene-folder-caret{color:var(--ink-soft); opacity:1; width:10px;}
+  #content-blocnotes .scene-folder-row.active-folder .scene-folder-toggle,
+  #content-blocnotes .scene-folder-row.active-folder .scene-folder-toggle:hover,
+  #content-blocnotes .scene-folder-row.collapsed.active-folder .scene-folder-toggle{background:transparent; color:var(--lavande);}
+  #content-blocnotes .scene-folder-row.active-folder .scene-folder-caret{color:var(--lavande);}
+  #content-blocnotes .scene-folder-row.collapsed .scene-folder-toggle{color:var(--ink-soft);}
+  #content-blocnotes .scene-pill-add-note{border:none; background:transparent; color:var(--ink-soft); border-radius:6px; opacity:0.6;}
+  #content-blocnotes .scene-folder-row:hover .scene-pill-add-note{opacity:1;}
+  #content-blocnotes .scene-pill-add-note:hover{background:var(--lavande); color:#fff;}
+  #content-blocnotes .scene-divider-row{margin:12px 0;}
+  #content-blocnotes .scene-divider-line{background:none; border-top:1px dashed var(--line); height:0;}
+
+  /* Boutons du bas : pointillés discrets, empilés, comme "+ Ajouter une semaine". */
+  #content-blocnotes .scene-sidebar-actions{
+    flex-direction:column; align-items:stretch; gap:6px; padding-top:14px; border-top:1px dashed var(--line);
+  }
+  #content-blocnotes .btn-add-subtab,
+  #content-blocnotes .btn-organize-toggle{
+    font-size:0.74rem; font-weight:600; padding:6px 12px; border:1px dashed var(--line); border-radius:10px;
+    background:transparent; color:var(--ink-soft); text-align:left; justify-content:flex-start;
+  }
+  #content-blocnotes .btn-add-subtab:hover,
+  #content-blocnotes .btn-organize-toggle:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
+  #content-blocnotes .btn-organize-toggle.active{background:var(--ink); color:#fff; border:1px solid var(--ink);}
+  #content-blocnotes #addSubTabBtn{border-style:solid; border-color:var(--line); background:var(--panel); color:var(--ink);}
+  #content-blocnotes #addSubTabBtn:hover{border-color:var(--lavande); color:var(--lavande);}
+
+  #content-blocnotes .blocnotes-sidebar-collapse-btn{border-color:transparent; background:transparent; width:24px; height:24px;}
+  #content-blocnotes .blocnotes-sidebar-collapse-btn:hover{border-color:var(--line); background:var(--panel);}
+
+  /* Zone d'écriture : case blanche arrondie, fine bordure, sans ombre (comme les cases du Todo). */
+  #content-blocnotes .panel{box-shadow:none; border-radius:14px; padding:26px 30px 30px;}
+  #content-blocnotes .scene-editor-title{
+    font-size:1.35rem; font-weight:700; border-bottom:none; padding:2px 0 4px; margin-bottom:12px;
+  }
+  #content-blocnotes .scene-editor-title::placeholder{color:var(--ink-soft); font-weight:600;}
+  #content-blocnotes .subtab-title{font-size:1.2rem;}
+  /* Barre d'outils : bande grise arrondie avec boutons sans bordure, comme le menu des onglets. */
+  #content-blocnotes .scene-toolbar{
+    background:var(--gris); border-radius:12px; padding:4px; gap:2px; margin-bottom:22px;
+    position:sticky; top:8px; z-index:5;
+  }
+  #content-blocnotes .scene-toolbar button{
+    border:none; background:transparent; border-radius:8px; padding:6px 10px; font-size:0.76rem; color:var(--ink-soft);
+  }
+  #content-blocnotes .scene-toolbar button:hover{background:var(--panel); color:var(--ink); box-shadow:var(--shadow-sm);}
+  #content-blocnotes .scene-toolbar-sep{margin:4px 3px; background:#D5DEE8;}
+  #content-blocnotes .scene-editor-content{font-size:0.97rem; line-height:1.7;}
+  #content-blocnotes .scene-editor-content h2{color:var(--ink);}
+  #content-blocnotes .custom-tab-weight{opacity:0.75;}
+  #content-blocnotes .blocnotes-empty{border-radius:14px; background:transparent;}
+  @media(max-width:640px){
+    #content-blocnotes .panel{padding:18px 16px 22px;}
+    #content-blocnotes .scene-toolbar{position:static;}
+  }
+
 </style>
 </head>
 <body>
