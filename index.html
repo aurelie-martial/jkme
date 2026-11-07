@@ -1546,7 +1546,8 @@
      sur #content-blocnotes : l'onglet Post, qui partage les mêmes classes, ne change pas.
      ===================================================================================== */
   #content-blocnotes .scenes-layout{gap:26px;}
-  #content-blocnotes .scene-sidebar{flex-basis:230px; gap:14px;}
+  #content-blocnotes .scene-sidebar{gap:14px;}
+  @media(min-width:641px){ #content-blocnotes .scene-sidebar:not(.collapsed){flex-basis:230px;} }
   #content-blocnotes .scene-pills{gap:2px;}
 
   /* Notes : plus de contour coloré, une ligne simple qui s'éclaire au survol. */
@@ -1654,6 +1655,51 @@
     #content-blocnotes .panel{padding:18px 16px 22px;}
     #content-blocnotes .scene-toolbar{position:static;}
   }
+
+  /* =====================================================================================
+     POST-IT — NOUVELLE APPARENCE (demande du 7 novembre 2026)
+     Même esprit que les cartes du Todo : cartes droites (plus inclinées), coins arrondis, fine
+     bordure, teintes claires des projets (voir POSTIT_COLORS), petits boutons blancs comme ✓ / ✕.
+     ===================================================================================== */
+  #content-blocnotes .parti-grid{column-width:260px; column-gap:14px;}
+  #content-blocnotes .parti-card{
+    transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important;
+    border:1px solid var(--postit-line, var(--line)); border-radius:12px;
+    padding:14px 16px 14px; margin:0 0 14px;
+    box-shadow:none; animation:none;
+    transition:box-shadow .15s ease, border-color .15s ease;
+  }
+  #content-blocnotes .parti-card:hover{box-shadow:var(--shadow-sm); border-color:color-mix(in srgb, var(--postit-line, var(--line)) 70%, #94A3B8);}
+  #content-blocnotes .parti-card::before{display:none;}
+  #content-blocnotes .parti-card h4{font-size:0.95rem; margin:0 0 6px; padding-right:0; line-height:1.35;}
+  #content-blocnotes .parti-card .parti-content{font-size:0.86rem; line-height:1.55;}
+  #content-blocnotes .parti-card .parti-content p{margin:0 0 0.4em;}
+  #content-blocnotes .parti-actions{top:10px; right:10px; gap:3px; opacity:0; transition:opacity .12s ease;
+    background:var(--postit-bg, #fff); border-radius:8px; padding-left:4px; box-shadow:-10px 0 10px var(--postit-bg, #fff);}
+  #content-blocnotes .parti-card:hover .parti-actions,
+  #content-blocnotes .parti-card:focus-within .parti-actions{opacity:1;}
+  @media(hover:none){ #content-blocnotes .parti-actions{opacity:0.75;} }
+  #content-blocnotes .parti-actions button,
+  #content-blocnotes .parti-drag-handle{
+    width:22px; height:22px; padding:0; display:inline-flex; align-items:center; justify-content:center;
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    font-size:0.7rem; color:var(--ink-soft); line-height:1;
+  }
+  #content-blocnotes .parti-actions button:hover,
+  #content-blocnotes .parti-drag-handle:hover{background:var(--gris); color:var(--ink);}
+  #content-blocnotes .parti-actions button[data-act="del"]:hover{background:#FBEAEA; color:var(--due-late); border-color:#F1CFCF;}
+  #content-blocnotes .parti-card h4[contenteditable="true"]:focus,
+  #content-blocnotes .parti-card .parti-content[contenteditable="true"]:focus{background:rgba(255,255,255,0.6); box-shadow:0 0 0 2px rgba(91,124,153,0.25);}
+  #content-blocnotes .parti-card .last-modified{margin-top:10px; padding-top:6px; border-top:1px dashed rgba(51,65,85,0.12); font-size:0.66rem;}
+  /* Boutons au-dessus des post-it : même style que « + Ajouter une note » et les boutons pointillés. */
+  #partiModeBlock .btn, #customSubTabBlock .btn{
+    font-size:0.78rem; font-weight:600; padding:7px 14px; border-radius:10px; box-shadow:none; transform:none;
+    background:var(--panel); color:var(--ink); border:1px solid var(--line);
+  }
+  #partiModeBlock .btn:hover, #customSubTabBlock .btn:hover{opacity:1; border-color:var(--lavande); color:var(--lavande);}
+  #partiModeBlock .btn-secondary, #customSubTabBlock .btn-secondary{background:transparent; color:var(--ink-soft); border:1px dashed var(--line);}
+  #partiModeBlock .btn-secondary:hover, #customSubTabBlock .btn-secondary:hover{color:var(--ink); border-color:var(--ink-soft); background:var(--panel);}
+  #partiModeBlock .subtab-title{font-size:1.35rem;}
 
 </style>
 </head>
@@ -4796,12 +4842,14 @@
   // ---------- PROJET / PARTIS PRIS ----------
   // Les post-it se distinguent par des nuances de gris (blanc → gris foncé) plutôt que par des
   // couleurs vives : ça fait moins "arc-en-ciel" quand plusieurs post-it sont affichés ensemble.
+  // Teintes claires reprises des cartes du Todo (7 novembre 2026) : blanc, bleu clair, sauge
+  // (Roman), terracotta clair (Instagram), miel (Projet). Plus d'inclinaison (rotate 0).
   const POSTIT_COLORS = [
-    { bg: '#FFFFFF', rotate: '-1deg' },  // Blanc
-    { bg: '#F1F5F9', rotate: '1deg' },   // Gris très clair
-    { bg: '#E2E8F0', rotate: '-0.5deg'}, // Gris clair
-    { bg: '#CBD5E1', rotate: '1.2deg'},  // Gris moyen
-    { bg: '#94A3B8', rotate: '-1.5deg'}  // Gris foncé
+    { bg: '#FFFFFF', line: '#E2E8F0', rotate: '0deg' }, // Blanc
+    { bg: '#EAF1F7', line: '#D3E0EC', rotate: '0deg' }, // Bleu clair
+    { bg: '#EDF5EE', line: '#CFE3D3', rotate: '0deg' }, // Sauge
+    { bg: '#FCEFE8', line: '#F1D6C8', rotate: '0deg' }, // Terracotta clair
+    { bg: '#FBF5E4', line: '#EEDFB6', rotate: '0deg' }  // Miel
   ];
   function renderPartis(){
     const grid = document.getElementById('partiGrid');
@@ -4812,7 +4860,7 @@
     grid.innerHTML = partis.map((p,i) => {
       const theme = POSTIT_COLORS[i % POSTIT_COLORS.length];
       return `
-      <div class="parti-card" data-order-key="${p.id}" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
+      <div class="parti-card" data-order-key="${p.id}" style="--postit-bg:${theme.bg}; --postit-line:${theme.line};">
         <div class="parti-actions">
           <button type="button" class="parti-drag-handle" title="Glisser pour déplacer">⠿</button>
           <button type="button" data-act="save" title="Forcer l'enregistrement tout de suite">💾</button>
@@ -6629,7 +6677,7 @@
       grid.innerHTML = data.items.map((n,i) => {
         const theme = POSTIT_COLORS[i % POSTIT_COLORS.length];
         return `
-        <div class="parti-card" data-order-key="${n.id}" style="--postit-bg:${theme.bg}; transform: rotate(${theme.rotate});">
+        <div class="parti-card" data-order-key="${n.id}" style="--postit-bg:${theme.bg}; --postit-line:${theme.line};">
           <div class="parti-actions">
             <button type="button" class="parti-drag-handle" title="Glisser pour déplacer">⠿</button>
             <button type="button" data-act="save" title="Forcer l'enregistrement tout de suite">💾</button>
