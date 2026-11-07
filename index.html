@@ -556,6 +556,20 @@
   .ev-garde-bar{
     height:7px; flex:0 0 auto; margin:1px -6px 0; background:var(--ev-garde); cursor:pointer;
   }
+  /* Événements sur plusieurs jours (exposition, salon, séjour... — 7 novembre 2026) : une barre
+     continue de la couleur de leur type, comme le trait "mon fils", au lieu d'une étiquette répétée
+     dans chaque case. Le titre n'apparaît qu'au premier jour et au début de chaque semaine. */
+  .ev-multi-bar{
+    height:15px; flex:0 0 auto; margin:1px -6px 0; padding:0 6px; cursor:pointer;
+    background:var(--ev-color, var(--ev-rdv)); color:#fff; font-size:0.6rem; font-weight:600; line-height:15px;
+    white-space:nowrap; overflow:hidden;
+  }
+  .ev-multi-bar.ev-off-multi{background:rgba(123,138,128,0.18); color:var(--ev-off); font-style:italic; border-top:1px dashed var(--ev-off); border-bottom:1px dashed var(--ev-off);}
+  .week-multi-bar{
+    min-height:16px; margin:0 -4px; padding:1px 6px; cursor:pointer; border-radius:0;
+    background:var(--ev-color, var(--ev-rdv)); color:#fff; font-size:0.62rem; font-weight:600; line-height:1.3;
+  }
+  .week-multi-bar.ev-off-multi{background:rgba(123,138,128,0.18); color:var(--ev-off); font-style:italic;}
 
   /* Choix du type d'événement, dans le formulaire d'ajout du calendrier */
   .ev-type-choice{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:2px;}
@@ -3863,6 +3877,26 @@
   // volontairement différentes du bleu/gris-bleu de l'interface générale, pour bien distinguer les
   // types d'événements entre eux dans l'agenda.
   const EVENT_TYPE_COLORS = { rdv: 'var(--ev-rdv)', travail: 'var(--ev-travail)', garde: 'var(--ev-garde)', off: 'var(--ev-off)' };
+
+  // Événement sur plusieurs jours (hors "mon fils", qui a déjà son trait) : affiché en barre continue.
+  function isMultiDayEvent(ev){
+    return !ev._deadline && eventType(ev) !== 'garde' && ev.startDate && ev.endDate && ev.startDate !== ev.endDate;
+  }
+  // Ordre stable d'un jour à l'autre (début le plus ancien en premier), pour que la barre d'un même
+  // événement reste à la même hauteur dans toutes les cases qu'elle traverse.
+  function sortMultiDay(list){
+    return list.slice().sort((a,b)=> (a.startDate||'').localeCompare(b.startDate||'') || (a.endDate||'').localeCompare(b.endDate||'') || String(a.id).localeCompare(String(b.id)));
+  }
+  function multiDayBarHtml(ev, key, isMonday, isSunday, baseCls){
+    const leftRound = ev.startDate === key || isMonday;
+    const rightRound = ev.endDate === key || isSunday;
+    const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
+    const type = eventType(ev);
+    const color = ev._foreign ? (ev.color || '#6366f1') : EVENT_TYPE_COLORS[type];
+    const title = ev._foreign && ev.emoji ? `${ev.emoji} ${ev.title || ''}` : (ev.title || '');
+    const cls = baseCls + (type === 'off' ? ' ev-off-multi' : '');
+    return `<div class="${cls}" style="--ev-color:${color}; border-radius:${radius}" title="${escapeHtml(title)}" data-id="${ev.id}"${ev._foreign ? ' data-foreign="1"' : ''}>${leftRound ? escapeHtml(title) : '&nbsp;'}</div>`;
+  }
   const EVENT_TYPES = ['travail', 'garde', 'off'];
   function eventType(ev){ return EVENT_TYPES.includes(ev.type) ? ev.type : 'rdv'; }
 
@@ -3937,7 +3971,8 @@
       // pastille) mais comme un trait continu qui traverse les jours concernés : le temps ne
       // s'organise pas de la même façon, donc l'affichage doit le distinguer nettement.
       const gardeEvs = evs.filter(ev => eventType(ev) === 'garde');
-      const otherEvs = evs.filter(ev => eventType(ev) !== 'garde');
+      const multiEvs = sortMultiDay(evs.filter(isMultiDayEvent));
+      const otherEvs = evs.filter(ev => eventType(ev) !== 'garde' && !isMultiDayEvent(ev));
       cell.className = 'cal-cell' + (outside ? ' outside-month' : '') + (key===todayKey ? ' today' : '') + (key<todayKey ? ' past' : '') + (evs.length ? ' has-events' : '');
       const isMonday = (i % 7) === 0;
       const isSunday = (i % 7) === 6;
@@ -3949,6 +3984,7 @@
           const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
           return `<div class="ev-garde-bar" style="border-radius:${radius}" title="${escapeHtml(ev.title || 'Mon fils')}" data-id="${ev.id}"></div>`;
         }).join('') +
+        multiEvs.map(ev => multiDayBarHtml(ev, key, isMonday, isSunday, 'ev-multi-bar')).join('') +
         otherEvs.slice(0, maxPreview).map(ev => {
           const multi = ev.startDate !== ev.endDate;
           // Un événement perso (partagé avec LilyTracker) porte sa propre couleur/emoji, pas un
@@ -4093,8 +4129,9 @@
       const gardeEvs = evs.filter(ev => eventType(ev) === 'garde');
       // Un événement perso (foreign) n'a jamais d'heure (voir combinedDayEvents) : il rejoint donc
       // naturellement la ligne "toute la journée", comme les bandeaux LilyTracker eux-mêmes.
-      const untimedEvs = evs.filter(ev => eventType(ev) !== 'garde' && !ev.time);
-      const timedEvs = evs.filter(ev => eventType(ev) !== 'garde' && ev.time);
+      const multiEvs = sortMultiDay(evs.filter(isMultiDayEvent));
+      const untimedEvs = evs.filter(ev => eventType(ev) !== 'garde' && !isMultiDayEvent(ev) && !ev.time);
+      const timedEvs = evs.filter(ev => eventType(ev) !== 'garde' && !isMultiDayEvent(ev) && ev.time);
 
       const isMonday = date.getDay() === 1;
       const isSunday = date.getDay() === 0;
@@ -4105,6 +4142,7 @@
           const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
           return `<div class="week-garde-bar" style="border-radius:${radius}" data-id="${ev.id}">${leftRound ? escapeHtml(ev.title || 'Mon fils') : ''}</div>`;
         }).join('') +
+        multiEvs.map(ev => multiDayBarHtml(ev, key, isMonday, isSunday, 'week-multi-bar')).join('') +
         untimedEvs.map(ev=>{
           if(ev._deadline){
             return `<div class="ev-preview ev-deadline" style="--ev-color:${ev.color}" data-id="${ev.id}" data-deadline="1" title="Deadline · ${escapeHtml(ev.projectLabel)}">⏰ ${escapeHtml(ev.title)}</div>`;
