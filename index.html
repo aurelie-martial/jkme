@@ -573,6 +573,13 @@
 
   /* Choix du type d'événement, dans le formulaire d'ajout du calendrier */
   .ev-type-choice{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:2px;}
+  .ev-emoji-quick{display:flex; flex-wrap:wrap; gap:2px; margin-top:4px;}
+  .ev-emoji-quick button{border:none; background:transparent; font-size:1.05rem; line-height:1; padding:3px; border-radius:6px; cursor:pointer;}
+  .ev-emoji-quick button:hover{background:var(--gris);}
+  .ev-color-wrap{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .ev-color-wrap input[type="color"]{width:44px; height:32px; padding:2px; border-radius:8px; cursor:pointer;}
+  .ev-color-wrap .link-btn{font-size:0.72rem;}
+  .ev-color-wrap.is-default .link-btn{visibility:hidden;}
   .ev-type-option{
     display:flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:20px;
     padding:5px 11px; font-size:0.76rem; font-weight:600; color:var(--ink-soft); cursor:pointer;
@@ -2094,6 +2101,22 @@
       </div>
       <label id="evTitleLabel">Titre du rendez-vous</label>
       <input type="text" id="evTitle" placeholder="Ex : RDV éditeur">
+      <!-- Emoji et couleur propres à chaque événement (7 novembre 2026). Sans couleur choisie,
+           l'événement garde celle de son type. -->
+      <div class="ev-time-row ev-style-row">
+        <div>
+          <label>Emoji (optionnel)</label>
+          <input type="text" id="evEmoji" maxlength="8" placeholder="🎨">
+          <div class="ev-emoji-quick" id="evEmojiQuick"></div>
+        </div>
+        <div>
+          <label>Couleur</label>
+          <div class="ev-color-wrap">
+            <input type="color" id="evColor" value="#C4574F">
+            <button type="button" class="link-btn" id="evColorReset" title="Revenir à la couleur du type">↺ couleur du type</button>
+          </div>
+        </div>
+      </div>
       <div class="ev-time-row" id="evTimeRow">
         <div>
           <label>Heure de début (optionnel)</label>
@@ -3887,14 +3910,24 @@
   function sortMultiDay(list){
     return list.slice().sort((a,b)=> (a.startDate||'').localeCompare(b.startDate||'') || (a.endDate||'').localeCompare(b.endDate||'') || String(a.id).localeCompare(String(b.id)));
   }
+  // Couleur et emoji choisis pour un événement (7 novembre 2026) ; à défaut, couleur de son type.
+  const EVENT_TYPE_HEX = { rdv:'#C4574F', travail:'#C98A2E', garde:'#B15590', off:'#7B8A80' };
+  function evColor(ev){
+    if(ev._foreign) return ev.color || '#6366f1';
+    if(ev._deadline) return ev.color;
+    return ev.color || EVENT_TYPE_COLORS[eventType(ev)];
+  }
+  function evEmojiPrefix(ev){ return ev.emoji ? escapeHtml(ev.emoji) + ' ' : ''; }
+  // Le style "temps off" (pointillés, gris) n'a de sens que si on garde sa couleur d'origine.
+  function evIsOffStyled(ev){ return eventType(ev) === 'off' && !ev.color; }
   function multiDayBarHtml(ev, key, isMonday, isSunday, baseCls){
     const leftRound = ev.startDate === key || isMonday;
     const rightRound = ev.endDate === key || isSunday;
     const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
     const type = eventType(ev);
-    const color = ev._foreign ? (ev.color || '#6366f1') : EVENT_TYPE_COLORS[type];
-    const title = ev._foreign && ev.emoji ? `${ev.emoji} ${ev.title || ''}` : (ev.title || '');
-    const cls = baseCls + (type === 'off' ? ' ev-off-multi' : '');
+    const color = evColor(ev);
+    const title = ev.emoji ? `${ev.emoji} ${ev.title || ''}` : (ev.title || '');
+    const cls = baseCls + (evIsOffStyled(ev) ? ' ev-off-multi' : '');
     return `<div class="${cls}" style="--ev-color:${color}; border-radius:${radius}" title="${escapeHtml(title)}" data-id="${ev.id}"${ev._foreign ? ' data-foreign="1"' : ''}>${leftRound ? escapeHtml(title) : '&nbsp;'}</div>`;
   }
   const EVENT_TYPES = ['travail', 'garde', 'off'];
@@ -3982,7 +4015,7 @@
           const leftRound = ev.startDate === key || isMonday;
           const rightRound = ev.endDate === key || isSunday;
           const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
-          return `<div class="ev-garde-bar" style="border-radius:${radius}" title="${escapeHtml(ev.title || 'Mon fils')}" data-id="${ev.id}"></div>`;
+          return `<div class="ev-garde-bar" style="border-radius:${radius}; background:${evColor(ev)}" title="${escapeHtml((ev.emoji ? ev.emoji + ' ' : '') + (ev.title || 'Mon fils'))}" data-id="${ev.id}"></div>`;
         }).join('') +
         multiEvs.map(ev => multiDayBarHtml(ev, key, isMonday, isSunday, 'ev-multi-bar')).join('') +
         otherEvs.slice(0, maxPreview).map(ev => {
@@ -4001,9 +4034,9 @@
           // Un créneau de travail affiche son moment de la journée plutôt que l'heure exacte
           // (voir nextWorkSlotTime) : "Matin · Écriture" plutôt que "09:00 · Écriture".
           const timeText = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period]) ? WORK_PERIOD_LABELS[ev.period] : ev.time;
-          const label = timeText ? `${escapeHtml(timeText)} · ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
-          const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
-          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[type]}" data-id="${ev.id}">${multi ? '↔ ' : ''}${label}</div>`;
+          const label = timeText ? `${escapeHtml(timeText)} · ${evEmojiPrefix(ev)}${escapeHtml(ev.title)}` : evEmojiPrefix(ev) + escapeHtml(ev.title);
+          const cls = 'ev-preview' + (evIsOffStyled(ev) ? ' ev-off-preview' : '');
+          return `<div class="${cls}" style="--ev-color:${evColor(ev)}" data-id="${ev.id}">${multi ? '↔ ' : ''}${label}</div>`;
         }).join('') +
         (otherEvs.length > maxPreview ? `<div class="ev-more">+${otherEvs.length - maxPreview} autre${otherEvs.length - maxPreview > 1 ? 's' : ''}</div>` : '');
       // Un clic sur un événement précis (barre "Mon fils" ou aperçu) bascule directement en
@@ -4140,7 +4173,7 @@
           const leftRound = ev.startDate === key || isMonday;
           const rightRound = ev.endDate === key || isSunday;
           const radius = `${leftRound?'4px':'0'} ${rightRound?'4px':'0'} ${rightRound?'4px':'0'} ${leftRound?'4px':'0'}`;
-          return `<div class="week-garde-bar" style="border-radius:${radius}" data-id="${ev.id}">${leftRound ? escapeHtml(ev.title || 'Mon fils') : ''}</div>`;
+          return `<div class="week-garde-bar" style="border-radius:${radius}; background:${evColor(ev)}" data-id="${ev.id}">${leftRound ? evEmojiPrefix(ev) + escapeHtml(ev.title || 'Mon fils') : ''}</div>`;
         }).join('') +
         multiEvs.map(ev => multiDayBarHtml(ev, key, isMonday, isSunday, 'week-multi-bar')).join('') +
         untimedEvs.map(ev=>{
@@ -4151,9 +4184,8 @@
             const label = ev.emoji ? `${ev.emoji} ${escapeHtml(ev.title)}` : escapeHtml(ev.title);
             return `<div class="ev-preview" style="--ev-color:${ev.color || '#6366f1'}" data-id="${ev.id}" data-foreign="1">${label}</div>`;
           }
-          const isOff = eventType(ev) === 'off';
-          const cls = 'ev-preview' + (isOff ? ' ev-off-preview' : '');
-          return `<div class="${cls}" style="--ev-color:${EVENT_TYPE_COLORS[eventType(ev)]}" data-id="${ev.id}">${escapeHtml(ev.title)}</div>`;
+          const cls = 'ev-preview' + (evIsOffStyled(ev) ? ' ev-off-preview' : '');
+          return `<div class="${cls}" style="--ev-color:${evColor(ev)}" data-id="${ev.id}">${evEmojiPrefix(ev)}${escapeHtml(ev.title)}</div>`;
         }).join('') +
       `</div>`;
 
@@ -4169,14 +4201,14 @@
         const left = lane * width;
         const type = eventType(ev);
         const isOff = type === 'off';
-        const cls = 'week-event' + (isOff ? ' ev-off-preview' : '');
+        const cls = 'week-event' + (evIsOffStyled(ev) ? ' ev-off-preview' : '');
         // Un créneau de travail affiche son moment de la journée (Matin/Midi/...) plutôt que
         // l'heure exacte, qui n'est qu'une heure de début/fin dérivée de ce moment (voir nextWorkSlotTime).
         const timeLabel = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period])
           ? WORK_PERIOD_LABELS[ev.period]
           : (ev.endTime ? `${escapeHtml(ev.time)}–${escapeHtml(ev.endTime)}` : escapeHtml(ev.time));
-        return `<div class="${cls}" style="top:${top}px; height:${height}px; left:${left}%; width:calc(${width}% - 3px); --ev-color:${EVENT_TYPE_COLORS[type]}" data-key="${key}" data-id="${ev.id}" data-start="${start}" data-end="${end}">
-          <span class="wt">${timeLabel}</span>${escapeHtml(ev.title || '')}
+        return `<div class="${cls}" style="top:${top}px; height:${height}px; left:${left}%; width:calc(${width}% - 3px); --ev-color:${evColor(ev)}" data-key="${key}" data-id="${ev.id}" data-start="${start}" data-end="${end}">
+          <span class="wt">${timeLabel}</span>${evEmojiPrefix(ev)}${escapeHtml(ev.title || '')}
         </div>`;
       }).join('');
 
@@ -4497,6 +4529,8 @@
   }
 
   function updateEvFormForType(type){
+    // Tant qu'aucune couleur n'a été choisie à la main, l'aperçu suit la couleur du type sélectionné.
+    if(!evColorCustom) setEvColorDefault(type);
     evTypeChoiceEl.querySelectorAll('.ev-type-option').forEach(opt=>{
       opt.classList.toggle('active', opt.querySelector('input').value === type);
     });
@@ -4574,8 +4608,30 @@
     }
   });
 
+  // Emoji + couleur personnalisés. evColorCustom = la couleur a été choisie à la main (sinon on
+  // n'enregistre rien et l'événement suit la couleur de son type).
+  const evEmojiEl = document.getElementById('evEmoji');
+  const evColorEl = document.getElementById('evColor');
+  const evColorWrapEl = evColorEl.closest('.ev-color-wrap');
+  let evColorCustom = false;
+  function setEvColorDefault(type){
+    evColorCustom = false;
+    evColorEl.value = EVENT_TYPE_HEX[type] || EVENT_TYPE_HEX.rdv;
+    evColorWrapEl.classList.add('is-default');
+  }
+  evColorEl.addEventListener('input', ()=>{ evColorCustom = true; evColorWrapEl.classList.remove('is-default'); });
+  document.getElementById('evColorReset').addEventListener('click', ()=> setEvColorDefault(currentEvType()));
+  (function buildEmojiQuick(){
+    const list = ['🎨','🖼️','📚','✍️','☕','🍽️','🎉','🎂','✈️','🚆','🏖️','🏥','💆‍♀️','🧘‍♀️','📞','💻','🎬','🎭','🛍️','❤️'];
+    const box = document.getElementById('evEmojiQuick');
+    box.innerHTML = list.map(e=>`<button type="button" data-e="${e}">${e}</button>`).join('') + `<button type="button" data-e="" title="Retirer l'emoji">✕</button>`;
+    box.querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{ evEmojiEl.value = b.dataset.e; }));
+  })();
+
   function resetEvForm(){
     editingEventId = null;
+    evEmojiEl.value = '';
+    setEvColorDefault('rdv');
     addEventFormEl.classList.remove('editing');
     evCancelEditBtnEl.style.display = 'none';
     evTypeChoiceEl.querySelector('input[value="rdv"]').checked = true;
@@ -4604,6 +4660,9 @@
     evTypeChoiceEl.querySelector(`input[value="${type}"]`).checked = true;
     evTitleInputEl.value = ev.title || '';
     evNoteInputEl.value = ev.note || '';
+    evEmojiEl.value = ev.emoji || '';
+    if(ev.color){ evColorCustom = true; evColorEl.value = ev.color; evColorWrapEl.classList.remove('is-default'); }
+    else setEvColorDefault(type);
     evStartTimeEl.value = ev.time || '';
     evEndTimeEl.value = ev.endTime || '';
     if(type === 'travail'){
@@ -4724,10 +4783,10 @@
       // exacte, qui n'en est qu'une heure de début/fin dérivée (voir nextWorkSlotTime).
       const timeText = (type === 'travail' && ev.period && WORK_PERIOD_LABELS[ev.period]) ? WORK_PERIOD_LABELS[ev.period] : ev.time;
       return `
-      <div class="ev-item" style="border-left:3px solid ${EVENT_TYPE_COLORS[type]}">
+      <div class="ev-item" style="border-left:3px solid ${evColor(ev)}">
         <span class="time">${timeText ? escapeHtml(timeText) : 'Journée'}</span>
         <div class="info">
-          <div class="t">${escapeHtml(ev.title || (type==='garde' ? 'Mon fils' : (type==='off' ? 'Temps off' : ''))) } <span class="n">· ${EVENT_TYPE_LABELS[type]}</span></div>
+          <div class="t">${evEmojiPrefix(ev)}${escapeHtml(ev.title || (type==='garde' ? 'Mon fils' : (type==='off' ? 'Temps off' : ''))) } <span class="n">· ${EVENT_TYPE_LABELS[type]}</span></div>
           ${multi ? `<div class="n">Du ${formatShort(ev.startDate)} au ${formatShort(ev.endDate)}</div>` : ''}
           ${ev.note ? `<div class="n">${escapeHtml(ev.note)}</div>` : ''}
           ${ev.recurrenceId ? `<div class="n">↻ Se répète une semaine sur deux · <button type="button" class="link-btn del-series" data-recurrence-id="${ev.recurrenceId}">supprimer toute la série</button></div>` : ''}
@@ -4772,6 +4831,8 @@
     let title = document.getElementById('evTitle').value.trim();
     const note = document.getElementById('evNote').value.trim();
     const endDateVal = document.getElementById('evEndDate').value;
+    const emoji = evEmojiEl.value.trim();
+    const color = evColorCustom ? evColorEl.value : '';
     if(type === 'garde'){
       if(!title) title = 'Mon fils';
     } else if(type === 'off'){
@@ -4804,7 +4865,7 @@
       if(!editingOriginal){ resetEvForm(); return; }
       const startDate = editingOriginal.startDate;
       const endDate = (endDateVal && endDateVal >= startDate) ? endDateVal : startDate;
-      updateEventEverywhere(editingEventId, { type, title, note, startDate, endDate, time, endTime, period });
+      updateEventEverywhere(editingEventId, { type, title, note, startDate, endDate, time, endTime, period, emoji, color });
       resetEvForm();
       renderEventList(); renderCalendarView();
       return;
@@ -4828,6 +4889,8 @@
         if(!events[d]) events[d] = [];
         const ev = {id, time, endTime, title, note, startDate: occStart, endDate: occEnd, type};
         if(period) ev.period = period;
+        if(emoji) ev.emoji = emoji;
+        if(color) ev.color = color;
         if(recurrenceId) ev.recurrenceId = recurrenceId;
         events[d].push(ev);
       });
