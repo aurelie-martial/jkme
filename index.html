@@ -1320,13 +1320,18 @@
   .parti-content-editable img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
   .parti-form-actions{display:flex; gap:10px; align-items:center; margin-top:4px;}
 
-  /* Disposition en colonnes façon "mur de post-it" : contrairement à une grille classique (où
-     chaque ligne prend la hauteur de sa carte la plus haute, laissant un vide sous les cartes plus
-     courtes de la même ligne), les colonnes CSS font remonter chaque nouvelle carte dans la
-     première colonne qui a de la place, comblant automatiquement les espaces vides. */
+  /* Disposition "mur de post-it" (refaite le 11 novembre 2026). L'ancienne version utilisait les
+     colonnes CSS (column-width) : Safari a un bug connu avec elles — en ajoutant ou en modifiant un
+     post-it, une autre carte (souvent celle de la dernière colonne) pouvait disparaître de l'écran,
+     ce qui donnait l'impression qu'ajouter un post-it en supprimait un autre. On utilise maintenant
+     une grille CSS à lignes très fines (4px) : chaque carte s'étend sur autant de lignes que sa
+     hauteur (calculé par enableMasonryGrid), ce qui garde le rendu "mur" sans espace vide sous les
+     cartes courtes, sans le bug de Safari. */
   .parti-grid{
-    column-width:280px; column-gap:20px;
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+    column-gap:20px; row-gap:0; grid-auto-rows:4px; align-items:start;
   }
+  .parti-grid > .empty-msg{grid-column:1 / -1; grid-row:auto;}
   .parti-card{
     background: var(--postit-bg, #FEF08A);
     color: var(--ink);
@@ -1697,7 +1702,7 @@
      Même esprit que les cartes du Todo : cartes droites (plus inclinées), coins arrondis, fine
      bordure, teintes claires des projets (voir POSTIT_COLORS), petits boutons blancs comme ✓ / ✕.
      ===================================================================================== */
-  #content-blocnotes .parti-grid{column-width:260px; column-gap:14px;}
+  #content-blocnotes .parti-grid{grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); column-gap:14px;}
   #content-blocnotes .parti-card{
     transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important;
     border:1px solid var(--postit-line, var(--line)); border-radius:12px;
@@ -5556,6 +5561,7 @@
     });
   }
 
+  enableMasonryGrid(document.getElementById('partiGrid'));
   enableGridDragReorder(document.getElementById('partiGrid'), '.parti-drag-handle', ()=>partis, (newOrder)=>{
     partis = newOrder;
     savePartis();
@@ -5774,6 +5780,34 @@
   // correspondant, `saveFn` la fonction de sauvegarde (savePartis / saveCustomTabContent(ct.id)).
   // On ne redessine jamais la grille sur un simple "input" (ça ferait perdre le curseur) :
   // seul un clic sur ✎ ou ✕ redessine.
+  // Mur de post-it (voir .parti-grid dans le CSS) : chaque carte occupe dans la grille autant de
+  // lignes de 4px que sa hauteur réelle (+ sa marge du bas). Recalculé automatiquement dès qu'une
+  // carte change de taille (texte modifié, image chargée, fenêtre redimensionnée) et dès qu'une
+  // carte est ajoutée ou retirée.
+  function enableMasonryGrid(grid){
+    if(!grid || grid.__rgMasonry) return;
+    grid.__rgMasonry = true;
+    const ROW_PX = 4;
+    const sizeCard = (card)=>{
+      const mb = parseFloat(getComputedStyle(card).marginBottom) || 0;
+      const h = card.getBoundingClientRect().height;
+      card.style.gridRowEnd = 'span ' + Math.max(1, Math.ceil((h + mb) / ROW_PX));
+    };
+    const ro = (typeof ResizeObserver !== 'undefined')
+      ? new ResizeObserver(entries=> entries.forEach(en=> sizeCard(en.target)))
+      : null;
+    const sync = (mutations)=>{
+      if(mutations && ro) mutations.forEach(m=> m.removedNodes.forEach(n=>{ if(n.nodeType === 1) ro.unobserve(n); }));
+      grid.querySelectorAll(':scope > .parti-card').forEach(card=>{
+        if(ro && !card.__rgMasonryObserved){ card.__rgMasonryObserved = true; ro.observe(card); }
+        sizeCard(card);
+      });
+    };
+    new MutationObserver(sync).observe(grid, {childList:true});
+    if(!ro) window.addEventListener('resize', ()=> sync());
+    sync();
+  }
+
   function wirePostitCardInlineEdit(card, item, saveFn){
     const titleEl = card.querySelector('h4');
     const contentEl = card.querySelector('.parti-content');
@@ -7359,6 +7393,7 @@
       });
     });
 
+    enableMasonryGrid(grid);
     enableGridDragReorder(grid, '.parti-drag-handle', ()=>data.items || [], (newOrder)=>{
       data.items = newOrder;
       persist();
