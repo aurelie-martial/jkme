@@ -1201,6 +1201,13 @@
     cursor:pointer; padding:0; transition:transform .1s ease, border-color .1s ease;
   }
   .highlight-swatch:hover{transform:scale(1.12); border-color:var(--ink);}
+  .emoji-popover{max-width:none; flex-wrap:nowrap;}
+  .emoji-swatch{
+    width:34px; height:34px; border-radius:8px; border:1px solid transparent; background:transparent;
+    font-size:1.25rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif; transition:background .1s ease, transform .1s ease;
+  }
+  .emoji-swatch:hover{background:var(--gris); transform:scale(1.12);}
   .highlight-swatch-none{
     background:var(--panel); display:flex; align-items:center; justify-content:center;
     font-size:0.68rem; color:var(--ink-soft); border:1px dashed var(--line);
@@ -1916,6 +1923,7 @@
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
             <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
             <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
+            <button type="button" class="toolbar-emoji-btn" data-cmd="emoji-toggle" title="Insérer un emoji">✅</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -1952,6 +1960,7 @@
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
             <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
             <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
+            <button type="button" class="toolbar-emoji-btn" data-cmd="emoji-toggle" title="Insérer un emoji">✅</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -2059,6 +2068,7 @@
             <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
             <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
             <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
+            <button type="button" class="toolbar-emoji-btn" data-cmd="emoji-toggle" title="Insérer un emoji">✅</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -2295,6 +2305,7 @@
         <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
         <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
         <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
+        <button type="button" class="toolbar-emoji-btn" data-cmd="emoji-toggle" title="Insérer un emoji">✅</button>
         <div class="scene-toolbar-sep"></div>
         <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
         <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
@@ -2333,6 +2344,8 @@
 
 <!-- Popover de couleurs de surlignage, partagé par tous les éditeurs enrichis -->
 <div class="highlight-popover" id="highlightPopover"></div>
+<!-- Popover d'emojis, partagé par tous les éditeurs enrichis -->
+<div class="highlight-popover emoji-popover" id="emojiPopover"></div>
 
 <!-- Zone dédiée à l'export PDF (impression navigateur) : remplie juste avant window.print(),
      vidée juste après. Le CSS @media print masque tout le reste de la page et n'affiche que ceci. -->
@@ -3266,6 +3279,7 @@
       closeHighlightPopover();
       return;
     }
+    if(typeof closeEmojiPopover === 'function') closeEmojiPopover();
     highlightPopoverTarget = containerEl;
     highlightSavedRange = null;
     const sel = window.getSelection();
@@ -3293,11 +3307,97 @@
       closeHighlightPopover();
     }
   });
-  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeHighlightPopover(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ closeHighlightPopover(); closeEmojiPopover(); } });
   // La palette est en position fixe : on la ferme au défilement plutôt que de la laisser flotter
   // loin de son bouton.
   window.addEventListener('scroll', ()=>{
     if(highlightPopoverEl.classList.contains('active')) closeHighlightPopover();
+  }, true);
+
+  // ---------- EMOJIS (éditeur enrichi) ----------
+  // Bouton ✅ de la barre d'outils (ajouté le 11 novembre 2026) : ouvre une petite palette
+  // d'emojis ; un clic insère l'emoji à l'endroit du curseur (ou remplace le texte sélectionné).
+  const EDITOR_EMOJIS = [
+    {e:'✅', t:'Check vert'},
+    {e:'❌', t:'Croix rouge'},
+    {e:'🏅', t:'Médaille'},
+    {e:'⚠️', t:'Attention'},
+    {e:'🔍', t:'Loupe'}
+  ];
+  const emojiPopoverEl = document.getElementById('emojiPopover');
+  let emojiPopoverTarget = null;
+  let emojiSavedRange = null;
+
+  function insertEmoji(editorEl, emoji){
+    const sel = window.getSelection();
+    const inEditor = sel && sel.rangeCount && editorEl.contains(sel.getRangeAt(0).commonAncestorContainer);
+    if(!inEditor){
+      editorEl.focus();
+      sel.removeAllRanges();
+      if(emojiSavedRange) sel.addRange(emojiSavedRange);
+      else { const r = document.createRange(); r.selectNodeContents(editorEl); r.collapse(false); sel.addRange(r); }
+    }
+    // insertText garde l'annulation (Cmd+Z) ; repli manuel si le navigateur le refuse.
+    if(!document.execCommand('insertText', false, emoji)){
+      const r = sel.getRangeAt(0);
+      r.deleteContents();
+      const t = document.createTextNode(emoji);
+      r.insertNode(t);
+      r.setStartAfter(t);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+    notifyEditorChanged(editorEl);
+  }
+
+  (function buildEmojiPopover(){
+    emojiPopoverEl.innerHTML = EDITOR_EMOJIS.map(x=>
+      `<button type="button" class="emoji-swatch" data-emoji="${x.e}" title="${x.t}">${x.e}</button>`
+    ).join('');
+    emojiPopoverEl.querySelectorAll('.emoji-swatch').forEach(sw=>{
+      sw.addEventListener('mousedown', e=> e.preventDefault());
+      sw.addEventListener('click', ()=>{
+        if(emojiPopoverTarget) insertEmoji(emojiPopoverTarget, sw.dataset.emoji);
+        closeEmojiPopover();
+      });
+    });
+  })();
+
+  function openEmojiPopover(triggerBtn, editorEl){
+    if(emojiPopoverEl.classList.contains('active') && emojiPopoverTarget === editorEl){
+      closeEmojiPopover();
+      return;
+    }
+    closeHighlightPopover();
+    emojiPopoverTarget = editorEl;
+    emojiSavedRange = null;
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount && editorEl.contains(sel.getRangeAt(0).commonAncestorContainer)){
+      emojiSavedRange = sel.getRangeAt(0).cloneRange();
+    }
+    emojiPopoverEl.classList.add('active');
+    const rect = triggerBtn.getBoundingClientRect();
+    const maxLeft = document.documentElement.clientWidth - emojiPopoverEl.offsetWidth - 8;
+    emojiPopoverEl.style.top = (rect.bottom + 6) + 'px';
+    emojiPopoverEl.style.left = Math.max(8, Math.min(rect.left, maxLeft)) + 'px';
+  }
+
+  function closeEmojiPopover(){
+    emojiPopoverEl.classList.remove('active');
+    emojiPopoverTarget = null;
+    emojiSavedRange = null;
+  }
+
+  document.addEventListener('mousedown', (e)=>{
+    if(emojiPopoverEl.classList.contains('active')
+      && !emojiPopoverEl.contains(e.target)
+      && !e.target.closest('.toolbar-emoji-btn')){
+      closeEmojiPopover();
+    }
+  });
+  window.addEventListener('scroll', ()=>{
+    if(emojiPopoverEl.classList.contains('active')) closeEmojiPopover();
   }, true);
 
   // ---------- BARRE D'OUTILS ENRICHIE (commune à tous les éditeurs) ----------
@@ -3322,6 +3422,7 @@
         if(cmd === 'exportPdf'){ if(opts.onExport) opts.onExport(); return; }
         if(cmd === 'manualSave'){ flushNoteSave(btn, opts.saveTabId); return; }
         if(cmd === 'highlight-toggle'){ openHighlightPopover(btn, editorEl); return; }
+        if(cmd === 'emoji-toggle'){ openEmojiPopover(btn, editorEl); return; }
         editorEl.focus();
         if(cmd === 'insertTableCustom') openTableModal(editorEl);
         else if(cmd === 'insertLink') openLinkModal(editorEl);
@@ -7036,6 +7137,7 @@
     <button type="button" data-cmd="underline" title="Souligné"><u>S</u></button>
     <button type="button" data-cmd="strikeThrough" title="Barré"><s>B</s></button>
     <button type="button" class="toolbar-highlight-btn" data-cmd="highlight-toggle" title="Surligner">🖍</button>
+    <button type="button" class="toolbar-emoji-btn" data-cmd="emoji-toggle" title="Insérer un emoji">✅</button>
     <div class="scene-toolbar-sep"></div>
     <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
     <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
