@@ -2755,77 +2755,240 @@
     });
   }
 
+  // Gras / souligné / barré passent par execCommand (toujours bien supporté pour ça) ; Titre,
+  // Sous-titre et Normal passent par applyBlockFormat (voir plus haut).
   function runToolbarCmd(cmd, value, containerEl){
-    if(cmd === 'formatBlock' && value && containerEl){
-      applyBlockFormat(containerEl, value.toUpperCase());
-    } else if(cmd === 'formatBlock' && value){
-      document.execCommand(cmd, false, '<' + value.toLowerCase() + '>');
+    if(cmd === 'formatBlock'){
+      if(value && containerEl) applyBlockFormat(containerEl, value.toUpperCase());
     } else {
       document.execCommand(cmd, false, value || null);
     }
   }
 
   // ---------- SURLIGNAGE (éditeur enrichi) ----------
-  // Comme pour formatBlock, on évite document.execCommand('hiliteColor', ...) et on manipule le
-  // DOM directement : ça marche de façon fiable sur tous les navigateurs/webviews, y compris pour
-  // retirer un surlignage sur une portion de texte déjà surlignée.
+  // On manipule le DOM directement (pas de document.execCommand('hiliteColor')) pour un résultat
+  // identique sur tous les navigateurs. Nettoyage du 11 novembre 2026 : l'ancienne version ne
+  // retirait un surlignage que si la sélection couvrait EXACTEMENT tout le passage surligné ;
+  // sélectionner seulement une partie du texte surligné (ou juste y placer le curseur) puis cliquer
+  // sur ✕ ne faisait donc rien. Désormais :
+  //   - ✕ avec une sélection : retire le surlignage de la partie sélectionnée seulement, même au
+  //     milieu d'un passage surligné (le reste garde sa couleur) ;
+  //   - ✕ avec le simple curseur dans un passage surligné : retire le surlignage de tout ce passage ;
+  //   - une couleur sur du texte déjà surligné remplace la couleur au lieu d'empiler les couches ;
+  //   - les anciens surlignages (span avec fond coloré sans la classe rg-highlight, <mark>, texte
+  //     collé depuis une page web) sont reconnus et retirés eux aussi ;
+  //   - une sélection sur plusieurs paragraphes surligne chaque morceau de texte dans son propre
+  //     paragraphe, au lieu de glisser des paragraphes à l'intérieur d'un <span> (HTML invalide).
   const HIGHLIGHT_COLORS = ['#FFF3A3', '#C8F2C8', '#C8E4FA', '#FADCE9', '#FFE0B8', '#E3D4F5'];
 
+  function isHighlightEl(node){
+    if(!node || node.nodeType !== 1) return false;
+    if(node.classList.contains('rg-highlight') || node.tagName === 'MARK') return true;
+    if(node.tagName !== 'SPAN' && node.tagName !== 'FONT') return false;
+    const bg = node.style && node.style.backgroundColor;
+    return !!bg && bg !== 'transparent' && bg !== 'initial' && bg !== 'inherit' && bg !== 'rgba(0, 0, 0, 0)';
+  }
+
+  function closestHighlight(node, root){
+    let n = node && node.nodeType === 3 ? node.parentNode : node;
+    while(n && n !== root){
+      if(isHighlightEl(n)) return n;
+      n = n.parentNode;
+    }
+    return null;
+  }
+
+  // Remplace un élément par son propre contenu.
+  function unwrapEl(el){
+    const parent = el.parentNode;
+    if(!parent) return;
+    while(el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+  }
+
+  // Coupe `el` en deux juste avant `marker` (un descendant de el) : el garde ce qui précède, une
+  // copie de el (même couleur) reçoit le marqueur et tout ce qui suit. Renvoie cette copie.
+  function splitElBefore(el, marker){
+    const r = document.createRange();
+    r.setStartBefore(marker);
+    r.setEnd(el, el.childNodes.length);
+    const right = el.cloneNode(false);
+    right.appendChild(r.extractContents());
+    el.parentNode.insertBefore(right, el.nextSibling);
+    return right;
+  }
+
+  // Idem, mais la coupe se fait juste APRÈS le marqueur : el garde le marqueur. Renvoie la copie.
+  function splitElAfter(el, marker){
+    const r = document.createRange();
+    r.setStartAfter(marker);
+    r.setEnd(el, el.childNodes.length);
+    const right = el.cloneNode(false);
+    right.appendChild(r.extractContents());
+    el.parentNode.insertBefore(right, el.nextSibling);
+    return right;
+  }
+
+  function highlightHasContent(el){
+    return (el.textContent || '').length > 0 || !!el.querySelector('img,br');
+  }
+
+  // Après chaque opération : supprime les surlignages vides et fusionne deux surlignages voisins
+  // de la même couleur (évite que le HTML se fragmente à force de modifications).
+  // Les découpes laissent parfois des coquilles vides (<b></b>, <span style="background…"></span>) :
+  // elles n'affichent rien, on les supprime.
+  const EMPTY_INLINE_SELECTOR = 'span,b,strong,i,em,u,s,strike,font,mark';
+  function tidyHighlights(root){
+    root.querySelectorAll(EMPTY_INLINE_SELECTOR).forEach(el=>{
+      if(el.hasAttribute('data-rg-marker')) return;
+      if(el.closest('[contenteditable="false"]')) return;
+      if(!highlightHasContent(el)) el.remove();
+    });
+    root.querySelectorAll('span.rg-highlight').forEach(span=>{
+      if(!span.parentNode) return;
+      let next = span.nextSibling;
+      while(next && next.nodeType === 1 && next.classList.contains('rg-highlight')
+            && next.style.backgroundColor === span.style.backgroundColor){
+        while(next.firstChild) span.appendChild(next.firstChild);
+        const after = next.nextSibling;
+        next.remove();
+        next = after;
+      }
+    });
+  }
+
   function applyHighlight(editableRoot, color){
-    editableRoot.focus();
     const sel = window.getSelection();
-    if(!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    if(!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
     if(!editableRoot.contains(range.commonAncestorContainer)) return;
 
-    // Dépouille d'abord tout <span class="rg-highlight"> entièrement compris dans la sélection
-    // (remplacé par son propre contenu) : sans ça, ré-appliquer ou retirer une couleur sur du
-    // texte déjà surligné empilerait les span les uns dans les autres au lieu de remplacer la
-    // couleur, et "Aucun" ne retirerait jamais visuellement le surlignage.
-    editableRoot.querySelectorAll('span.rg-highlight').forEach(span=>{
-      if(!range.intersectsNode(span)) return;
-      const spanRange = document.createRange();
-      spanRange.selectNodeContents(span);
-      const startsAtOrBefore = range.compareBoundaryPoints(Range.START_TO_START, spanRange) <= 0;
-      const endsAtOrAfter = range.compareBoundaryPoints(Range.END_TO_END, spanRange) >= 0;
-      if(startsAtOrBefore && endsAtOrAfter){
-        const parent = span.parentNode;
-        while(span.firstChild) parent.insertBefore(span.firstChild, span);
-        parent.removeChild(span);
+    // Simple curseur (aucun texte sélectionné) : on agit sur tout le passage surligné qui
+    // l'entoure — ✕ le retire, une couleur le recolore. Hors d'un passage surligné : rien à faire.
+    if(range.collapsed){
+      const hl = closestHighlight(range.startContainer, editableRoot);
+      if(!hl) return;
+      if(color){
+        hl.classList.add('rg-highlight');
+        hl.style.backgroundColor = color;
+      } else {
+        unwrapEl(hl);
       }
-    });
-
-    if(!color){
+      tidyHighlights(editableRoot);
       editableRoot.normalize();
       editableRoot.dispatchEvent(new Event('input', {bubbles:true}));
       return;
     }
 
-    const span = document.createElement('span');
-    span.className = 'rg-highlight';
-    span.style.backgroundColor = color;
+    // Deux marqueurs invisibles posés aux bornes de la sélection : ils restent en place pendant
+    // qu'on découpe/déplace les nœuds, ce qui permet de retrouver la sélection à la fin.
+    const mStart = document.createElement('span');
+    const mEnd = document.createElement('span');
+    mStart.setAttribute('data-rg-marker', '1');
+    mEnd.setAttribute('data-rg-marker', '1');
+    const endRange = range.cloneRange();
+    endRange.collapse(false);
+    endRange.insertNode(mEnd);
+    range.insertNode(mStart);
+    // Si la sélection s'arrête pile à la fin d'un mot en gras (ou commence pile au début), on sort
+    // le marqueur de cet élément : le mot entier est alors considéré comme sélectionné.
+    const INLINE_TAGS = /^(SPAN|B|STRONG|I|EM|U|S|STRIKE|FONT|MARK|A)$/;
+    const isEmptyText = (n)=> n && n.nodeType === 3 && n.data.length === 0;
+    const liftMarker = (marker, atEnd)=>{
+      for(;;){
+        let sib = atEnd ? marker.nextSibling : marker.previousSibling;
+        while(isEmptyText(sib)) sib = atEnd ? sib.nextSibling : sib.previousSibling;
+        const parent = marker.parentNode;
+        if(sib || parent === editableRoot || !INLINE_TAGS.test(parent.tagName)) return;
+        if(atEnd) parent.parentNode.insertBefore(marker, parent.nextSibling);
+        else parent.parentNode.insertBefore(marker, parent);
+      }
+    };
+    liftMarker(mEnd, true);
+    liftMarker(mStart, false);
 
-    try{
-      range.surroundContents(span);
-    }catch(e){
-      // La sélection chevauche plusieurs éléments (ex : deux paragraphes) : surroundContents()
-      // ne fonctionne pas dans ce cas, on extrait le contenu puis on l'enveloppe à la main.
-      const frag = range.extractContents();
-      span.appendChild(frag);
-      range.insertNode(span);
+    const between = () => {
+      const r = document.createRange();
+      r.setStartAfter(mStart);
+      r.setEndBefore(mEnd);
+      return r;
+    };
+
+    // 1) Retire tout surlignage existant sur la partie sélectionnée, en découpant les passages
+    //    surlignés qui débordent de la sélection (le débordement garde sa couleur).
+    for(let guard = 0; guard < 500; guard++){
+      const r = between();
+      const hl = Array.from(editableRoot.querySelectorAll('*')).find(el=>
+        isHighlightEl(el) && r.intersectsNode(el)
+      ) || closestHighlight(mStart, editableRoot) || closestHighlight(mEnd, editableRoot);
+      if(!hl) break;
+      let middle = hl;
+      if(middle.contains(mStart)) middle = splitElBefore(middle, mStart);
+      if(middle.contains(mEnd)) splitElAfter(middle, mEnd);
+      unwrapEl(middle);
     }
 
+    // 2) Nouvelle couleur : on ne met jamais un paragraphe, une liste ou un tableau dans un <span>.
+    //    Chaque suite continue de texte (gras, souligné... compris) d'un même paragraphe reçoit son
+    //    propre <span>, ce qui garde un seul fond arrondi par morceau au lieu d'un par mot en gras.
+    if(color){
+      const r = between();
+      const BLOCK_TAGS = /^(P|DIV|H[1-6]|UL|OL|LI|TABLE|THEAD|TBODY|TR|TD|TH|BLOCKQUOTE|PRE)$/;
+      const fullyInRange = (node)=>{
+        const nr = document.createRange();
+        nr.selectNode(node);
+        return r.compareBoundaryPoints(Range.START_TO_START, nr) <= 0
+            && r.compareBoundaryPoints(Range.END_TO_END, nr) >= 0;
+      };
+      const walker = document.createTreeWalker(editableRoot, NodeFilter.SHOW_TEXT);
+      const units = [];
+      while(walker.nextNode()){
+        const t = walker.currentNode;
+        if(!t.data.length || !r.intersectsNode(t)) continue;
+        // Retours à la ligne du code HTML entre deux blocs : pas du vrai texte.
+        if(/^\s*$/.test(t.data) && /\n/.test(t.data)) continue;
+        // Remonte jusqu'au plus grand élément "en ligne" (b, u, a...) entièrement sélectionné.
+        let unit = t;
+        while(unit.parentNode && unit.parentNode !== editableRoot
+              && !BLOCK_TAGS.test(unit.parentNode.tagName) && fullyInRange(unit.parentNode)){
+          unit = unit.parentNode;
+        }
+        if(units[units.length - 1] !== unit) units.push(unit);
+      }
+      // Regroupe les éléments voisins directs pour les envelopper ensemble.
+      const groups = [];
+      units.forEach(u=>{
+        const last = groups[groups.length - 1];
+        if(last && last[last.length - 1].nextSibling === u) last.push(u);
+        else groups.push([u]);
+      });
+      groups.forEach(group=>{
+        const span = document.createElement('span');
+        span.className = 'rg-highlight';
+        span.style.backgroundColor = color;
+        group[0].parentNode.insertBefore(span, group[0]);
+        group.forEach(n=> span.appendChild(n));
+      });
+    }
+
+    // 3) Remet la sélection sur le texte traité, puis enlève les marqueurs.
+    const finalRange = document.createRange();
+    finalRange.setStartAfter(mStart);
+    finalRange.setEndBefore(mEnd);
+    mStart.remove();
+    mEnd.remove();
+    tidyHighlights(editableRoot);
     sel.removeAllRanges();
-    const newRange = document.createRange();
-    newRange.selectNodeContents(span);
-    newRange.collapse(false);
-    sel.addRange(newRange);
+    sel.addRange(finalRange);
 
     editableRoot.dispatchEvent(new Event('input', {bubbles:true}));
   }
 
   const highlightPopoverEl = document.getElementById('highlightPopover');
   let highlightPopoverTarget = null;
+  // Sélection mémorisée à l'ouverture de la palette : sur écran tactile, toucher une pastille peut
+  // faire perdre la sélection du texte avant que le clic n'arrive.
+  let highlightSavedRange = null;
 
   (function buildHighlightPopover(){
     highlightPopoverEl.innerHTML = HIGHLIGHT_COLORS.map(c=>
@@ -2833,25 +2996,49 @@
     ).join('') + `<button type="button" class="highlight-swatch highlight-swatch-none" data-color="" title="Retirer le surlignage">✕</button>`;
 
     highlightPopoverEl.querySelectorAll('.highlight-swatch').forEach(sw=>{
+      // mousedown bloqué : le clic sur une pastille ne doit pas faire perdre la sélection du texte.
       sw.addEventListener('mousedown', e=> e.preventDefault());
       sw.addEventListener('click', ()=>{
-        if(highlightPopoverTarget) applyHighlight(highlightPopoverTarget, sw.dataset.color || null);
+        if(highlightPopoverTarget){
+          const target = highlightPopoverTarget;
+          const sel = window.getSelection();
+          const selInTarget = sel && sel.rangeCount && target.contains(sel.getRangeAt(0).commonAncestorContainer);
+          if(!selInTarget && highlightSavedRange){
+            target.focus();
+            sel.removeAllRanges();
+            sel.addRange(highlightSavedRange);
+          }
+          applyHighlight(target, sw.dataset.color || null);
+        }
         closeHighlightPopover();
       });
     });
   })();
 
   function openHighlightPopover(triggerBtn, containerEl){
+    // Un 2ᵉ clic sur 🖍 referme la palette.
+    if(highlightPopoverEl.classList.contains('active') && highlightPopoverTarget === containerEl){
+      closeHighlightPopover();
+      return;
+    }
     highlightPopoverTarget = containerEl;
-    const rect = triggerBtn.getBoundingClientRect();
-    highlightPopoverEl.style.top = (rect.bottom + 6) + 'px';
-    highlightPopoverEl.style.left = rect.left + 'px';
+    highlightSavedRange = null;
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount && containerEl.contains(sel.getRangeAt(0).commonAncestorContainer)){
+      highlightSavedRange = sel.getRangeAt(0).cloneRange();
+    }
     highlightPopoverEl.classList.add('active');
+    const rect = triggerBtn.getBoundingClientRect();
+    const popW = highlightPopoverEl.offsetWidth;
+    const maxLeft = document.documentElement.clientWidth - popW - 8;
+    highlightPopoverEl.style.top = (rect.bottom + 6) + 'px';
+    highlightPopoverEl.style.left = Math.max(8, Math.min(rect.left, maxLeft)) + 'px';
   }
 
   function closeHighlightPopover(){
     highlightPopoverEl.classList.remove('active');
     highlightPopoverTarget = null;
+    highlightSavedRange = null;
   }
 
   document.addEventListener('mousedown', (e)=>{
@@ -2861,6 +3048,43 @@
       closeHighlightPopover();
     }
   });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeHighlightPopover(); });
+  // La palette est en position fixe : on la ferme au défilement plutôt que de la laisser flotter
+  // loin de son bouton.
+  window.addEventListener('scroll', ()=>{
+    if(highlightPopoverEl.classList.contains('active')) closeHighlightPopover();
+  }, true);
+
+  // ---------- BARRE D'OUTILS ENRICHIE (commune à tous les éditeurs) ----------
+  // Avant le nettoyage du 11 novembre 2026, chaque éditeur (Global, Mécanisme, Scène, post-it,
+  // notes perso "Simple" et "Scène") recopiait sa propre version de ce code, avec de petites
+  // différences d'une copie à l'autre. Tous les éditeurs se sauvegardent via leur écouteur "input" :
+  // après une modification faite "à la main" dans le DOM, il suffit donc de redéclencher cet
+  // évènement pour que la sauvegarde habituelle suive.
+  function notifyEditorChanged(editorEl){
+    if(editorEl) editorEl.dispatchEvent(new Event('input', {bubbles:true}));
+  }
+
+  // opts.onExport : fonction appelée par le bouton 🖨 PDF (si la barre en a un).
+  // opts.saveTabId : id de la note perso, transmis au bouton 💾 (flushNoteSave).
+  function wireRichToolbar(toolbarEl, editorEl, opts = {}){
+    if(!toolbarEl || !editorEl) return;
+    toolbarEl.querySelectorAll('button[data-cmd]').forEach(btn=>{
+      // Empêche le bouton de voler le focus : la sélection du texte reste intacte.
+      btn.addEventListener('mousedown', e=> e.preventDefault());
+      btn.addEventListener('click', ()=>{
+        const cmd = btn.dataset.cmd;
+        if(cmd === 'exportPdf'){ if(opts.onExport) opts.onExport(); return; }
+        if(cmd === 'manualSave'){ flushNoteSave(btn, opts.saveTabId); return; }
+        if(cmd === 'highlight-toggle'){ openHighlightPopover(btn, editorEl); return; }
+        editorEl.focus();
+        if(cmd === 'insertTableCustom') openTableModal(editorEl);
+        else if(cmd === 'insertLink') openLinkModal(editorEl);
+        else if(cmd === 'insertImage') insertImageIntoEditor(editorEl, ()=> notifyEditorChanged(editorEl));
+        else { runToolbarCmd(cmd, btn.dataset.value, editorEl); notifyEditorChanged(editorEl); }
+      });
+    });
+  }
 
   function formatUpdatedAt(ts){
     if(!ts) return '';
@@ -2900,13 +3124,7 @@
       }
       html += '</tbody></table><p><br></p>';
       document.execCommand('insertHTML', false, html);
-      
-      // Déclencher la mise à jour correspondante
-      if(activeContentEditableEl === notesArea) { notesData.content = notesArea.innerHTML; saveNotes(); }
-      else if(activeContentEditableEl === sceneContentInput) { const cs = currentScene(); if(cs){ cs.content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); } }
-      else if(activeContentEditableEl === mecanismeContentInput) { mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
-      // Les autres éditeurs (post-it, sous-onglets personnalisés) se sauvegardent via leur
-      // propre écouteur "input", déclenché automatiquement par insertHTML.
+      notifyEditorChanged(activeContentEditableEl);
     }
   });
 
@@ -2919,14 +3137,6 @@
   const removeLinkBtn = document.getElementById('removeLinkBtn');
   let linkSavedRange = null;
   let linkTargetAnchor = null;
-
-  function stampEditorSave(el){
-    if(el === notesArea){ notesData.content = notesArea.innerHTML; saveNotes(); }
-    else if(el === sceneContentInput){ const cs = currentScene(); if(cs){ cs.content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); } }
-    else if(el === mecanismeContentInput){ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
-    // Les autres éditeurs (post-it, sous-onglets personnalisés) se sauvegardent via leur
-    // propre écouteur "input", déclenché automatiquement par insertHTML/execCommand.
-  }
 
   function openLinkModal(editableEl){
     activeContentEditableEl = editableEl;
@@ -2972,9 +3182,6 @@
       linkTargetAnchor.setAttribute('href', url);
       linkTargetAnchor.setAttribute('target', '_blank');
       linkTargetAnchor.setAttribute('rel', 'noopener');
-      // Manipulation directe du DOM (pas d'execCommand) : on redéclenche "input" à la main pour que
-      // les éditeurs qui se sauvegardent via cet évènement (sous-onglets personnalisés) soient à jour.
-      activeContentEditableEl.dispatchEvent(new Event('input', {bubbles:true}));
     } else {
       const sel = window.getSelection();
       sel.removeAllRanges();
@@ -2989,7 +3196,7 @@
       }
     }
 
-    stampEditorSave(activeContentEditableEl);
+    notifyEditorChanged(activeContentEditableEl);
   });
 
   removeLinkBtn.addEventListener('click', ()=>{
@@ -2997,8 +3204,7 @@
       const parent = linkTargetAnchor.parentNode;
       while(linkTargetAnchor.firstChild) parent.insertBefore(linkTargetAnchor.firstChild, linkTargetAnchor);
       parent.removeChild(linkTargetAnchor);
-      activeContentEditableEl.dispatchEvent(new Event('input', {bubbles:true}));
-      stampEditorSave(activeContentEditableEl);
+      notifyEditorChanged(activeContentEditableEl);
     }
     closeLinkModal();
   });
@@ -3090,9 +3296,7 @@
     }
 
     hideTableCellToolbar();
-    if(editableContainer){
-      editableContainer.dispatchEvent(new Event('input', {bubbles:true}));
-    }
+    notifyEditorChanged(editableContainer);
   }
 
   document.addEventListener('click', (e)=>{
@@ -3149,16 +3353,7 @@
     if(handler) handler(title, content);
   });
 
-  document.querySelectorAll('#postitToolbar button').forEach(btn=>{
-    btn.addEventListener('mousedown', e=> e.preventDefault());
-    btn.addEventListener('click', ()=>{
-      postitContentInput.focus();
-      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(postitContentInput); }
-      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, postitContentInput); }
-      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(postitContentInput); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, postitContentInput); }
-    });
-  });
+  wireRichToolbar(document.getElementById('postitToolbar'), postitContentInput);
   enableImageEditing(postitContentInput, ()=>{});
   enableDashToBulletList(postitContentInput);
 
@@ -3239,21 +3434,11 @@
     saveMecanismeStamped();
   });
 
-  document.querySelectorAll('#mecanismeToolbar button').forEach(btn => {
-    btn.addEventListener('mousedown', e => e.preventDefault());
-    btn.addEventListener('click', () => {
-      if(btn.dataset.cmd === 'exportPdf'){
-        exportHtmlToPdf(mecanismeTitleInput.value.trim() || 'Mécanisme', buildNoteExportHtml(mecanismeTitleInput.value.trim() || 'Mécanisme', mecanismeContentInput.innerHTML));
-        return;
-      }
-      if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
-      mecanismeContentInput.focus();
-      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(mecanismeContentInput); }
-      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, mecanismeContentInput); }
-      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(mecanismeContentInput); }
-      else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(mecanismeContentInput, ()=>{ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, mecanismeContentInput); mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); }
-    });
+  wireRichToolbar(document.getElementById('mecanismeToolbar'), mecanismeContentInput, {
+    onExport: ()=>{
+      const title = mecanismeTitleInput.value.trim() || 'Mécanisme';
+      exportHtmlToPdf(title, buildNoteExportHtml(title, mecanismeContentInput.innerHTML));
+    }
   });
   enableImageEditing(mecanismeContentInput, ()=>{ mecanismeData.content = mecanismeContentInput.innerHTML; saveMecanismeStamped(); });
   enableDashToBulletList(mecanismeContentInput);
@@ -4933,21 +5118,11 @@
     saveNotes();
   });
 
-  document.querySelectorAll('#globalToolbar button').forEach(btn=>{
-    btn.addEventListener('mousedown', e=> e.preventDefault());
-    btn.addEventListener('click', ()=>{
-      if(btn.dataset.cmd === 'exportPdf'){
-        exportHtmlToPdf(globalTitleInput.value.trim() || 'Global', buildNoteExportHtml(globalTitleInput.value.trim() || 'Global', notesArea.innerHTML));
-        return;
-      }
-      if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
-      notesArea.focus();
-      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(notesArea); }
-      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, notesArea); }
-      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(notesArea); }
-      else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(notesArea, ()=>{ notesData.content = notesArea.innerHTML; saveNotes(); }); }
-      else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, notesArea); notesData.content = notesArea.innerHTML; saveNotes(); }
-    });
+  wireRichToolbar(document.getElementById('globalToolbar'), notesArea, {
+    onExport: ()=>{
+      const title = globalTitleInput.value.trim() || 'Global';
+      exportHtmlToPdf(title, buildNoteExportHtml(title, notesArea.innerHTML));
+    }
   });
   enableImageEditing(notesArea, ()=>{ notesData.content = notesArea.innerHTML; saveNotes(); });
   enableDashToBulletList(notesArea);
@@ -5434,21 +5609,7 @@
     stampSceneModified();
     saveScenes();
   });
-  document.querySelectorAll('#sceneToolbar button').forEach(btn=>{
-    btn.addEventListener('mousedown', (e)=> e.preventDefault());
-    btn.addEventListener('click', ()=>{
-      if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn); return; }
-      sceneContentInput.focus();
-      if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(sceneContentInput); }
-      else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, sceneContentInput); }
-      else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(sceneContentInput); }
-      else {
-        runToolbarCmd(btn.dataset.cmd, btn.dataset.value, sceneContentInput);
-        const s = currentScene();
-        if(s){ s.content = sceneContentInput.innerHTML; stampSceneModified(); saveScenes(); }
-      }
-    });
-  });
+  wireRichToolbar(document.getElementById('sceneToolbar'), sceneContentInput);
 
   // ---------- BLOC-NOTES (onglet "Bloc-notes" : Global, Parti pris, Mécanisme, sous-onglets perso) ----------
   const blocNotesPillsEl = document.getElementById('blocNotesPills');
@@ -6688,21 +6849,12 @@
     };
     titleEl.addEventListener('input', ()=>{ data.title = titleEl.value; stamp(); });
     contentEl.addEventListener('input', ()=>{ data.content = contentEl.innerHTML; stamp(); });
-    document.querySelectorAll('#customSimpleToolbar button').forEach(btn=>{
-      btn.addEventListener('mousedown', e=>e.preventDefault());
-      btn.addEventListener('click', ()=>{
-        if(btn.dataset.cmd === 'exportPdf'){
-          exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML));
-          return;
-        }
-        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn, ct.id); return; }
-        contentEl.focus();
-        if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
-        else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
-        else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); }); }
-        else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(contentEl); }
-        else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
-      });
+    wireRichToolbar(document.getElementById('customSimpleToolbar'), contentEl, {
+      saveTabId: ct.id,
+      onExport: ()=>{
+        const title = titleEl.value.trim() || ct.label;
+        exportHtmlToPdf(title, buildNoteExportHtml(title, contentEl.innerHTML));
+      }
     });
     enableImageEditing(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); });
     enableDashToBulletList(contentEl);
@@ -6725,21 +6877,12 @@
 
     titleEl.addEventListener('input', ()=>{ data.title = titleEl.value; stamp(); });
     contentEl.addEventListener('input', ()=>{ data.content = contentEl.innerHTML; stamp(); });
-    document.querySelectorAll('#customSceneToolbar button').forEach(btn=>{
-      btn.addEventListener('mousedown', e=>e.preventDefault());
-      btn.addEventListener('click', ()=>{
-        if(btn.dataset.cmd === 'exportPdf'){
-          exportHtmlToPdf(titleEl.value.trim() || ct.label, buildNoteExportHtml(titleEl.value.trim() || ct.label, contentEl.innerHTML, data.image));
-          return;
-        }
-        if(btn.dataset.cmd === 'manualSave'){ flushNoteSave(btn, ct.id); return; }
-        contentEl.focus();
-        if(btn.dataset.cmd === 'insertTableCustom'){ openTableModal(contentEl); }
-        else if(btn.dataset.cmd === 'highlight-toggle'){ openHighlightPopover(btn, contentEl); }
-        else if(btn.dataset.cmd === 'insertImage'){ insertImageIntoEditor(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); }); }
-        else if(btn.dataset.cmd === 'insertLink'){ openLinkModal(contentEl); }
-        else { runToolbarCmd(btn.dataset.cmd, btn.dataset.value, contentEl); data.content = contentEl.innerHTML; stamp(); }
-      });
+    wireRichToolbar(document.getElementById('customSceneToolbar'), contentEl, {
+      saveTabId: ct.id,
+      onExport: ()=>{
+        const title = titleEl.value.trim() || ct.label;
+        exportHtmlToPdf(title, buildNoteExportHtml(title, contentEl.innerHTML, data.image));
+      }
     });
     enableImageEditing(contentEl, ()=>{ data.content = contentEl.innerHTML; stamp(); });
     enableDashToBulletList(contentEl);
