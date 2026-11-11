@@ -3086,6 +3086,25 @@
     });
   }
 
+  // ---------- RACCOURCIS CLAVIER (éditeurs enrichis) ----------
+  // Cmd+B (Ctrl+B sur PC) : gras — Cmd+U (Ctrl+U) : souligné. Gérés à la main plutôt que laissés au
+  // navigateur : comportement identique partout, et la note est enregistrée tout de suite (le
+  // raccourci natif ne déclenche pas toujours l'enregistrement). Actif dans tous les blocs de texte
+  // enrichi (Global, Mécanisme, Post, post-it, notes perso), pas dans les champs de titre.
+  const RICH_EDITOR_SELECTOR = '.scene-editor-content[contenteditable="true"], .parti-content-editable[contenteditable="true"], .parti-content[contenteditable="true"]';
+  const RICH_SHORTCUTS = {b: 'bold', u: 'underline'};
+  document.addEventListener('keydown', (e)=>{
+    if(!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+    const cmd = RICH_SHORTCUTS[(e.key || '').toLowerCase()];
+    if(!cmd) return;
+    const target = e.target && e.target.nodeType === 1 ? e.target : null;
+    const editorEl = target && target.closest(RICH_EDITOR_SELECTOR);
+    if(!editorEl) return;
+    e.preventDefault();
+    document.execCommand(cmd, false, null);
+    notifyEditorChanged(editorEl);
+  }, true);
+
   function formatUpdatedAt(ts){
     if(!ts) return '';
     const d = new Date(ts);
