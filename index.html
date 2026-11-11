@@ -1215,7 +1215,10 @@
   .scene-editor-content h2{font-size:1.35em; font-weight:700; margin:0.7em 0 0.3em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content h3{font-size:1.12em; font-weight:700; margin:0.6em 0 0.25em; font-family:'Plus Jakarta Sans', sans-serif;}
   .scene-editor-content p{margin:0 0 0.6em; overflow-wrap:anywhere; word-break:break-word;}
-  .scene-editor-content ul, .parti-content-editable ul, .parti-card .parti-content ul{margin:0 0 0.6em; padding-left:1.3em;}
+  .scene-editor-content ul, .parti-content-editable ul, .parti-card .parti-content ul,
+  .scene-editor-content ol, .parti-content-editable ol, .parti-card .parti-content ol{margin:0 0 0.6em; padding-left:1.3em;}
+  .scene-editor-content ul, .parti-content-editable ul, .parti-card .parti-content ul{list-style:disc;}
+  .scene-editor-content ol, .parti-content-editable ol, .parti-card .parti-content ol{list-style:decimal; padding-left:1.6em;}
   .scene-editor-content li, .parti-content-editable li, .parti-card .parti-content li{margin:0 0 0.2em; overflow-wrap:anywhere; word-break:break-word;}
   .scene-editor-content a, .parti-content-editable a{overflow-wrap:anywhere; word-break:break-word; color:var(--lavande); text-decoration:underline; text-decoration-color:var(--lavande);}
   .scene-editor-content img{max-width:100%; height:auto; border-radius:8px; display:block; margin:0.4em 0;}
@@ -1917,6 +1920,8 @@
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <button type="button" data-cmd="list" data-value="ul" title="Liste à puces (cliquer à nouveau pour la retirer)">• Liste</button>
+            <button type="button" data-cmd="list" data-value="ol" title="Liste numérotée (cliquer à nouveau pour la retirer)">1. Liste</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~30 Ko)">🖼 Image</button>
@@ -1951,6 +1956,8 @@
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <button type="button" data-cmd="list" data-value="ul" title="Liste à puces (cliquer à nouveau pour la retirer)">• Liste</button>
+            <button type="button" data-cmd="list" data-value="ol" title="Liste numérotée (cliquer à nouveau pour la retirer)">1. Liste</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~30 Ko)">🖼 Image</button>
@@ -2056,6 +2063,8 @@
             <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
             <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
             <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <button type="button" data-cmd="list" data-value="ul" title="Liste à puces (cliquer à nouveau pour la retirer)">• Liste</button>
+            <button type="button" data-cmd="list" data-value="ol" title="Liste numérotée (cliquer à nouveau pour la retirer)">1. Liste</button>
             <div class="scene-toolbar-sep"></div>
             <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
             <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
@@ -2290,6 +2299,8 @@
         <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
         <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
         <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <button type="button" data-cmd="list" data-value="ul" title="Liste à puces (cliquer à nouveau pour la retirer)">• Liste</button>
+            <button type="button" data-cmd="list" data-value="ol" title="Liste numérotée (cliquer à nouveau pour la retirer)">1. Liste</button>
         <div class="scene-toolbar-sep"></div>
         <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
         <button type="button" data-cmd="insertLink" title="Insérer un lien hypertexte">🔗 Lien</button>
@@ -2654,50 +2665,260 @@
     sel.addRange(newRange);
   }
 
+  // Titre / Sous-titre / Normal (réécrit le 11 novembre 2026). L'ancienne version ne traitait que la
+  // ligne du début de la sélection et se trompait dans plusieurs cas : du texte "brut" (pas rangé
+  // dans un paragraphe) à côté d'un titre faisait envelopper TOUTE la note dans le nouveau bloc
+  // (le titre restait donc un titre à l'intérieur d'un paragraphe) ; un titre rangé dans un <div>
+  // (ce que font Chrome/Safari quand on appuie sur Entrée) ne repassait jamais en texte normal ;
+  // une ligne de liste devenait un titre à l'intérieur de la liste. Désormais :
+  //   - toutes les lignes touchées par la sélection sont transformées ;
+  //   - cliquer sur Titre alors que la ligne est déjà un Titre la remet en texte normal (idem
+  //     Sous-titre) ;
+  //   - Normal retire aussi les grandes tailles de police collées depuis une page web ou un
+  //     document (Google Docs, Word...).
   function applyBlockFormat(editableRoot, tagName){
     editableRoot.focus();
     const sel = window.getSelection();
     if(!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
     if(!editableRoot.contains(range.commonAncestorContainer)) return;
+    const TAG = tagName.toUpperCase();
 
-    // Si la sélection est dans une cellule de tableau, on limite la transformation à cette cellule
-    // (on ne veut pas transformer la cellule elle-même en <h2>, seulement son contenu).
-    let scopeContainer = editableRoot;
-    let scanNode = range.startContainer;
-    while(scanNode && scanNode !== editableRoot){
-      if(scanNode.nodeType === 1 && scanNode.tagName === 'TD'){ scopeContainer = scanNode; break; }
-      scanNode = scanNode.parentNode;
+    const {mStart, mEnd, restore} = placeSelectionMarkers(range);
+    let lines = getSelectedLines(editableRoot, mStart, mEnd);
+    // Une ligne de liste sort d'abord de sa liste.
+    lines = lines.map(l=> l.tagName === 'LI' ? listItemToParagraph(l) : l).filter(Boolean);
+
+    // Si toutes les lignes sont déjà au format demandé, le bouton sert d'interrupteur.
+    const target = (TAG !== 'P' && lines.length && lines.every(l=> l.tagName === TAG)) ? 'P' : TAG;
+
+    lines.forEach(line=>{
+      let el = line;
+      if(line.tagName !== target){
+        el = document.createElement(target);
+        moveChildren(line, el);
+        line.parentNode.replaceChild(el, line);
+      }
+      if(target === 'P') clearPastedTextSize(el);
+      ensureNotEmpty(el);
+    });
+
+    restore();
+    notifyEditorChanged(editableRoot);
+  }
+
+  // Texte collé depuis un autre site/document : la taille de police est souvent forcée par des
+  // styles en ligne (style="font-size:24px", <font size="6">), ce qui le fait rester "gros" même
+  // en texte normal. On retire ces tailles (les couleurs, le surlignage, le gras... restent).
+  function clearPastedTextSize(el){
+    el.querySelectorAll('[style]').forEach(n=>{
+      if(n.hasAttribute('data-rg-marker')) return;
+      n.style.removeProperty('font-size');
+      n.style.removeProperty('line-height');
+      if(!n.getAttribute('style').trim()) n.removeAttribute('style');
+    });
+    el.querySelectorAll('font[size]').forEach(f=> f.removeAttribute('size'));
+    el.style.removeProperty('font-size');
+    el.style.removeProperty('line-height');
+    if(el.hasAttribute('style') && !el.getAttribute('style').trim()) el.removeAttribute('style');
+  }
+
+  // ---------- LISTES À PUCES / NUMÉROTÉES (éditeur enrichi) ----------
+  // Boutons "• Liste" et "1. Liste" de la barre d'outils (ajoutés le 11 novembre 2026) : un clic
+  // transforme les lignes sélectionnées en liste ; un 2ᵉ clic sur le même bouton les remet en texte
+  // normal ; l'autre bouton fait passer une liste à puces en liste numérotée (et inversement).
+  // Comme pour les titres et le surlignage, on manipule le DOM à la main (execCommand
+  // 'insertUnorderedList' est peu fiable selon les navigateurs).
+  const LIST_BLOCK_TAGS = /^(P|DIV|H[1-6]|BLOCKQUOTE|PRE)$/;
+  const LIST_TAGS = /^(UL|OL)$/;
+
+  function isBlankText(n){ return n && n.nodeType === 3 && !n.data.replace(/[\s ]/g, '').length && /\n/.test(n.data); }
+  function moveChildren(from, to){ while(from.firstChild) to.appendChild(from.firstChild); }
+  function ensureNotEmpty(el){
+    if(!(el.textContent || '').length && !el.querySelector('img,br')) el.appendChild(document.createElement('br'));
+  }
+  function prevRealSibling(n){ let s = n.previousSibling; while(isBlankText(s)) s = s.previousSibling; return s; }
+  function nextRealSibling(n){ let s = n.nextSibling; while(isBlankText(s)) s = s.nextSibling; return s; }
+
+  // Sort un élément de liste de sa liste et le transforme en paragraphe. Si l'élément était au
+  // milieu de la liste, la liste est coupée en deux autour du nouveau paragraphe.
+  function listItemToParagraph(li){
+    const list = li.parentNode;
+    if(!list || !LIST_TAGS.test(list.tagName)) return null;
+    const p = document.createElement('p');
+    moveChildren(li, p);
+    ensureNotEmpty(p);
+    const tail = [];
+    let n = li.nextSibling;
+    while(n){ tail.push(n); n = n.nextSibling; }
+    li.remove();
+    list.parentNode.insertBefore(p, list.nextSibling);
+    if(tail.some(t=> t.nodeType === 1)){
+      const rest = list.cloneNode(false);
+      tail.forEach(t=> rest.appendChild(t));
+      p.parentNode.insertBefore(rest, p.nextSibling);
+    }
+    if(!list.querySelector('li')) list.remove();
+    return p;
+  }
+
+  function renameList(list, tagName){
+    if(list.tagName === tagName) return list;
+    const nl = document.createElement(tagName);
+    moveChildren(list, nl);
+    list.parentNode.replaceChild(nl, list);
+    return nl;
+  }
+
+  // Fusionne une liste avec les listes du même type collées juste avant / après elle.
+  function mergeAdjacentLists(list){
+    const prev = prevRealSibling(list);
+    if(prev && prev.nodeType === 1 && prev.tagName === list.tagName){
+      moveChildren(list, prev); list.remove(); list = prev;
+    }
+    const next = nextRealSibling(list);
+    if(next && next.nodeType === 1 && next.tagName === list.tagName){
+      moveChildren(next, list); next.remove();
+    }
+    return list;
+  }
+
+  // Pose deux marqueurs invisibles aux bornes de la sélection (ils suivent le texte pendant qu'on
+  // déplace les nœuds) et renvoie une fonction qui remet la sélection en place puis les enlève.
+  function placeSelectionMarkers(range){
+    const mStart = document.createElement('span');
+    const mEnd = document.createElement('span');
+    mStart.setAttribute('data-rg-marker', '1');
+    mEnd.setAttribute('data-rg-marker', '1');
+    const endRange = range.cloneRange();
+    endRange.collapse(false);
+    endRange.insertNode(mEnd);
+    range.insertNode(mStart);
+    const restore = ()=>{
+      const sel = window.getSelection();
+      const r = document.createRange();
+      r.setStartAfter(mStart);
+      r.setEndBefore(mEnd);
+      const parents = [mStart.parentNode, mEnd.parentNode];
+      mStart.remove();
+      mEnd.remove();
+      parents.forEach(p=>{ if(p && p.nodeType === 1 && /^(LI|P|H[1-6]|DIV)$/.test(p.tagName)) ensureNotEmpty(p); });
+      if(sel){ sel.removeAllRanges(); sel.addRange(r); }
+    };
+    return {mStart, mEnd, restore};
+  }
+
+  // Lignes touchées par la sélection : éléments de liste (LI) et blocs ordinaires (P, titres...),
+  // dans l'éditeur ou dans la cellule de tableau où se trouve la sélection. Du texte "brut" pas
+  // encore rangé dans un paragraphe est d'abord enveloppé dans un <p>.
+  function getSelectedLines(root, mStart, mEnd){
+    let scope = root;
+    for(let n = mStart.parentNode; n && n !== root; n = n.parentNode){
+      if(n.tagName === 'TD' || n.tagName === 'TH'){ scope = n; break; }
+    }
+    // Plage recalculée à chaque appel : déplacer des nœuds fausserait une plage gardée en mémoire.
+    const touches = (n)=>{
+      const r = document.createRange();
+      r.setStartBefore(mStart);
+      r.setEndAfter(mEnd);
+      return r.intersectsNode(n);
+    };
+
+    const CONTAINER_TAGS = /^(DIV|BLOCKQUOTE|SECTION|ARTICLE)$/;
+    const isBlockEl = (n)=> n.nodeType === 1
+      && (LIST_BLOCK_TAGS.test(n.tagName) || LIST_TAGS.test(n.tagName) || /^(TABLE|SECTION|ARTICLE)$/.test(n.tagName));
+    const lines = [];
+
+    const collect = (container)=>{
+      // Enveloppe les suites de nœuds "en ligne" touchés (texte, gras, <br>...) dans un <p>.
+      let run = [];
+      const flush = ()=>{
+        if(run.some(touches)){
+          const p = document.createElement('p');
+          container.insertBefore(p, run[0]);
+          run.forEach(n=> p.appendChild(n));
+        }
+        run = [];
+      };
+      Array.from(container.childNodes).forEach(n=>{
+        if(isBlockEl(n) || isBlankText(n)) flush();
+        else run.push(n);
+      });
+      flush();
+
+      Array.from(container.children).forEach(el=>{
+        if(!touches(el)) return;
+        if(LIST_TAGS.test(el.tagName)){
+          Array.from(el.children).forEach(li=>{ if(li.tagName === 'LI' && touches(li)) lines.push(li); });
+        } else if(CONTAINER_TAGS.test(el.tagName) && Array.from(el.children).some(isBlockEl)){
+          // <div> qui regroupe d'autres blocs (fréquent après un copier-coller) : on descend dedans.
+          collect(el);
+        } else if(LIST_BLOCK_TAGS.test(el.tagName)){
+          lines.push(el);
+        }
+      });
+    };
+    collect(scope);
+    return lines;
+  }
+
+  function toggleList(root, listTag){
+    root.focus();
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    if(!root.contains(range.commonAncestorContainer)) return;
+    const TAG = listTag.toUpperCase();
+
+    const {mStart, mEnd, restore} = placeSelectionMarkers(range);
+    const lines = getSelectedLines(root, mStart, mEnd);
+    const items = lines.filter(l=> l.tagName === 'LI');
+    const blocks = lines.filter(l=> l.tagName !== 'LI');
+
+    if(lines.length && !blocks.length && items.every(li=> li.parentNode.tagName === TAG)){
+      // Tout est déjà une liste de ce type : on retire la liste.
+      items.forEach(listItemToParagraph);
+    } else {
+      // Listes de l'autre type : on change leur type.
+      const otherLists = new Set(items.map(li=> li.parentNode).filter(l=> l.tagName !== TAG));
+      otherLists.forEach(l=> mergeAdjacentLists(renameList(l, TAG)));
+      // Lignes ordinaires : regroupées en listes (une par suite de lignes qui se suivent).
+      let current = null, lastBlock = null;
+      blocks.forEach(b=>{
+        if(!current || nextRealSibling(lastBlock) !== b){
+          current = document.createElement(TAG);
+          b.parentNode.insertBefore(current, b);
+        }
+        lastBlock = b;
+        const li = document.createElement('li');
+        moveChildren(b, li);
+        ensureNotEmpty(li);
+        // le bloc vidé reste un instant dans le DOM pour repérer la ligne suivante
+        current.appendChild(li);
+      });
+      blocks.forEach(b=> b.remove());
+      root.querySelectorAll(TAG).forEach(l=>{ if(l.isConnected) mergeAdjacentLists(l); });
     }
 
-    const BLOCK_TAGS = ['P','H2','H3','DIV','BLOCKQUOTE','LI'];
+    restore();
+    notifyEditorChanged(root);
+  }
 
-    // Trouve l'enfant direct de scopeContainer qui contient le point de départ de la sélection
-    // (ou scopeContainer lui-même si la sélection porte sur tout son contenu, ex : Ctrl+A).
-    let block = range.startContainer;
-    while(block && block !== scopeContainer && block.parentNode && block.parentNode !== scopeContainer){
-      block = block.parentNode;
-    }
-    if(block && block.nodeType !== 1) block = block.parentNode;
-    if(!block) return;
-
-    if(block === scopeContainer){
-      // Contenu texte "brut" non enveloppé dans un bloc (typiquement la toute première ligne
-      // avant d'appuyer sur Entrée) : on enveloppe tout le contenu dans le nouveau bloc.
-      if(!scopeContainer.firstChild) return;
-      const newBlock = document.createElement(tagName);
-      while(scopeContainer.firstChild) newBlock.appendChild(scopeContainer.firstChild);
-      scopeContainer.appendChild(newBlock);
-      placeCursorAtEnd(newBlock, sel);
-      return;
-    }
-
-    if(!BLOCK_TAGS.includes(block.tagName)) return;
-
-    const newBlock = document.createElement(tagName);
-    newBlock.innerHTML = block.innerHTML;
-    block.parentNode.replaceChild(newBlock, block);
-    placeCursorAtEnd(newBlock, sel);
+  // Le curseur est-il tout au début d'un élément de liste ? (rien d'écrit avant lui dans ce LI)
+  function caretAtStartOfListItem(root){
+    const sel = window.getSelection();
+    if(!sel || !sel.rangeCount || !sel.isCollapsed) return null;
+    const range = sel.getRangeAt(0);
+    let n = range.startContainer;
+    let li = null;
+    for(let x = n; x && x !== root; x = x.parentNode){ if(x.tagName === 'LI'){ li = x; break; } }
+    if(!li || !root.contains(li)) return null;
+    const before = document.createRange();
+    before.setStart(li, 0);
+    before.setEnd(range.startContainer, range.startOffset);
+    if(before.toString().replace(/[​]/g, '').length) return null;
+    if(before.cloneContents().querySelector('img')) return null;
+    return li;
   }
 
   // Transforme automatiquement "- " tapé en tout début de ligne en liste à puce (comme dans la
@@ -2739,9 +2960,13 @@
       // pas ; on normalise avant de comparer.
       const rawText = scopeEl.textContent;
       const text = (rawText || '').replace(/ /g, ' ');
-      if(text !== '- ') return;
+      // "- " ou "* " → liste à puces ; "1. " ou "1) " → liste numérotée.
+      let listTag = null;
+      if(text === '- ' || text === '* ') listTag = 'ul';
+      else if(text === '1. ' || text === '1) ') listTag = 'ol';
+      if(!listTag) return;
 
-      const ul = document.createElement('ul');
+      const ul = document.createElement(listTag);
       const li = document.createElement('li');
       ul.appendChild(li);
       if(block === containerEl){
@@ -2753,13 +2978,33 @@
       placeCursorAtEnd(li, sel);
       containerEl.dispatchEvent(new Event('input', {bubbles:true}));
     });
+
+    // Retour arrière tout au début d'une ligne de liste : la ligne sort de la liste et redevient
+    // un paragraphe normal (au lieu d'être fusionnée avec la ligne du dessus).
+    containerEl.addEventListener('keydown', (e)=>{
+      if(e.key !== 'Backspace' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      const li = caretAtStartOfListItem(containerEl);
+      if(!li) return;
+      e.preventDefault();
+      const p = listItemToParagraph(li);
+      if(!p) return;
+      const sel = window.getSelection();
+      const r = document.createRange();
+      r.setStart(p, 0);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+      notifyEditorChanged(containerEl);
+    });
   }
 
   // Gras / souligné / barré passent par execCommand (toujours bien supporté pour ça) ; Titre,
-  // Sous-titre et Normal passent par applyBlockFormat (voir plus haut).
+  // Sous-titre et Normal passent par applyBlockFormat, les listes par toggleList (voir plus haut).
   function runToolbarCmd(cmd, value, containerEl){
     if(cmd === 'formatBlock'){
-      if(value && containerEl) applyBlockFormat(containerEl, value.toUpperCase());
+      if(value && containerEl) applyBlockFormat(containerEl, value);
+    } else if(cmd === 'list'){
+      if(containerEl) toggleList(containerEl, value || 'ul');
     } else {
       document.execCommand(cmd, false, value || null);
     }
@@ -6795,6 +7040,8 @@
     <button type="button" data-cmd="formatBlock" data-value="H2" title="Titre">Titre</button>
     <button type="button" data-cmd="formatBlock" data-value="H3" title="Sous-titre">Sous-titre</button>
     <button type="button" data-cmd="formatBlock" data-value="P" title="Texte normal">Normal</button>
+            <button type="button" data-cmd="list" data-value="ul" title="Liste à puces (cliquer à nouveau pour la retirer)">• Liste</button>
+            <button type="button" data-cmd="list" data-value="ol" title="Liste numérotée (cliquer à nouveau pour la retirer)">1. Liste</button>
     <div class="scene-toolbar-sep"></div>
     <button type="button" data-cmd="insertTableCustom" title="Insérer un tableau sur mesure">▦ Tableau</button>
     <button type="button" data-cmd="insertImage" title="Insérer une image (compressée automatiquement, ~70 Ko)">🖼 Image</button>
