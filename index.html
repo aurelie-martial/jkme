@@ -1350,10 +1350,10 @@
        survol d'une autre. Forcer chaque carte sur son propre calque graphique (translateZ(0)) évite
        à Safari de redessiner toute la colonne à chaque survol, et corrige ce bug à la racine.
     */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+    /* 12 novembre 2026 : l'ancienne astuce translateZ(0) + backface-visibility (utile seulement avec
+       l'ancienne mise en page en colonnes) est retirée : avec la grille actuelle, elle faisait garder
+       à Safari des "fantômes" de cartes (ancienne version d'un post-it affichée en double, ou un
+       post-it qui ne se dessinait plus) après un ajout ou une modification. */
   }
   .parti-card:hover{
     box-shadow: 4px 8px 18px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
@@ -1704,7 +1704,7 @@
      ===================================================================================== */
   #content-blocnotes .parti-grid{grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); column-gap:14px;}
   #content-blocnotes .parti-card{
-    transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important;
+    transform:none !important; -webkit-transform:none !important;
     border:1px solid var(--postit-line, var(--line)); border-radius:12px;
     padding:14px 16px 14px; margin:0 0 14px;
     box-shadow:none; animation:none;
