@@ -1041,8 +1041,10 @@
   .ig-feed-title span{font-size:0.62rem; font-weight:600; color:var(--ink-soft); letter-spacing:0.04em;}
   .ig-feed-title b{font-size:0.9rem;}
   .ig-feed-post{padding-bottom:18px;}
+  .ig-car-counter.show{opacity:1;}
+  .ig-feed-post.is-video-post .ig-feed-post-header{display:none;}
   .ig-media-user{
-    position:absolute; top:10px; right:10px; z-index:2; display:flex; align-items:center; gap:6px;
+    position:absolute; top:10px; left:10px; z-index:2; display:flex; align-items:center; gap:6px;
     max-width:70%; pointer-events:none; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.55);
   }
   .ig-media-user .ig-post-card-avatar{flex:0 0 24px; width:24px; height:24px; border:1.5px solid #fff; background:rgba(255,255,255,0.35);}
@@ -1147,7 +1149,8 @@
   .ig-car-prev{left:8px;}
   .ig-car-next{right:8px;}
   .ig-car-counter{
-    position:absolute; top:10px; left:10px; z-index:2; background:rgba(38,38,38,0.72); color:#fff;
+    opacity:0; transition:opacity .25s ease;
+    position:absolute; top:10px; right:10px; z-index:2; background:rgba(38,38,38,0.72); color:#fff;
     font-size:0.68rem; font-weight:600; padding:3px 8px; border-radius:12px; pointer-events:none;
   }
   .ig-post-card-actions{position:relative;}
@@ -7256,6 +7259,7 @@
   // Compteurs affichés à côté des 4 icônes d'un post (J'aime, commentaires, republications,
   // partages), modifiables d'un clic. 100 par défaut.
   const IG_COUNT_DEFAULT = 100;
+  const IG_MORE_ICON_SVG = `<svg class="ig-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>`;
   // Fausses photos de profil pour la ligne "Aimé par moi-même et d'autres personnes" : simples
   // silhouettes sur fond pastel, aucune vraie personne.
   const IG_FAKE_AVATAR_A = `<span class="ig-fake-avatar" style="background:linear-gradient(135deg,#f6c9b4,#e9a6b8);"><svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><circle cx="12" cy="9.5" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0z"/></svg></span>`;
@@ -7364,6 +7368,11 @@
     const uname = escapeHtml(igUsername());
     return `
       <article class="ig-feed-post" data-post-id="${p.id}">
+        <div class="ig-feed-post-header">
+          <div class="ig-post-card-avatar">${igAvatarHtml()}</div>
+          <div class="ig-post-card-username">${uname}</div>
+          <span class="ig-feed-more">${IG_MORE_ICON_SVG}</span>
+        </div>
         <div class="ig-post-card-image ig-feed-media" style="aspect-ratio:${igRatioOf(p).css};"></div>
         <div class="ig-car-dots"></div>
         <div class="ig-post-card-actions">
@@ -7395,8 +7404,14 @@
     const items = igSlideItems(p);
     if(slideIdxOf(p) >= items.length) setSlideIdx(p, Math.max(0, items.length - 1));
     box.style.aspectRatio = igRatioOf(p).css;
-    // Nom du compte (et petite photo) incrusté en haut à droite de l'image, comme sur Instagram.
-    const userOverlay = `<div class="ig-media-user"><span class="ig-post-card-avatar">${igAvatarHtml()}</span><span class="ig-post-card-username">${escapeHtml(igUsername())}</span></div>`;
+    // Comme sur Instagram : pour une image ou un carrousel, le nom du compte est AU-DESSUS du post
+    // (ligne d'en-tête) ; pour une vidéo, l'en-tête disparaît et le nom est incrusté en haut à
+    // gauche de la vidéo.
+    const isVideoPost = items.length === 1 && !!items[0].video;
+    card.classList.toggle('is-video-post', isVideoPost);
+    const userOverlay = isVideoPost
+      ? `<div class="ig-media-user"><span class="ig-post-card-avatar">${igAvatarHtml()}</span><span class="ig-post-card-username">${escapeHtml(igUsername())}</span></div>`
+      : '';
     if(!items.length){
       box.innerHTML = `<span class="placeholder-txt">+ Images / vidéos</span>${userOverlay}`;
       box.classList.add('is-empty');
@@ -7436,7 +7451,15 @@
     if(prev) prev.style.display = idx > 0 ? '' : 'none';
     if(next) next.style.display = idx < n - 1 ? '' : 'none';
     const counter = box.querySelector('.ig-car-counter');
-    if(counter) counter.textContent = `${idx + 1}/${n}`;
+    if(counter){
+      counter.textContent = `${idx + 1}/${n}`;
+      // Le compteur "2/5" n'apparaît qu'au moment où l'on fait défiler, puis s'efface.
+      if(animate){
+        counter.classList.add('show');
+        clearTimeout(counter._hideTimer);
+        counter._hideTimer = setTimeout(()=> counter.classList.remove('show'), 1800);
+      }
+    }
     card.querySelectorAll('.ig-car-dot').forEach((d, i)=> d.classList.toggle('active', i === idx));
     if(String(p.id) === String(currentIgPostId)) updateIgEditPanelPosition();
   }
