@@ -1928,7 +1928,7 @@
               </div>
               <!-- igPostImageInput : remplacer l'image affichée ; igPostSlidesInput : ajouter une ou
                    plusieurs images au carrousel (sélection multiple). -->
-              <input type="file" id="igPostImageInput" accept="image/*" style="display:none;">
+              <input type="file" id="igPostImageInput" accept="image/*,video/*" style="display:none;">
               <input type="file" id="igPostSlidesInput" accept="image/*,video/*" multiple style="display:none;">
               <div class="ig-post-card-actions">
                 <span class="ig-icon">♡</span>
@@ -1953,7 +1953,7 @@
                 <div class="ig-slide-actions" id="igSlideActions">
                   <button type="button" id="igSlideMoveLeftBtn" title="Déplacer cette image vers la gauche">◀ Déplacer</button>
                   <button type="button" id="igSlideMoveRightBtn" title="Déplacer cette image vers la droite">Déplacer ▶</button>
-                  <button type="button" id="igSlideReplaceBtn" title="Remplacer cette diapo par une image">🔄 Remplacer</button>
+                  <button type="button" id="igSlideReplaceBtn" title="Remplacer cette diapo par une image ou une vidéo">🔄 Remplacer</button>
                   <button type="button" id="igSlideThumbBtn" title="Choisir une autre miniature pour cette vidéo" style="display:none;">🖼 Miniature</button>
                   <button type="button" class="ig-slide-remove" id="igSlideRemoveBtn" title="Retirer cette diapo du carrousel">✕ Retirer</button>
                 </div>
@@ -7386,6 +7386,30 @@
   // ---------- Ajout d'images / de vidéos ----------
   // Images : compressées puis ajoutées. Vidéos : choix de la miniature, puis envoi dans le cloud
   // (la progression s'affiche sous les vignettes).
+  // Prépare une diapo vidéo : vérifie la taille, fait choisir la miniature, envoie la vidéo dans le
+  // cloud. Renvoie {img, video}, ou null si annulé / impossible.
+  async function prepareIgVideoSlide(file){
+    if(file.size > IG_MAX_VIDEO_MB * 1024 * 1024){
+      alert(`« ${file.name} » fait ${(file.size / 1048576).toFixed(0)} Mo : la limite est de ${IG_MAX_VIDEO_MB} Mo par vidéo. Raccourcis-la ou exporte-la en qualité plus légère (ex. 720p) puis réessaie.`);
+      return null;
+    }
+    if(!window.__rg_uploadIgVideo){
+      alert("Les vidéos ont besoin de la connexion au cloud : connecte-toi puis réessaie.");
+      return null;
+    }
+    const localUrl = URL.createObjectURL(file);
+    const thumb = await chooseIgVideoThumbnail(localUrl);
+    if(!thumb){ URL.revokeObjectURL(localUrl); return null; }
+    setIgSlideStatus(`Envoi de la vidéo… 0 %`);
+    try{
+      const videoId = await window.__rg_uploadIgVideo(file, (ratio)=> setIgSlideStatus(`Envoi de la vidéo… ${Math.round(ratio * 100)} %`));
+      igVideoUrlCache[videoId] = localUrl;
+      return {img: thumb, video: videoId};
+    } finally {
+      setIgSlideStatus('');
+    }
+  }
+
   async function addIgSlidesFromFiles(files){
     const p = currentIgPost(); if(!p) return;
     const postId = p.id;
@@ -7410,29 +7434,16 @@
           commitIgSlides(post, items);
           continue;
         }
-        if(file.size > IG_MAX_VIDEO_MB * 1024 * 1024){
-          alert(`« ${file.name} » fait ${(file.size / 1048576).toFixed(0)} Mo : la limite est de ${IG_MAX_VIDEO_MB} Mo par vidéo. Raccourcis-la ou exporte-la en qualité plus légère (ex. 720p) puis réessaie.`);
-          continue;
-        }
-        if(!window.__rg_uploadIgVideo){
-          alert("Les vidéos ont besoin de la connexion au cloud : connecte-toi puis réessaie.");
-          continue;
-        }
-        const localUrl = URL.createObjectURL(file);
-        const thumb = await chooseIgVideoThumbnail(localUrl);
-        if(!thumb){ URL.revokeObjectURL(localUrl); continue; }
-        setIgSlideStatus(`Envoi de la vidéo… 0 %`);
-        const videoId = await window.__rg_uploadIgVideo(file, (ratio)=> setIgSlideStatus(`Envoi de la vidéo… ${Math.round(ratio * 100)} %`));
-        igVideoUrlCache[videoId] = localUrl;
+        const slide = await prepareIgVideoSlide(file);
+        if(!slide) continue;
         const post2 = igPosts.find(x=> String(x.id) === String(postId));
-        if(!post2){ cleanupIgVideos([videoId]); return; }
+        if(!post2){ cleanupIgVideos([slide.video]); return; }
         const items = igSlideItems(post2);
-        items.push({img: thumb, video: videoId});
+        items.push(slide);
         if(firstNew === null) firstNew = items.length - 1;
         igSlideIndex = firstNew;
         if(String(currentIgPostId) === String(postId)) commitIgSlides(post2, items);
         else { igSetSlideItems(post2, items); saveIgPosts(); renderIgGrid(); }
-        setIgSlideStatus('');
       }catch(err){
         console.error('Ajout au carrousel :', err);
         setIgSlideStatus('');
@@ -7616,22 +7627,28 @@
     }
     igPostImageInput.click();
   });
-  // Remplacer la diapo affichée par une image (une vidéo remplacée est supprimée du cloud).
+  // Remplacer la diapo affichée par une image ou une vidéo (une vidéo remplacée est supprimée du cloud).
   igPostImageInput.addEventListener('change', async ()=>{
     const file = igPostImageInput.files[0];
     igPostImageInput.value = '';
     if(!file) return;
     const p = currentIgPost(); if(!p) return;
+    const idx = igSlideIndex;
+    const isVideo = (file.type || '').startsWith('video/');
     try{
-      const img = await compressImageSquare(file, igPostCompressOpts());
+      const slide = isVideo
+        ? await prepareIgVideoSlide(file)
+        : {img: await compressImageSquare(file, igPostCompressOpts()), video: null};
+      if(!slide) return;
       const items = igSlideItems(p);
       let oldVideo = null;
-      if(items.length){ oldVideo = items[igSlideIndex].video; items[igSlideIndex] = {img, video:null}; }
-      else items.push({img, video:null});
+      if(items[idx]){ oldVideo = items[idx].video; items[idx] = slide; igSlideIndex = idx; }
+      else items.push(slide);
       commitIgSlides(p, items);
       if(oldVideo) cleanupIgVideos([oldVideo]);
     }catch(err){
-      console.error('Erreur image de post Instagram :', err);
+      console.error('Remplacement de diapo :', err);
+      alert(isVideo ? "L'envoi de la vidéo a échoué (connexion ou droits d'accès au cloud). Réessaie ; si ça recommence, dis-le à Claude." : "Impossible d'utiliser cette image.");
     }
   });
 
