@@ -1050,7 +1050,7 @@
   .ig-feed-post .ig-post-card-likes,
   .ig-feed-post .ig-post-card-caption,
   .ig-feed-post .ig-post-card-date{padding-left:12px; padding-right:12px;}
-  .ig-feed-post .ig-post-card-date{margin-bottom:0;}
+  .ig-feed-post .ig-post-card-date{margin-bottom:0; font-size:0.56rem; letter-spacing:0.02em; margin-top:2px;}
   .ig-feed-post .ig-post-card-caption{display:flex; align-items:flex-start; gap:4px;}
   .ig-feed-post .ig-post-card-caption b{flex:0 0 auto; margin-right:0; line-height:1.4;}
   /* Petite barre d'accueil en bas de l'écran, comme sur un vrai téléphone : purement décorative,
@@ -1145,7 +1145,8 @@
     font-size:0.68rem; font-weight:600; padding:3px 8px; border-radius:12px; pointer-events:none;
   }
   .ig-post-card-actions{position:relative;}
-  .ig-car-dots{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:4px; pointer-events:none;}
+  .ig-car-dots{display:flex; justify-content:center; gap:4px; pointer-events:none; height:6px; margin:2px 0 4px;}
+  .ig-car-dots:empty{display:none;}
   .ig-car-dot{width:6px; height:6px; border-radius:50%; background:#c7c7c7; transition:background .2s ease;}
   .ig-car-dot.active{background:#0095f6;}
   /* Gestion des images du carrousel : sous la carte, en dehors de l'aperçu du post. */
@@ -1203,6 +1204,14 @@
   .ig-thumb-time{font-size:0.72rem; color:var(--ink-soft); text-align:center; margin-top:2px;}
   .ig-post-card-actions{display:flex; align-items:center; gap:14px; margin-bottom:6px; padding-top:4px; color:#262626;}
   .ig-icon{width:24px; height:24px; flex:0 0 auto;}
+  .ig-action{display:flex; align-items:center; gap:4px; flex:0 0 auto;}
+  .ig-feed-post .ig-post-card-actions{gap:12px;}
+  .ig-count{
+    border:none; background:none; padding:0; margin:0; font-family:inherit; font-size:0.8rem; font-weight:600;
+    color:#262626; min-width:1ch; border-bottom:1px dashed transparent; border-radius:0;
+  }
+  .ig-count:hover{border-bottom-color:var(--line);}
+  .ig-count:focus{outline:none; border-bottom-color:var(--lavande);}
   .ig-icon-save{margin-left:auto;}
   .ig-post-card-likes{font-weight:700; font-size:0.82rem; margin-bottom:4px; display:flex; align-items:center; gap:5px;}
   .ig-post-card-likes input{
@@ -7230,6 +7239,18 @@
   const igVideoUrlCache = {}; // videoId → URL locale (blob:) déjà téléchargée ou tout juste importée
   let igSwipedPostId = null;  // post dont le média vient d'être "glissé" (ce n'est pas un clic)
 
+  // Compteurs affichés à côté des 4 icônes d'un post (J'aime, commentaires, republications,
+  // partages), modifiables d'un clic. 100 par défaut.
+  const IG_COUNT_DEFAULT = 100;
+  function igCountOf(p, key){
+    const c = p && p.counts;
+    if(c && c[key] !== undefined && c[key] !== null && c[key] !== '') return c[key];
+    if(key === 'likes' && p && p.likes) return p.likes; // anciens posts : leur nombre de J'aime
+    return IG_COUNT_DEFAULT;
+  }
+
+  function igCountWidth(v){ return (Math.max(1, String(v).length) * 0.62 + 0.1).toFixed(2) + 'em'; }
+
   function igRatioOf(p){
     const id = (p && p.ratio) || '1:1'; // anciens posts : images recadrées en carré
     return IG_RATIOS.find(r=> r.id === id) || IG_RATIOS[2];
@@ -7326,16 +7347,13 @@
           <span class="ig-feed-more"><svg class="ig-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
         </div>
         <div class="ig-post-card-image ig-feed-media" style="aspect-ratio:${igRatioOf(p).css};"></div>
+        <div class="ig-car-dots"></div>
         <div class="ig-post-card-actions">
-          <span class="ig-icon" title="J'aime"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.3s-7.6-4.6-9.2-9.3C1.7 7.6 3.9 4.5 7.2 4.5c2 0 3.5 1.1 4.8 2.9 1.3-1.8 2.8-2.9 4.8-2.9 3.3 0 5.5 3.1 4.4 6.5-1.6 4.7-9.2 9.3-9.2 9.3z"/></svg></span>
-          <span class="ig-icon" title="Commenter"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 16.4A9 9 0 1 0 17 20l4 1.2z"/></svg></span>
-          <span class="ig-icon" title="Republier"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/></svg></span>
-          <span class="ig-icon" title="Partager"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3L10 13.5"/><path d="M21.5 3l-6.8 18-4.7-7.5L2.5 9z"/></svg></span>
-          <div class="ig-car-dots"></div>
+          <span class="ig-action"><span class="ig-icon" title="J'aime"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.3s-7.6-4.6-9.2-9.3C1.7 7.6 3.9 4.5 7.2 4.5c2 0 3.5 1.1 4.8 2.9 1.3-1.8 2.8-2.9 4.8-2.9 3.3 0 5.5 3.1 4.4 6.5-1.6 4.7-9.2 9.3-9.2 9.3z"/></svg></span><input type="text" inputmode="numeric" class="ig-count" data-count="likes" value="${igCountOf(p, 'likes')}" style="width:${igCountWidth(igCountOf(p, 'likes'))}" title="Nombre modifiable"></span>
+          <span class="ig-action"><span class="ig-icon" title="Commenter"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 16.4A9 9 0 1 0 17 20l4 1.2z"/></svg></span><input type="text" inputmode="numeric" class="ig-count" data-count="comments" value="${igCountOf(p, 'comments')}" style="width:${igCountWidth(igCountOf(p, 'comments'))}" title="Nombre modifiable"></span>
+          <span class="ig-action"><span class="ig-icon" title="Republier"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/></svg></span><input type="text" inputmode="numeric" class="ig-count" data-count="reposts" value="${igCountOf(p, 'reposts')}" style="width:${igCountWidth(igCountOf(p, 'reposts'))}" title="Nombre modifiable"></span>
+          <span class="ig-action"><span class="ig-icon" title="Partager"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3L10 13.5"/><path d="M21.5 3l-6.8 18-4.7-7.5L2.5 9z"/></svg></span><input type="text" inputmode="numeric" class="ig-count" data-count="shares" value="${igCountOf(p, 'shares')}" style="width:${igCountWidth(igCountOf(p, 'shares'))}" title="Nombre modifiable"></span>
           <span class="ig-icon ig-icon-save" title="Enregistrer"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 21l-6.5-5.3L5.5 21V4.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1z"/></svg></span>
-        </div>
-        <div class="ig-post-card-likes">
-          <input type="number" class="ig-feed-likes" min="0" value="${p.likes || 0}"> mentions J'aime
         </div>
         <div class="ig-post-card-caption">
           <b class="ig-feed-caption-user">${uname} </b><textarea class="ig-feed-caption" placeholder="Écris une légende..." rows="1">${escapeHtml(p.caption || '')}</textarea>
@@ -7512,8 +7530,14 @@
       saveIgPosts();
       renderIgPostPills();
       if(String(p.id) === String(currentIgPostId)) renderIgEditPanelTitle();
-    } else if(e.target.classList.contains('ig-feed-likes')){
-      p.likes = parseInt(e.target.value, 10) || 0;
+    } else if(e.target.classList.contains('ig-count')){
+      // Chiffres, espaces et abréviations (1,2 k, 3 M) acceptés, comme sur Instagram.
+      const v = e.target.value.replace(/[^0-9 ,.kKmM]/g, '');
+      if(v !== e.target.value) e.target.value = v;
+      e.target.style.width = igCountWidth(v);
+      if(!p.counts) p.counts = {};
+      p.counts[e.target.dataset.count] = v;
+      if(e.target.dataset.count === 'likes') p.likes = parseInt(v.replace(/\D/g, ''), 10) || 0;
       saveIgPosts();
     }
   });
