@@ -1073,6 +1073,10 @@
     display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:1.3rem;
   }
   .ig-grid-cell img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ig-grid-cell{position:relative;}
+  /* Icône "carrousel" (deux carrés superposés) en haut à droite d'une vignette, comme sur Instagram. */
+  .ig-grid-multi{position:absolute; top:6px; right:6px; width:18px; height:18px; pointer-events:none;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.45));}
   .ig-grid-cell:hover{opacity:0.85;}
   .ig-post-card-header{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
   .ig-back-btn{flex:0 0 auto; border:none; background:none; font-size:1.1rem; cursor:pointer; color:#262626; padding:0 4px 0 0;}
@@ -1085,6 +1089,53 @@
     border-radius:8px; overflow:hidden; margin-bottom:8px;
   }
   .ig-post-card-image img{width:100%; height:100%; object-fit:cover; display:block;}
+  /* --- CARROUSEL (ajouté le 24 novembre 2026) --- */
+  .ig-post-card-image{position:relative; touch-action:pan-y; user-select:none; -webkit-user-select:none;}
+  .ig-car-track{display:flex; width:100%; height:100%; transition:transform .3s ease;}
+  .ig-car-track.no-anim{transition:none;}
+  .ig-car-slide{flex:0 0 100%; width:100%; height:100%;}
+  .ig-car-slide img{width:100%; height:100%; object-fit:cover; display:block; -webkit-user-drag:none; pointer-events:none;}
+  .ig-car-arrow{
+    position:absolute; top:50%; transform:translateY(-50%); width:26px; height:26px; border-radius:50%;
+    border:none; background:rgba(255,255,255,0.85); color:#262626; font-size:0.95rem; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+    box-shadow:0 1px 4px rgba(0,0,0,0.25); z-index:2;
+  }
+  .ig-car-arrow:hover{background:#fff;}
+  .ig-car-prev{left:8px;}
+  .ig-car-next{right:8px;}
+  .ig-car-counter{
+    position:absolute; top:10px; right:10px; z-index:2; background:rgba(38,38,38,0.72); color:#fff;
+    font-size:0.68rem; font-weight:600; padding:3px 8px; border-radius:12px; pointer-events:none;
+  }
+  .ig-post-card-actions{position:relative;}
+  .ig-car-dots{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:4px; pointer-events:none;}
+  .ig-car-dot{width:6px; height:6px; border-radius:50%; background:#c7c7c7; transition:background .2s ease;}
+  .ig-car-dot.active{background:#0095f6;}
+  /* Gestion des images du carrousel : sous la carte, en dehors de l'aperçu du post. */
+  .ig-slide-manager{border-top:1px solid #efefef; padding-top:10px; margin-bottom:12px;}
+  .ig-slide-manager-title{font-size:0.68rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;}
+  .ig-slide-strip{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;}
+  .ig-slide-thumb{
+    width:42px; height:42px; border-radius:6px; overflow:hidden; padding:0; cursor:pointer;
+    border:2px solid transparent; background:var(--gris); position:relative;
+  }
+  .ig-slide-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ig-slide-thumb.active{border-color:#0095f6;}
+  .ig-slide-thumb .ig-slide-num{position:absolute; left:2px; bottom:1px; font-size:0.55rem; font-weight:700; color:#fff; text-shadow:0 0 3px rgba(0,0,0,0.8);}
+  .ig-slide-add{
+    width:42px; height:42px; border-radius:6px; border:1px dashed var(--line); background:var(--panel);
+    color:var(--ink-soft); font-size:1.1rem; cursor:pointer; padding:0;
+  }
+  .ig-slide-add:hover{border-color:var(--lavande); color:var(--lavande);}
+  .ig-slide-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .ig-slide-actions button{
+    font-family:'Plus Jakarta Sans', sans-serif; font-size:0.7rem; font-weight:600; padding:4px 9px;
+    border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink-soft); cursor:pointer;
+  }
+  .ig-slide-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
+  .ig-slide-actions button:disabled{opacity:0.4; cursor:default;}
+  .ig-slide-actions .ig-slide-remove:hover:not(:disabled){color:var(--rose); border-color:var(--rose);}
   .ig-post-card-actions{display:flex; gap:12px; font-size:1.25rem; margin-bottom:6px;}
   .ig-icon-save{margin-left:auto;}
   .ig-post-card-likes{font-weight:700; font-size:0.82rem; margin-bottom:4px; display:flex; align-items:center; gap:5px;}
@@ -1350,10 +1401,10 @@
        survol d'une autre. Forcer chaque carte sur son propre calque graphique (translateZ(0)) évite
        à Safari de redessiner toute la colonne à chaque survol, et corrige ce bug à la racine.
     */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+    /* 12 novembre 2026 : l'ancienne astuce translateZ(0) + backface-visibility (utile seulement avec
+       l'ancienne mise en page en colonnes) est retirée : avec la grille actuelle, elle faisait garder
+       à Safari des "fantômes" de cartes (ancienne version d'un post-it affichée en double, ou un
+       post-it qui ne se dessinait plus) après un ajout ou une modification. */
   }
   .parti-card:hover{
     box-shadow: 4px 8px 18px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
@@ -1704,7 +1755,7 @@
      ===================================================================================== */
   #content-blocnotes .parti-grid{grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); column-gap:14px;}
   #content-blocnotes .parti-card{
-    transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important;
+    transform:none !important; -webkit-transform:none !important;
     border:1px solid var(--postit-line, var(--line)); border-radius:12px;
     padding:14px 16px 14px; margin:0 0 14px;
     box-shadow:none; animation:none;
@@ -1859,11 +1910,15 @@
               <div class="ig-post-card-image" id="igPostImageBox">
                 <span class="placeholder-txt" id="igPostImagePlaceholder">+ Image</span>
               </div>
+              <!-- igPostImageInput : remplacer l'image affichée ; igPostSlidesInput : ajouter une ou
+                   plusieurs images au carrousel (sélection multiple). -->
               <input type="file" id="igPostImageInput" accept="image/*" style="display:none;">
+              <input type="file" id="igPostSlidesInput" accept="image/*" multiple style="display:none;">
               <div class="ig-post-card-actions">
                 <span class="ig-icon">♡</span>
                 <span class="ig-icon">💬</span>
                 <span class="ig-icon">📤</span>
+                <div class="ig-car-dots" id="igCarouselDots"></div>
                 <span class="ig-icon ig-icon-save">🔖</span>
               </div>
               <div class="ig-post-card-likes">
@@ -1875,6 +1930,16 @@
               </div>
               <div class="ig-post-card-date" id="igPostDateLabel"></div>
               <div class="ig-post-card-comment-placeholder">Ajouter un commentaire...</div>
+              <div class="ig-slide-manager" id="igSlideManager">
+                <div class="ig-slide-manager-title">Images du post (carrousel)</div>
+                <div class="ig-slide-strip" id="igSlideStrip"></div>
+                <div class="ig-slide-actions" id="igSlideActions">
+                  <button type="button" id="igSlideMoveLeftBtn" title="Déplacer cette image vers la gauche">◀ Déplacer</button>
+                  <button type="button" id="igSlideMoveRightBtn" title="Déplacer cette image vers la droite">Déplacer ▶</button>
+                  <button type="button" id="igSlideReplaceBtn" title="Remplacer cette image">🔄 Remplacer</button>
+                  <button type="button" class="ig-slide-remove" id="igSlideRemoveBtn" title="Retirer cette image du carrousel">✕ Retirer</button>
+                </div>
+              </div>
               <button type="button" class="ig-delete-post-btn" id="igDeletePostBtn">✕ Supprimer ce post</button>
             </div>
 
@@ -6924,6 +6989,7 @@
     igGridEl.innerHTML = igPosts.map(p => `
       <div class="ig-grid-cell" data-post-id="${p.id}">
         ${p.image ? `<img src="${p.image}" alt="">` : '+'}
+        ${igSlides(p).length > 1 ? IG_MULTI_ICON_SVG : ''}
       </div>
     `).join('');
     igGridEl.querySelectorAll('.ig-grid-cell').forEach(cell=>{
@@ -6976,17 +7042,184 @@
     });
   }
 
-  function renderIgPostImage(p){
-    const existingImg = igPostImageBox.querySelector('img');
-    if(p.image){
-      if(existingImg) existingImg.src = p.image;
-      else igPostImageBox.insertAdjacentHTML('afterbegin', `<img src="${p.image}" alt="">`);
-      igPostImagePlaceholder.style.display = 'none';
-    } else {
-      if(existingImg) existingImg.remove();
-      igPostImagePlaceholder.style.display = '';
-    }
+  // ---------- CARROUSEL (24 novembre 2026) ----------
+  // Un post peut maintenant avoir plusieurs images, comme un carrousel Instagram. La 1ʳᵉ image
+  // reste dans p.image (couverture affichée dans la grille, comme avant : les anciens posts n'ont
+  // rien à migrer) ; les suivantes sont dans p.extraImages. Côté Firestore, chaque image a son
+  // propre document : "{postId}" pour la 1ʳᵉ (inchangé), "{postId}__s2", "{postId}__s3"... pour les
+  // suivantes (voir __rg_getIgPostImages et prepareIgPostImages).
+  const IG_MAX_SLIDES = 20;
+  const IG_MULTI_ICON_SVG = `<svg class="ig-grid-multi" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M19 2H9a3 3 0 0 0-3 3v1H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1h1a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3Zm-3 17a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1Zm4-4a1 1 0 0 1-1 1h-1V9a3 3 0 0 0-3-3H8V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1Z"/></svg>`;
+  let igSlideIndex = 0;
+  let igCarouselSwiped = false;
+
+  function igSlides(p){
+    if(!p || !p.image) return [];
+    return [p.image, ...(Array.isArray(p.extraImages) ? p.extraImages.filter(Boolean) : [])];
   }
+  function igSetSlides(p, arr){
+    arr = arr.filter(Boolean);
+    p.image = arr[0] || null;
+    if(arr.length > 1) p.extraImages = arr.slice(1);
+    else delete p.extraImages;
+  }
+
+  const igPostSlidesInput = document.getElementById('igPostSlidesInput');
+  const igCarouselDotsEl = document.getElementById('igCarouselDots');
+  const igSlideStripEl = document.getElementById('igSlideStrip');
+  const igSlideActionsEl = document.getElementById('igSlideActions');
+
+  function renderIgPostImage(p){
+    const slides = igSlides(p);
+    if(igSlideIndex >= slides.length) igSlideIndex = Math.max(0, slides.length - 1);
+
+    if(!slides.length){
+      igPostImageBox.innerHTML = `<span class="placeholder-txt">+ Image(s)</span>`;
+      igPostImageBox.title = "Ajouter une ou plusieurs images";
+    } else {
+      igPostImageBox.innerHTML = `
+        <div class="ig-car-track">${slides.map(src=>`<div class="ig-car-slide"><img src="${src}" alt=""></div>`).join('')}</div>
+        ${slides.length > 1 ? `
+          <div class="ig-car-counter"></div>
+          <button type="button" class="ig-car-arrow ig-car-prev" data-car-dir="-1" title="Image précédente">‹</button>
+          <button type="button" class="ig-car-arrow ig-car-next" data-car-dir="1" title="Image suivante">›</button>` : ''}
+      `;
+      igPostImageBox.title = "Cliquer pour remplacer cette image — glisser ou utiliser les flèches pour faire défiler";
+    }
+    igCarouselDotsEl.innerHTML = slides.length > 1 ? slides.map(()=>'<span class="ig-car-dot"></span>').join('') : '';
+    igSlideStripEl.innerHTML = slides.map((src, i)=>
+      `<button type="button" class="ig-slide-thumb" data-slide-idx="${i}" title="Image ${i+1}"><img src="${src}" alt=""><span class="ig-slide-num">${i+1}</span></button>`
+    ).join('') + (slides.length < IG_MAX_SLIDES
+      ? `<button type="button" class="ig-slide-add" id="igSlideAddBtn" title="Ajouter une ou plusieurs images au carrousel">+</button>` : '');
+    igSlideActionsEl.style.display = slides.length ? '' : 'none';
+    updateIgCarouselPosition(false);
+  }
+
+  // Met à jour la position du carrousel (image affichée, flèches, compteur, points, vignette active)
+  // sans tout redessiner — pour un défilement fluide.
+  function updateIgCarouselPosition(animate = true){
+    const p = currentIgPost();
+    const n = igSlides(p).length;
+    const track = igPostImageBox.querySelector('.ig-car-track');
+    if(track){
+      track.classList.toggle('no-anim', !animate);
+      track.style.transform = `translateX(-${igSlideIndex * 100}%)`;
+    }
+    const prev = igPostImageBox.querySelector('.ig-car-prev');
+    const next = igPostImageBox.querySelector('.ig-car-next');
+    if(prev) prev.style.display = igSlideIndex > 0 ? '' : 'none';
+    if(next) next.style.display = igSlideIndex < n - 1 ? '' : 'none';
+    const counter = igPostImageBox.querySelector('.ig-car-counter');
+    if(counter) counter.textContent = `${igSlideIndex + 1}/${n}`;
+    igCarouselDotsEl.querySelectorAll('.ig-car-dot').forEach((d, i)=> d.classList.toggle('active', i === igSlideIndex));
+    igSlideStripEl.querySelectorAll('.ig-slide-thumb').forEach((t, i)=> t.classList.toggle('active', i === igSlideIndex));
+    document.getElementById('igSlideMoveLeftBtn').disabled = igSlideIndex <= 0;
+    document.getElementById('igSlideMoveRightBtn').disabled = igSlideIndex >= n - 1;
+  }
+
+  function goToIgSlide(i){
+    const n = igSlides(currentIgPost()).length;
+    if(!n) return;
+    igSlideIndex = Math.max(0, Math.min(n - 1, i));
+    updateIgCarouselPosition(true);
+  }
+
+  function commitIgSlides(p, slides){
+    igSetSlides(p, slides);
+    saveIgPosts();
+    renderIgPostImage(p);
+    renderIgGrid();
+  }
+
+  // Flèches (délégation : le contenu de la boîte est redessiné à chaque changement).
+  igPostImageBox.addEventListener('click', (e)=>{
+    const arrow = e.target.closest('[data-car-dir]');
+    if(arrow){
+      e.stopPropagation();
+      goToIgSlide(igSlideIndex + parseInt(arrow.dataset.carDir, 10));
+    }
+  }, true);
+
+  // Glisser du doigt / de la souris pour faire défiler, comme sur Instagram.
+  (function enableIgSwipe(){
+    let startX = null, startY = null, pointerId = null;
+    igPostImageBox.addEventListener('pointerdown', (e)=>{
+      if(e.target.closest('[data-car-dir]')) return;
+      startX = e.clientX; startY = e.clientY; pointerId = e.pointerId;
+      igCarouselSwiped = false;
+    });
+    igPostImageBox.addEventListener('pointermove', (e)=>{
+      if(startX === null || e.pointerId !== pointerId) return;
+      const dx = e.clientX - startX;
+      const track = igPostImageBox.querySelector('.ig-car-track');
+      if(!track || Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(e.clientY - startY)) return;
+      igCarouselSwiped = true;
+      track.classList.add('no-anim');
+      track.style.transform = `translateX(calc(-${igSlideIndex * 100}% + ${dx}px))`;
+    });
+    const end = (e)=>{
+      if(startX === null || e.pointerId !== pointerId) return;
+      const dx = e.clientX - startX;
+      startX = null;
+      if(!igCarouselSwiped) return;
+      if(dx < -40) goToIgSlide(igSlideIndex + 1);
+      else if(dx > 40) goToIgSlide(igSlideIndex - 1);
+      else updateIgCarouselPosition(true);
+    };
+    igPostImageBox.addEventListener('pointerup', end);
+    igPostImageBox.addEventListener('pointercancel', end);
+    igPostImageBox.addEventListener('pointerleave', end);
+  })();
+
+  // Ajoute une ou plusieurs images (compressées une par une) à la fin du carrousel.
+  async function addIgSlidesFromFiles(files){
+    const p = currentIgPost(); if(!p) return;
+    const slides = igSlides(p);
+    const room = IG_MAX_SLIDES - slides.length;
+    const list = Array.from(files || []).slice(0, Math.max(0, room));
+    if(files && files.length > list.length) alert(`Un carrousel peut contenir ${IG_MAX_SLIDES} images au maximum : seules les ${list.length} premières ont été ajoutées.`);
+    if(!list.length) return;
+    const firstNew = slides.length;
+    for(const file of list){
+      try{ slides.push(await compressImageSquare(file, igPostCompressOpts())); }
+      catch(err){ console.error('Erreur image de post Instagram :', err); }
+    }
+    igSlideIndex = Math.min(firstNew, slides.length - 1);
+    commitIgSlides(p, slides);
+  }
+
+  igPostSlidesInput.addEventListener('change', async ()=>{
+    const files = Array.from(igPostSlidesInput.files || []);
+    igPostSlidesInput.value = '';
+    await addIgSlidesFromFiles(files);
+  });
+
+  igSlideStripEl.addEventListener('click', (e)=>{
+    const thumb = e.target.closest('[data-slide-idx]');
+    if(thumb){ goToIgSlide(parseInt(thumb.dataset.slideIdx, 10)); return; }
+    if(e.target.closest('#igSlideAddBtn')) igPostSlidesInput.click();
+  });
+
+  function moveIgSlide(delta){
+    const p = currentIgPost(); if(!p) return;
+    const slides = igSlides(p);
+    const j = igSlideIndex + delta;
+    if(j < 0 || j >= slides.length) return;
+    [slides[igSlideIndex], slides[j]] = [slides[j], slides[igSlideIndex]];
+    igSlideIndex = j;
+    commitIgSlides(p, slides);
+  }
+  document.getElementById('igSlideMoveLeftBtn').addEventListener('click', ()=> moveIgSlide(-1));
+  document.getElementById('igSlideMoveRightBtn').addEventListener('click', ()=> moveIgSlide(1));
+  document.getElementById('igSlideReplaceBtn').addEventListener('click', ()=> igPostImageInput.click());
+  document.getElementById('igSlideRemoveBtn').addEventListener('click', ()=>{
+    const p = currentIgPost(); if(!p) return;
+    const slides = igSlides(p);
+    if(!slides.length) return;
+    if(!confirm(slides.length > 1 ? `Retirer l'image ${igSlideIndex + 1} du carrousel ?` : 'Retirer cette image ?')) return;
+    slides.splice(igSlideIndex, 1);
+    commitIgSlides(p, slides);
+  });
 
   function renderIgDetailView(){
     const p = currentIgPost();
@@ -7002,6 +7235,7 @@
   function selectIgPost(id){
     const p = igPosts.find(x=>String(x.id)===String(id));
     if(!p) return;
+    if(String(currentIgPostId) !== String(p.id)) igSlideIndex = 0;
     currentIgPostId = p.id;
     igDetailVisible = true;
     // La vue détail doit déjà être visible (display) avant de calculer la hauteur de la légende :
@@ -7088,7 +7322,13 @@
     saveIgPosts();
     renderIgPostPills();
   });
-  igPostImageBox.addEventListener('click', ()=> igPostImageInput.click());
+  // Clic sur l'image : post vide → ajouter une ou plusieurs images ; sinon → remplacer l'image
+  // affichée. Un glissement (défilement du carrousel) n'est pas un clic.
+  igPostImageBox.addEventListener('click', ()=>{
+    if(igCarouselSwiped){ igCarouselSwiped = false; return; }
+    if(!igSlides(currentIgPost()).length) igPostSlidesInput.click();
+    else igPostImageInput.click();
+  });
   igPostImageInput.addEventListener('change', async ()=>{
     const file = igPostImageInput.files[0];
     igPostImageInput.value = '';
@@ -7096,10 +7336,10 @@
     const p = currentIgPost(); if(!p) return;
     try{
       const dataUrl = await compressImageSquare(file, igPostCompressOpts());
-      p.image = dataUrl;
-      saveIgPosts();
-      renderIgPostImage(p);
-      renderIgGrid();
+      const slides = igSlides(p);
+      if(slides.length) slides[igSlideIndex] = dataUrl;
+      else slides.push(dataUrl);
+      commitIgSlides(p, slides);
     }catch(err){
       console.error('Erreur image de post Instagram :', err);
     }
@@ -7724,7 +7964,7 @@
     // sous-estimer le vrai poids total affiché dans le pied de page ci-dessous.
     if(igProfile) total += base64ImageBytes(igProfile.avatar);
     // Sauf les images de post, qui ont leur propre document depuis le 4 octobre 2026.
-    if(!window.__rg_igImagesSeparate) (igPosts || []).forEach(p=> total += base64ImageBytes(p.image));
+    if(!window.__rg_igImagesSeparate) (igPosts || []).forEach(p=> igSlides(p).forEach(img=> total += base64ImageBytes(img)));
     return total;
   }
 
@@ -8006,16 +8246,18 @@
     }
 
     (igPosts || []).forEach((p, i)=>{
-      if(!p.image) return;
-      entries.push({
-        label: 'Instagram — post ' + (i + 1),
-        bytes: base64ImageBytes(p.image),
-        config: window.__rg_igImagesSeparate
-          ? {...IG_POST_RELAXED_COMPRESS_OPTS, square:true}
-          : IW_IG_POST,
-        getDataUrl: () => p.image,
-        setDataUrl: (v) => { p.image = v; },
-        onSaved: () => { saveIgPosts(); }
+      const slides = igSlides(p);
+      slides.forEach((img, k)=>{
+        entries.push({
+          label: 'Instagram — post ' + (i + 1) + (slides.length > 1 ? ', image ' + (k + 1) : ''),
+          bytes: base64ImageBytes(img),
+          config: window.__rg_igImagesSeparate
+            ? {...IG_POST_RELAXED_COMPRESS_OPTS, square:true}
+            : IW_IG_POST,
+          getDataUrl: () => k === 0 ? p.image : (p.extraImages || [])[k - 1],
+          setDataUrl: (v) => { if(k === 0) p.image = v; else if(p.extraImages) p.extraImages[k - 1] = v; },
+          onSaved: () => { saveIgPosts(); }
+        });
       });
     });
 
@@ -8548,14 +8790,20 @@
     // (users/{uid}/igPostImages/{postId}) : on ne l'écrit plus dans le document principal, mais
     // seulement une fois que ces documents séparés ont bien été chargés/migrés (drapeau
     // __rg_igImagesSeparate) — sinon on garde l'ancien fonctionnement pour ne jamais rien perdre.
-    igPosts: window.__rg_igImagesSeparate ? igPosts.map(({image, ...rest}) => rest) : igPosts,
+    igPosts: window.__rg_igImagesSeparate ? igPosts.map(({image, extraImages, ...rest}) => rest) : igPosts,
     igBioDrafts
   });
 
   // Images actuelles des posts Instagram (id → image), pour le <script type="module">.
   window.__rg_getIgPostImages = () => {
     const map = {};
-    (igPosts || []).forEach(p => { map[String(p.id)] = p.image || ''; });
+    (igPosts || []).forEach(p => {
+      map[String(p.id)] = p.image || '';
+      // Images suivantes d'un carrousel : "{postId}__s2", "{postId}__s3"...
+      (Array.isArray(p.extraImages) ? p.extraImages : []).forEach((img, i) => {
+        if(img) map[String(p.id) + '__s' + (i + 2)] = img;
+      });
+    });
     return map;
   };
 
@@ -8857,7 +9105,7 @@
         // Images de post Instagram : sauvegardées à part (une par document), comme les notes.
         const igImages = window.__rg_igImagesSeparate ? { ...igImagesSynced } : {};
         if(window.__rg_igImagesSeparate && Array.isArray(dataToBackup.igPosts)){
-          dataToBackup = { ...dataToBackup, igPosts: dataToBackup.igPosts.map(({image, ...rest}) => rest) };
+          dataToBackup = { ...dataToBackup, igPosts: dataToBackup.igPosts.map(({image, extraImages, ...rest}) => rest) };
         }
         await setDoc(backupRef, { ...dataToBackup, backedUpAt: serverTimestamp() });
         for(const postId of Object.keys(igImages)){
@@ -8897,7 +9145,14 @@
         const restoredIgImages = {};
         igImgSnap.forEach(d => { restoredIgImages[d.id] = d.data().image || ''; });
         if(Array.isArray(data.igPosts)){
-          data.igPosts = data.igPosts.map(p => restoredIgImages[String(p.id)] ? { ...p, image: restoredIgImages[String(p.id)] } : p);
+          data.igPosts = data.igPosts.map(p => {
+            const id = String(p.id);
+            const out = restoredIgImages[id] ? { ...p, image: restoredIgImages[id] } : { ...p };
+            const extras = [];
+            for(let k = 2; restoredIgImages[id + '__s' + k]; k++) extras.push(restoredIgImages[id + '__s' + k]);
+            if(extras.length) out.extraImages = extras;
+            return out;
+          });
         }
       }catch(err){ console.error('Lecture des images de post sauvegardées :', err); }
       applyingRemoteState = true;
@@ -8912,7 +9167,7 @@
       delete data.events;
       delete data.customSceneTabsData;
       if(window.__rg_igImagesSeparate && Array.isArray(data.igPosts)){
-        data.igPosts = data.igPosts.map(({image, ...rest}) => rest);
+        data.igPosts = data.igPosts.map(({image, extraImages, ...rest}) => rest);
       }
       await setDoc(userDocRef, { ...data, updatedAt: serverTimestamp() });
       await setDoc(sharedAgendaJkmeRef, { days: restoredEvents, updatedAt: serverTimestamp() });
@@ -9220,6 +9475,20 @@
         } else if(p.image){
           await setDoc(igPostImageRef(id), { image: p.image });
           loaded[id] = p.image;
+          migrated = true;
+        }
+        // Carrousel : images suivantes, chacune dans son document "{postId}__s2", "__s3"...
+        const extras = [];
+        for(let k = 2; loaded[id + '__s' + k]; k++) extras.push(loaded[id + '__s' + k]);
+        if(extras.length){
+          p.extraImages = extras;
+        } else if(Array.isArray(p.extraImages) && p.extraImages.length){
+          for(let i = 0; i < p.extraImages.length; i++){
+            const key = id + '__s' + (i + 2);
+            if(!p.extraImages[i]) continue;
+            await setDoc(igPostImageRef(key), { image: p.extraImages[i] });
+            loaded[key] = p.extraImages[i];
+          }
           migrated = true;
         }
       }
