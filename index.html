@@ -1136,6 +1136,22 @@
   .ig-slide-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
   .ig-slide-actions button:disabled{opacity:0.4; cursor:default;}
   .ig-slide-actions .ig-slide-remove:hover:not(:disabled){color:var(--rose); border-color:var(--rose);}
+  .ig-slide-status{font-size:0.72rem; font-weight:600; color:var(--lavande); margin:-2px 0 8px;}
+  .ig-slide-video-badge{position:absolute; right:3px; top:2px; font-size:0.55rem; color:#fff; text-shadow:0 0 3px rgba(0,0,0,0.8);}
+  .ig-car-slide{position:relative; background:#000;}
+  .ig-car-slide video{width:100%; height:100%; object-fit:cover; display:block; background:#000;}
+  .ig-car-play{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:54px; height:54px;
+    border-radius:50%; border:none; background:rgba(0,0,0,0.5); color:#fff; font-size:1.3rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0 0 0 4px;
+  }
+  .ig-car-play:hover{background:rgba(0,0,0,0.65);}
+  /* Fenêtre de choix de la miniature */
+  .ig-thumb-hint{font-size:0.8rem; color:var(--ink-soft); margin:4px 0 12px;}
+  .ig-thumb-preview{width:100%; aspect-ratio:1/1; background:#000; border-radius:10px; overflow:hidden;}
+  .ig-thumb-preview video{width:100%; height:100%; object-fit:cover; display:block;}
+  #igThumbRange{width:100%; margin-top:12px; accent-color:var(--lavande);}
+  .ig-thumb-time{font-size:0.72rem; color:var(--ink-soft); text-align:center; margin-top:2px;}
   .ig-post-card-actions{display:flex; gap:12px; font-size:1.25rem; margin-bottom:6px;}
   .ig-icon-save{margin-left:auto;}
   .ig-post-card-likes{font-weight:700; font-size:0.82rem; margin-bottom:4px; display:flex; align-items:center; gap:5px;}
@@ -1913,7 +1929,7 @@
               <!-- igPostImageInput : remplacer l'image affichée ; igPostSlidesInput : ajouter une ou
                    plusieurs images au carrousel (sélection multiple). -->
               <input type="file" id="igPostImageInput" accept="image/*" style="display:none;">
-              <input type="file" id="igPostSlidesInput" accept="image/*" multiple style="display:none;">
+              <input type="file" id="igPostSlidesInput" accept="image/*,video/*" multiple style="display:none;">
               <div class="ig-post-card-actions">
                 <span class="ig-icon">♡</span>
                 <span class="ig-icon">💬</span>
@@ -1931,13 +1947,15 @@
               <div class="ig-post-card-date" id="igPostDateLabel"></div>
               <div class="ig-post-card-comment-placeholder">Ajouter un commentaire...</div>
               <div class="ig-slide-manager" id="igSlideManager">
-                <div class="ig-slide-manager-title">Images du post (carrousel)</div>
+                <div class="ig-slide-manager-title">Images et vidéos du post (carrousel)</div>
                 <div class="ig-slide-strip" id="igSlideStrip"></div>
+                <div class="ig-slide-status" id="igSlideStatus" style="display:none;"></div>
                 <div class="ig-slide-actions" id="igSlideActions">
                   <button type="button" id="igSlideMoveLeftBtn" title="Déplacer cette image vers la gauche">◀ Déplacer</button>
                   <button type="button" id="igSlideMoveRightBtn" title="Déplacer cette image vers la droite">Déplacer ▶</button>
-                  <button type="button" id="igSlideReplaceBtn" title="Remplacer cette image">🔄 Remplacer</button>
-                  <button type="button" class="ig-slide-remove" id="igSlideRemoveBtn" title="Retirer cette image du carrousel">✕ Retirer</button>
+                  <button type="button" id="igSlideReplaceBtn" title="Remplacer cette diapo par une image">🔄 Remplacer</button>
+                  <button type="button" id="igSlideThumbBtn" title="Choisir une autre miniature pour cette vidéo" style="display:none;">🖼 Miniature</button>
+                  <button type="button" class="ig-slide-remove" id="igSlideRemoveBtn" title="Retirer cette diapo du carrousel">✕ Retirer</button>
                 </div>
               </div>
               <button type="button" class="ig-delete-post-btn" id="igDeletePostBtn">✕ Supprimer ce post</button>
@@ -2358,6 +2376,23 @@
         <button type="button" class="btn btn-secondary" id="removeLinkBtn" style="display:none;">Retirer le lien</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODAL CHOIX DE LA MINIATURE D'UNE VIDÉO (simulation Instagram, carrousel) -->
+<div class="overlay" id="igVideoThumbOverlay">
+  <div class="modal" style="max-width:420px;">
+    <button class="close-x" id="closeIgThumbModal">✕</button>
+    <h3>Miniature de la vidéo</h3>
+    <p class="ig-thumb-hint">Fais glisser le curseur jusqu'à l'image de ton choix, ou importe une autre image.</p>
+    <div class="ig-thumb-preview"><video id="igThumbVideo" muted playsinline preload="auto"></video></div>
+    <input type="range" id="igThumbRange" min="0" max="1" step="0.04" value="0">
+    <div class="ig-thumb-time" id="igThumbTime">0:00</div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button type="button" class="btn" id="igThumbUseFrameBtn" style="flex:1;">Utiliser cette image</button>
+      <button type="button" class="btn btn-secondary" id="igThumbImportBtn">📷 Importer une image</button>
+    </div>
+    <input type="file" id="igThumbImportInput" accept="image/*" style="display:none;">
   </div>
 </div>
 
@@ -6989,7 +7024,7 @@
     igGridEl.innerHTML = igPosts.map(p => `
       <div class="ig-grid-cell" data-post-id="${p.id}">
         ${p.image ? `<img src="${p.image}" alt="">` : '+'}
-        ${igSlides(p).length > 1 ? IG_MULTI_ICON_SVG : ''}
+        ${igGridBadge(p)}
       </div>
     `).join('');
     igGridEl.querySelectorAll('.ig-grid-cell').forEach(cell=>{
@@ -7042,16 +7077,24 @@
     });
   }
 
-  // ---------- CARROUSEL (24 novembre 2026) ----------
-  // Un post peut maintenant avoir plusieurs images, comme un carrousel Instagram. La 1ʳᵉ image
-  // reste dans p.image (couverture affichée dans la grille, comme avant : les anciens posts n'ont
-  // rien à migrer) ; les suivantes sont dans p.extraImages. Côté Firestore, chaque image a son
-  // propre document : "{postId}" pour la 1ʳᵉ (inchangé), "{postId}__s2", "{postId}__s3"... pour les
-  // suivantes (voir __rg_getIgPostImages et prepareIgPostImages).
+  // ---------- CARROUSEL + VIDÉOS (24 novembre 2026) ----------
+  // Un post peut avoir plusieurs "diapos", comme un carrousel Instagram : des images et des vidéos.
+  // - La 1ʳᵉ image reste dans p.image (couverture affichée dans la grille, comme avant : les anciens
+  //   posts n'ont rien à migrer) ; les suivantes sont dans p.extraImages. Côté Firestore, chaque
+  //   image a son propre document : "{postId}" pour la 1ʳᵉ, "{postId}__s2", "__s3"... ensuite.
+  // - Une diapo vidéo garde aussi une image : sa MINIATURE (choisie dans la vidéo ou importée), à la
+  //   même place que les images ; p.slideVideos (aligné sur les diapos) donne l'identifiant de la
+  //   vidéo, ou null pour une simple image.
+  // - Une vidéo est trop lourde pour un document Firestore (1 Mo max) : elle est découpée en
+  //   morceaux de ~900 Ko dans users/{id}/igPostVideos (voir __rg_uploadIgVideo, plus bas dans le
+  //   <script type="module">), et n'est téléchargée qu'au moment où on la lance.
   const IG_MAX_SLIDES = 20;
+  const IG_MAX_VIDEO_MB = 30;
   const IG_MULTI_ICON_SVG = `<svg class="ig-grid-multi" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M19 2H9a3 3 0 0 0-3 3v1H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1h1a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3Zm-3 17a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1Zm4-4a1 1 0 0 1-1 1h-1V9a3 3 0 0 0-3-3H8V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1Z"/></svg>`;
+  const IG_VIDEO_ICON_SVG = `<svg class="ig-grid-multi" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.53.85l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 7 4.5Z"/></svg>`;
   let igSlideIndex = 0;
   let igCarouselSwiped = false;
+  const igVideoUrlCache = {}; // videoId → URL locale (blob:) déjà téléchargée ou tout juste importée
 
   function igSlides(p){
     if(!p || !p.image) return [];
@@ -7063,44 +7106,96 @@
     if(arr.length > 1) p.extraImages = arr.slice(1);
     else delete p.extraImages;
   }
+  // Diapos complètes : [{img, video}] (video = identifiant de vidéo, ou null pour une image).
+  function igSlideItems(p){
+    const vids = (p && Array.isArray(p.slideVideos)) ? p.slideVideos : [];
+    return igSlides(p).map((img, i)=> ({img, video: vids[i] || null}));
+  }
+  function igSetSlideItems(p, items){
+    items = items.filter(it=> it && it.img);
+    igSetSlides(p, items.map(it=> it.img));
+    const vids = items.map(it=> it.video || null);
+    if(vids.some(Boolean)) p.slideVideos = vids;
+    else delete p.slideVideos;
+  }
+  function igPostHasVideo(p){ return igSlideItems(p).some(it=> it.video); }
+  function igGridBadge(p){
+    const items = igSlideItems(p);
+    if(items.length > 1) return IG_MULTI_ICON_SVG;
+    if(items.length === 1 && items[0].video) return IG_VIDEO_ICON_SVG;
+    return '';
+  }
+
+  // Supprime de Firestore les vidéos qui ne sont plus utilisées par aucun post.
+  function cleanupIgVideos(videoIds){
+    const used = new Set();
+    igPosts.forEach(p=> igSlideItems(p).forEach(it=>{ if(it.video) used.add(it.video); }));
+    videoIds.filter(id=> id && !used.has(id)).forEach(id=>{
+      if(igVideoUrlCache[id]){ URL.revokeObjectURL(igVideoUrlCache[id]); delete igVideoUrlCache[id]; }
+      if(window.__rg_deleteIgVideo) window.__rg_deleteIgVideo(id).catch(err=> console.error('Suppression vidéo :', err));
+    });
+  }
+
+  async function getIgVideoUrl(videoId){
+    if(igVideoUrlCache[videoId]) return igVideoUrlCache[videoId];
+    if(!window.__rg_loadIgVideo) throw new Error('Connexion au cloud indisponible');
+    const url = await window.__rg_loadIgVideo(videoId);
+    igVideoUrlCache[videoId] = url;
+    return url;
+  }
 
   const igPostSlidesInput = document.getElementById('igPostSlidesInput');
   const igCarouselDotsEl = document.getElementById('igCarouselDots');
   const igSlideStripEl = document.getElementById('igSlideStrip');
   const igSlideActionsEl = document.getElementById('igSlideActions');
+  const igSlideStatusEl = document.getElementById('igSlideStatus');
+  const igSlideThumbBtn = document.getElementById('igSlideThumbBtn');
+
+  function setIgSlideStatus(text){
+    igSlideStatusEl.textContent = text || '';
+    igSlideStatusEl.style.display = text ? '' : 'none';
+  }
 
   function renderIgPostImage(p){
-    const slides = igSlides(p);
-    if(igSlideIndex >= slides.length) igSlideIndex = Math.max(0, slides.length - 1);
+    const items = igSlideItems(p);
+    if(igSlideIndex >= items.length) igSlideIndex = Math.max(0, items.length - 1);
 
-    if(!slides.length){
-      igPostImageBox.innerHTML = `<span class="placeholder-txt">+ Image(s)</span>`;
-      igPostImageBox.title = "Ajouter une ou plusieurs images";
+    if(!items.length){
+      igPostImageBox.innerHTML = `<span class="placeholder-txt">+ Images / vidéos</span>`;
+      igPostImageBox.title = "Ajouter une ou plusieurs images ou vidéos";
     } else {
       igPostImageBox.innerHTML = `
-        <div class="ig-car-track">${slides.map(src=>`<div class="ig-car-slide"><img src="${src}" alt=""></div>`).join('')}</div>
-        ${slides.length > 1 ? `
+        <div class="ig-car-track">${items.map((it, i)=> it.video
+          ? `<div class="ig-car-slide is-video" data-slide-i="${i}" data-video-id="${escapeHtml(it.video)}"><img src="${it.img}" alt=""><button type="button" class="ig-car-play" title="Lire la vidéo">▶</button></div>`
+          : `<div class="ig-car-slide" data-slide-i="${i}"><img src="${it.img}" alt=""></div>`).join('')}</div>
+        ${items.length > 1 ? `
           <div class="ig-car-counter"></div>
-          <button type="button" class="ig-car-arrow ig-car-prev" data-car-dir="-1" title="Image précédente">‹</button>
-          <button type="button" class="ig-car-arrow ig-car-next" data-car-dir="1" title="Image suivante">›</button>` : ''}
+          <button type="button" class="ig-car-arrow ig-car-prev" data-car-dir="-1" title="Diapo précédente">‹</button>
+          <button type="button" class="ig-car-arrow ig-car-next" data-car-dir="1" title="Diapo suivante">›</button>` : ''}
       `;
-      igPostImageBox.title = "Cliquer pour remplacer cette image — glisser ou utiliser les flèches pour faire défiler";
     }
-    igCarouselDotsEl.innerHTML = slides.length > 1 ? slides.map(()=>'<span class="ig-car-dot"></span>').join('') : '';
-    igSlideStripEl.innerHTML = slides.map((src, i)=>
-      `<button type="button" class="ig-slide-thumb" data-slide-idx="${i}" title="Image ${i+1}"><img src="${src}" alt=""><span class="ig-slide-num">${i+1}</span></button>`
-    ).join('') + (slides.length < IG_MAX_SLIDES
-      ? `<button type="button" class="ig-slide-add" id="igSlideAddBtn" title="Ajouter une ou plusieurs images au carrousel">+</button>` : '');
-    igSlideActionsEl.style.display = slides.length ? '' : 'none';
+    igCarouselDotsEl.innerHTML = items.length > 1 ? items.map(()=>'<span class="ig-car-dot"></span>').join('') : '';
+    igSlideStripEl.innerHTML = items.map((it, i)=>
+      `<button type="button" class="ig-slide-thumb" data-slide-idx="${i}" title="${it.video ? 'Vidéo' : 'Image'} ${i+1}"><img src="${it.img}" alt="">${it.video ? '<span class="ig-slide-video-badge">▶</span>' : ''}<span class="ig-slide-num">${i+1}</span></button>`
+    ).join('') + (items.length < IG_MAX_SLIDES
+      ? `<button type="button" class="ig-slide-add" id="igSlideAddBtn" title="Ajouter des images ou des vidéos">+</button>` : '');
+    igSlideActionsEl.style.display = items.length ? '' : 'none';
     updateIgCarouselPosition(false);
   }
 
-  // Met à jour la position du carrousel (image affichée, flèches, compteur, points, vignette active)
-  // sans tout redessiner — pour un défilement fluide.
+  function pauseIgVideos(){
+    igPostImageBox.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
+  }
+
+  // Met à jour la position du carrousel (diapo affichée, flèches, compteur, points, vignette
+  // active, boutons) sans tout redessiner — pour un défilement fluide.
   function updateIgCarouselPosition(animate = true){
     const p = currentIgPost();
-    const n = igSlides(p).length;
+    const items = igSlideItems(p);
+    const n = items.length;
     const track = igPostImageBox.querySelector('.ig-car-track');
+    // Le navigateur peut faire défiler la boîte tout seul (focus sur un bouton caché) : on la recale.
+    igPostImageBox.scrollLeft = 0;
     if(track){
       track.classList.toggle('no-anim', !animate);
       track.style.transform = `translateX(-${igSlideIndex * 100}%)`;
@@ -7115,36 +7210,73 @@
     igSlideStripEl.querySelectorAll('.ig-slide-thumb').forEach((t, i)=> t.classList.toggle('active', i === igSlideIndex));
     document.getElementById('igSlideMoveLeftBtn').disabled = igSlideIndex <= 0;
     document.getElementById('igSlideMoveRightBtn').disabled = igSlideIndex >= n - 1;
+    igSlideThumbBtn.style.display = (items[igSlideIndex] && items[igSlideIndex].video) ? '' : 'none';
   }
 
   function goToIgSlide(i){
-    const n = igSlides(currentIgPost()).length;
+    const n = igSlideItems(currentIgPost()).length;
     if(!n) return;
+    pauseIgVideos();
     igSlideIndex = Math.max(0, Math.min(n - 1, i));
     updateIgCarouselPosition(true);
   }
 
-  function commitIgSlides(p, slides){
-    igSetSlides(p, slides);
+  function commitIgSlides(p, items){
+    igSetSlideItems(p, items);
     saveIgPosts();
     renderIgPostImage(p);
     renderIgGrid();
   }
 
-  // Flèches (délégation : le contenu de la boîte est redessiné à chaque changement).
+  // Lance la vidéo d'une diapo : téléchargement à la demande, puis lecture sur place.
+  async function playIgVideoSlide(slideEl){
+    const slideI = parseInt(slideEl.dataset.slideI, 10);
+    if(!isNaN(slideI) && slideI !== igSlideIndex) goToIgSlide(slideI);
+    const videoId = slideEl.dataset.videoId;
+    const existing = slideEl.querySelector('video');
+    if(existing){ existing.paused ? existing.play() : existing.pause(); return; }
+    const playBtn = slideEl.querySelector('.ig-car-play');
+    if(playBtn){ playBtn.textContent = '…'; playBtn.disabled = true; }
+    try{
+      const url = await getIgVideoUrl(videoId);
+      if(!slideEl.isConnected) return;
+      const img = slideEl.querySelector('img');
+      const v = document.createElement('video');
+      v.src = url; v.controls = true; v.playsInline = true; v.autoplay = true;
+      if(img) v.poster = img.src;
+      slideEl.innerHTML = '';
+      slideEl.appendChild(v);
+      v.play().catch(()=>{});
+    }catch(err){
+      console.error('Lecture vidéo :', err);
+      if(playBtn){ playBtn.textContent = '▶'; playBtn.disabled = false; }
+      alert("Impossible de charger cette vidéo (elle a peut-être été supprimée, ou la connexion au cloud a échoué).");
+    }
+  }
+
+  // Flèches et bouton ▶ (délégation : le contenu de la boîte est redessiné à chaque changement).
   igPostImageBox.addEventListener('click', (e)=>{
     const arrow = e.target.closest('[data-car-dir]');
     if(arrow){
       e.stopPropagation();
       goToIgSlide(igSlideIndex + parseInt(arrow.dataset.carDir, 10));
+      return;
     }
+    const play = e.target.closest('.ig-car-play');
+    if(play){
+      e.stopPropagation();
+      playIgVideoSlide(play.closest('.ig-car-slide'));
+      return;
+    }
+    // Clic dans le lecteur vidéo (barre de contrôle...) : on laisse le lecteur gérer.
+    if(e.target.closest('video')) e.stopPropagation();
   }, true);
 
   // Glisser du doigt / de la souris pour faire défiler, comme sur Instagram.
   (function enableIgSwipe(){
     let startX = null, startY = null, pointerId = null;
     igPostImageBox.addEventListener('pointerdown', (e)=>{
-      if(e.target.closest('[data-car-dir]')) return;
+      if(e.target.closest('[data-car-dir], video')) return;
       startX = e.clientX; startY = e.clientY; pointerId = e.pointerId;
       igCarouselSwiped = false;
     });
@@ -7171,21 +7303,144 @@
     igPostImageBox.addEventListener('pointerleave', end);
   })();
 
-  // Ajoute une ou plusieurs images (compressées une par une) à la fin du carrousel.
+  // ---------- Choix de la miniature d'une vidéo ----------
+  // Fenêtre avec la vidéo et un curseur : on choisit l'instant qui servira de miniature (recadré
+  // en carré comme les images), ou on importe une autre image. Renvoie l'image (data URL), ou null
+  // si on annule.
+  const igThumbOverlay = document.getElementById('igVideoThumbOverlay');
+  const igThumbVideo = document.getElementById('igThumbVideo');
+  const igThumbRange = document.getElementById('igThumbRange');
+  const igThumbTime = document.getElementById('igThumbTime');
+  const igThumbImportInput = document.getElementById('igThumbImportInput');
+  let igThumbResolve = null;
+
+  function formatVideoTime(t){
+    t = Math.max(0, t || 0);
+    return Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+  }
+
+  function closeIgThumbModal(result){
+    igThumbOverlay.classList.remove('active');
+    igThumbVideo.pause();
+    igThumbVideo.removeAttribute('src');
+    igThumbVideo.load();
+    const r = igThumbResolve;
+    igThumbResolve = null;
+    if(r) r(result || null);
+  }
+
+  function chooseIgVideoThumbnail(videoUrl){
+    return new Promise(resolve=>{
+      igThumbResolve = resolve;
+      igThumbRange.value = 0;
+      igThumbRange.max = 1;
+      igThumbTime.textContent = '0:00';
+      igThumbVideo.onloadedmetadata = ()=>{
+        const d = igThumbVideo.duration || 0;
+        igThumbRange.max = d;
+        const start = Math.min(1, d * 0.1);
+        igThumbRange.value = start;
+        igThumbVideo.currentTime = start;
+        igThumbTime.textContent = formatVideoTime(start) + ' / ' + formatVideoTime(d);
+      };
+      igThumbVideo.src = videoUrl;
+      igThumbVideo.load();
+      igThumbOverlay.classList.add('active');
+    });
+  }
+
+  igThumbRange.addEventListener('input', ()=>{
+    const t = parseFloat(igThumbRange.value) || 0;
+    igThumbVideo.currentTime = t;
+    igThumbTime.textContent = formatVideoTime(t) + ' / ' + formatVideoTime(igThumbVideo.duration);
+  });
+
+  document.getElementById('igThumbUseFrameBtn').addEventListener('click', async ()=>{
+    const v = igThumbVideo;
+    if(!v.videoWidth){ alert("La vidéo n'est pas encore prête, réessaie dans un instant."); return; }
+    const side = Math.min(v.videoWidth, v.videoHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = side; canvas.height = side;
+    canvas.getContext('2d').drawImage(v, (v.videoWidth - side) / 2, (v.videoHeight - side) / 2, side, side, 0, 0, side, side);
+    const blob = await new Promise(res=> canvas.toBlob(res, 'image/jpeg', 0.92));
+    if(!blob){ alert("Impossible de capturer cette image de la vidéo."); return; }
+    try{
+      const dataUrl = await compressImageSquare(new File([blob], 'miniature.jpg', {type:'image/jpeg'}), igPostCompressOpts());
+      closeIgThumbModal(dataUrl);
+    }catch(err){
+      console.error('Miniature vidéo :', err);
+      alert("Impossible de capturer cette image de la vidéo.");
+    }
+  });
+  document.getElementById('igThumbImportBtn').addEventListener('click', ()=> igThumbImportInput.click());
+  igThumbImportInput.addEventListener('change', async ()=>{
+    const file = igThumbImportInput.files[0];
+    igThumbImportInput.value = '';
+    if(!file) return;
+    try{ closeIgThumbModal(await compressImageSquare(file, igPostCompressOpts())); }
+    catch(err){ console.error('Miniature importée :', err); }
+  });
+  document.getElementById('closeIgThumbModal').addEventListener('click', ()=> closeIgThumbModal(null));
+  igThumbOverlay.addEventListener('click', e=>{ if(e.target === igThumbOverlay) closeIgThumbModal(null); });
+
+  // ---------- Ajout d'images / de vidéos ----------
+  // Images : compressées puis ajoutées. Vidéos : choix de la miniature, puis envoi dans le cloud
+  // (la progression s'affiche sous les vignettes).
   async function addIgSlidesFromFiles(files){
     const p = currentIgPost(); if(!p) return;
-    const slides = igSlides(p);
-    const room = IG_MAX_SLIDES - slides.length;
-    const list = Array.from(files || []).slice(0, Math.max(0, room));
-    if(files && files.length > list.length) alert(`Un carrousel peut contenir ${IG_MAX_SLIDES} images au maximum : seules les ${list.length} premières ont été ajoutées.`);
-    if(!list.length) return;
-    const firstNew = slides.length;
-    for(const file of list){
-      try{ slides.push(await compressImageSquare(file, igPostCompressOpts())); }
-      catch(err){ console.error('Erreur image de post Instagram :', err); }
+    const postId = p.id;
+    let list = Array.from(files || []);
+    const room = IG_MAX_SLIDES - igSlideItems(p).length;
+    if(list.length > room){
+      alert(`Un carrousel peut contenir ${IG_MAX_SLIDES} diapos au maximum : seules les ${Math.max(0, room)} premières ont été ajoutées.`);
+      list = list.slice(0, Math.max(0, room));
     }
-    igSlideIndex = Math.min(firstNew, slides.length - 1);
-    commitIgSlides(p, slides);
+    let firstNew = null;
+    for(const file of list){
+      const post = igPosts.find(x=> String(x.id) === String(postId));
+      if(!post) return;
+      const isVideo = (file.type || '').startsWith('video/');
+      try{
+        if(!isVideo){
+          const img = await compressImageSquare(file, igPostCompressOpts());
+          const items = igSlideItems(post);
+          items.push({img, video:null});
+          if(firstNew === null) firstNew = items.length - 1;
+          igSlideIndex = firstNew;
+          commitIgSlides(post, items);
+          continue;
+        }
+        if(file.size > IG_MAX_VIDEO_MB * 1024 * 1024){
+          alert(`« ${file.name} » fait ${(file.size / 1048576).toFixed(0)} Mo : la limite est de ${IG_MAX_VIDEO_MB} Mo par vidéo. Raccourcis-la ou exporte-la en qualité plus légère (ex. 720p) puis réessaie.`);
+          continue;
+        }
+        if(!window.__rg_uploadIgVideo){
+          alert("Les vidéos ont besoin de la connexion au cloud : connecte-toi puis réessaie.");
+          continue;
+        }
+        const localUrl = URL.createObjectURL(file);
+        const thumb = await chooseIgVideoThumbnail(localUrl);
+        if(!thumb){ URL.revokeObjectURL(localUrl); continue; }
+        setIgSlideStatus(`Envoi de la vidéo… 0 %`);
+        const videoId = await window.__rg_uploadIgVideo(file, (ratio)=> setIgSlideStatus(`Envoi de la vidéo… ${Math.round(ratio * 100)} %`));
+        igVideoUrlCache[videoId] = localUrl;
+        const post2 = igPosts.find(x=> String(x.id) === String(postId));
+        if(!post2){ cleanupIgVideos([videoId]); return; }
+        const items = igSlideItems(post2);
+        items.push({img: thumb, video: videoId});
+        if(firstNew === null) firstNew = items.length - 1;
+        igSlideIndex = firstNew;
+        if(String(currentIgPostId) === String(postId)) commitIgSlides(post2, items);
+        else { igSetSlideItems(post2, items); saveIgPosts(); renderIgGrid(); }
+        setIgSlideStatus('');
+      }catch(err){
+        console.error('Ajout au carrousel :', err);
+        setIgSlideStatus('');
+        alert(isVideo
+          ? "L'envoi de la vidéo a échoué (connexion ou droits d'accès au cloud). Réessaie ; si ça recommence, dis-le à Claude."
+          : "Impossible d'ajouter cette image.");
+      }
+    }
   }
 
   igPostSlidesInput.addEventListener('change', async ()=>{
@@ -7202,23 +7457,46 @@
 
   function moveIgSlide(delta){
     const p = currentIgPost(); if(!p) return;
-    const slides = igSlides(p);
+    const items = igSlideItems(p);
     const j = igSlideIndex + delta;
-    if(j < 0 || j >= slides.length) return;
-    [slides[igSlideIndex], slides[j]] = [slides[j], slides[igSlideIndex]];
+    if(j < 0 || j >= items.length) return;
+    [items[igSlideIndex], items[j]] = [items[j], items[igSlideIndex]];
     igSlideIndex = j;
-    commitIgSlides(p, slides);
+    commitIgSlides(p, items);
   }
   document.getElementById('igSlideMoveLeftBtn').addEventListener('click', ()=> moveIgSlide(-1));
   document.getElementById('igSlideMoveRightBtn').addEventListener('click', ()=> moveIgSlide(1));
   document.getElementById('igSlideReplaceBtn').addEventListener('click', ()=> igPostImageInput.click());
   document.getElementById('igSlideRemoveBtn').addEventListener('click', ()=>{
     const p = currentIgPost(); if(!p) return;
-    const slides = igSlides(p);
-    if(!slides.length) return;
-    if(!confirm(slides.length > 1 ? `Retirer l'image ${igSlideIndex + 1} du carrousel ?` : 'Retirer cette image ?')) return;
-    slides.splice(igSlideIndex, 1);
-    commitIgSlides(p, slides);
+    const items = igSlideItems(p);
+    if(!items.length) return;
+    const it = items[igSlideIndex];
+    const what = it.video ? 'cette vidéo' : 'cette image';
+    if(!confirm(items.length > 1 ? `Retirer ${what} (diapo ${igSlideIndex + 1}) du carrousel ?` : `Retirer ${what} ?`)) return;
+    items.splice(igSlideIndex, 1);
+    commitIgSlides(p, items);
+    if(it.video) cleanupIgVideos([it.video]);
+  });
+  igSlideThumbBtn.addEventListener('click', async ()=>{
+    const p = currentIgPost(); if(!p) return;
+    const items = igSlideItems(p);
+    const it = items[igSlideIndex];
+    if(!it || !it.video) return;
+    const idx = igSlideIndex;
+    try{
+      setIgSlideStatus('Chargement de la vidéo…');
+      const url = await getIgVideoUrl(it.video);
+      setIgSlideStatus('');
+      const thumb = await chooseIgVideoThumbnail(url);
+      if(!thumb) return;
+      const fresh = igSlideItems(p);
+      if(fresh[idx] && fresh[idx].video === it.video){ fresh[idx].img = thumb; commitIgSlides(p, fresh); }
+    }catch(err){
+      setIgSlideStatus('');
+      console.error('Miniature vidéo :', err);
+      alert("Impossible de charger cette vidéo pour choisir sa miniature.");
+    }
   });
 
   function renderIgDetailView(){
@@ -7261,8 +7539,10 @@
     const p = igPosts.find(x=>String(x.id)===String(id));
     if(!p) return;
     if(!confirm('Supprimer ce post ?')) return;
+    const videos = igSlideItems(p).map(it=> it.video).filter(Boolean);
     igPosts = igPosts.filter(x=>String(x.id)!==String(id));
     saveIgPosts();
+    if(videos.length) cleanupIgVideos(videos);
     if(String(currentIgPostId) === String(id)) showIgGridView();
     renderIgGrid();
     renderIgPostPills();
@@ -7322,24 +7602,34 @@
     saveIgPosts();
     renderIgPostPills();
   });
-  // Clic sur l'image : post vide → ajouter une ou plusieurs images ; sinon → remplacer l'image
-  // affichée. Un glissement (défilement du carrousel) n'est pas un clic.
-  igPostImageBox.addEventListener('click', ()=>{
+  // Clic sur la diapo : post vide → ajouter des images / vidéos ; vidéo → la lire ; image → la
+  // remplacer. Un glissement (défilement du carrousel) n'est pas un clic.
+  igPostImageBox.addEventListener('click', (e)=>{
     if(igCarouselSwiped){ igCarouselSwiped = false; return; }
-    if(!igSlides(currentIgPost()).length) igPostSlidesInput.click();
-    else igPostImageInput.click();
+    const items = igSlideItems(currentIgPost());
+    if(!items.length){ igPostSlidesInput.click(); return; }
+    const slideEl = e.target.closest('.ig-car-slide');
+    if(items[igSlideIndex] && items[igSlideIndex].video){
+      const el = slideEl || igPostImageBox.querySelectorAll('.ig-car-slide')[igSlideIndex];
+      if(el) playIgVideoSlide(el);
+      return;
+    }
+    igPostImageInput.click();
   });
+  // Remplacer la diapo affichée par une image (une vidéo remplacée est supprimée du cloud).
   igPostImageInput.addEventListener('change', async ()=>{
     const file = igPostImageInput.files[0];
     igPostImageInput.value = '';
     if(!file) return;
     const p = currentIgPost(); if(!p) return;
     try{
-      const dataUrl = await compressImageSquare(file, igPostCompressOpts());
-      const slides = igSlides(p);
-      if(slides.length) slides[igSlideIndex] = dataUrl;
-      else slides.push(dataUrl);
-      commitIgSlides(p, slides);
+      const img = await compressImageSquare(file, igPostCompressOpts());
+      const items = igSlideItems(p);
+      let oldVideo = null;
+      if(items.length){ oldVideo = items[igSlideIndex].video; items[igSlideIndex] = {img, video:null}; }
+      else items.push({img, video:null});
+      commitIgSlides(p, items);
+      if(oldVideo) cleanupIgVideos([oldVideo]);
     }catch(err){
       console.error('Erreur image de post Instagram :', err);
     }
@@ -9530,6 +9820,72 @@
       setSyncStatus('idle');
     }
   }
+
+  // ---------- VIDÉOS DES POSTS INSTAGRAM (users/{id}/igPostVideos) ----------
+  // 24 novembre 2026 : une vidéo dépasse largement la limite de 1 Mo d'un document Firestore. Elle
+  // est donc découpée en morceaux de 900 000 caractères (base64) : "{videoId}__c0", "__c1"...,
+  // plus un document "{videoId}" qui décrit la vidéo (nombre de morceaux, type). Écrit en dernier :
+  // tant qu'il n'existe pas, la vidéo n'est pas considérée comme complète. Téléchargée seulement
+  // quand on la lance (voir getIgVideoUrl dans le <script> classique).
+  const IG_VIDEO_CHUNK_CHARS = 900000; // multiple de 4 : chaque morceau se décode seul
+  function igVideoMetaRef(videoId){ return doc(db, 'users', SHARED_DOC_ID, 'igPostVideos', String(videoId)); }
+  function igVideoChunkRef(videoId, i){ return doc(db, 'users', SHARED_DOC_ID, 'igPostVideos', String(videoId) + '__c' + i); }
+
+  window.__rg_uploadIgVideo = async function(file, onProgress){
+    if(!userDocRef) throw new Error('Non connecté');
+    const b64 = await new Promise((resolve, reject)=>{
+      const r = new FileReader();
+      r.onload = ()=> resolve(String(r.result).split(',')[1] || '');
+      r.onerror = ()=> reject(r.error);
+      r.readAsDataURL(file);
+    });
+    const n = Math.max(1, Math.ceil(b64.length / IG_VIDEO_CHUNK_CHARS));
+    const videoId = 'v' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    setSyncStatus('saving');
+    try{
+      let done = 0;
+      // 3 morceaux envoyés en parallèle : plus rapide, sans saturer la connexion.
+      for(let i = 0; i < n; i += 3){
+        const batch = [];
+        for(let k = i; k < Math.min(n, i + 3); k++){
+          batch.push(setDoc(igVideoChunkRef(videoId, k), { data: b64.slice(k * IG_VIDEO_CHUNK_CHARS, (k + 1) * IG_VIDEO_CHUNK_CHARS) })
+            .then(()=>{ done++; if(onProgress) onProgress(done / (n + 1)); }));
+        }
+        await Promise.all(batch);
+      }
+      await setDoc(igVideoMetaRef(videoId), { chunks: n, mime: file.type || 'video/mp4', size: file.size, name: file.name || '', createdAt: serverTimestamp() });
+      if(onProgress) onProgress(1);
+      setSyncStatus('idle');
+      return videoId;
+    }catch(err){
+      setSyncStatus('error', 'Vidéo non enregistrée');
+      // Nettoie les morceaux déjà envoyés.
+      for(let k = 0; k < n; k++) deleteDoc(igVideoChunkRef(videoId, k)).catch(()=>{});
+      throw err;
+    }
+  };
+
+  window.__rg_loadIgVideo = async function(videoId){
+    const meta = await getDoc(igVideoMetaRef(videoId));
+    if(!meta.exists()) throw new Error('Vidéo introuvable : ' + videoId);
+    const { chunks, mime } = meta.data();
+    const snaps = await Promise.all(Array.from({length: chunks}, (_, i)=> getDoc(igVideoChunkRef(videoId, i))));
+    const parts = snaps.map(snap=>{
+      if(!snap.exists()) throw new Error('Morceau de vidéo manquant');
+      const bin = atob(snap.data().data || '');
+      const bytes = new Uint8Array(bin.length);
+      for(let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+      return bytes;
+    });
+    return URL.createObjectURL(new Blob(parts, { type: mime || 'video/mp4' }));
+  };
+
+  window.__rg_deleteIgVideo = async function(videoId){
+    const meta = await getDoc(igVideoMetaRef(videoId));
+    const n = meta.exists() ? (meta.data().chunks || 0) : 0;
+    await deleteDoc(igVideoMetaRef(videoId));
+    await Promise.all(Array.from({length: n}, (_, i)=> deleteDoc(igVideoChunkRef(videoId, i))));
+  };
 
   window.__rg_scheduleIgImagesSync = function(){
     if(!userDocRef || applyingRemoteState || !window.__rg_igImagesSeparate) return;
