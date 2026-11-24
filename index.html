@@ -1012,12 +1012,20 @@
     border-radius:36px; overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column;
     font-family:'Plus Jakarta Sans', sans-serif; color:#262626;
   }
+  /* Icônes de la simulation (11 novembre → 24 novembre 2026) : pictogrammes au trait fin dessinés
+     en SVG, dans le style des applis actuelles, au lieu d'emojis. */
+  .ig-svg{width:100%; height:100%; display:block;}
+  /* Barre du haut de son propre profil : cadenas + pseudo + ⌄ à gauche, "+" et menu à droite. */
   .ig-phone-topbar{
-    flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:6px; position:relative;
-    padding:12px 40px; border-bottom:1px solid #efefef; font-weight:700; font-size:0.85rem;
+    flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 14px 10px 16px; font-weight:700; font-size:1.05rem; color:#262626;
   }
-  .ig-phone-topbar-lock{position:absolute; left:14px; font-size:0.68rem; opacity:0.5;}
-  .ig-phone-topbar-icon{position:absolute; right:14px; font-size:0.95rem; opacity:0.7;}
+  .ig-phone.feed-open .ig-phone-topbar{display:none;}
+  .ig-topbar-left{display:flex; align-items:center; gap:4px; min-width:0;}
+  .ig-topbar-lock{flex:0 0 auto; width:14px; height:14px;}
+  .ig-topbar-chev{flex:0 0 auto; width:14px; height:14px;}
+  .ig-topbar-right{display:flex; align-items:center; gap:16px; flex:0 0 auto;}
+  .ig-topbar-ico{width:24px; height:24px;}
   .ig-phone-topbar-username{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   /* flex:1 1 auto occupe tout l'espace restant sous la barre du haut (et au-dessus de la barre
      d'accueil) ; overflow-y:auto fait défiler le contenu s'il dépasse, sans jamais faire grandir
@@ -1034,7 +1042,8 @@
   .ig-feed-title b{font-size:0.9rem;}
   .ig-feed-post{padding-bottom:14px;}
   .ig-feed-post-header{display:flex; align-items:center; gap:10px; padding:10px 12px;}
-  .ig-feed-more{font-weight:700; color:#262626; letter-spacing:1px;}
+  .ig-feed-more{width:20px; height:20px; color:#262626; flex:0 0 auto;}
+  .ig-feed-post-header .ig-post-card-username{font-size:0.82rem;}
   .ig-feed-post .ig-feed-media{border-radius:0; margin-bottom:6px; aspect-ratio:4/5;}
   .ig-feed-post .ig-feed-media.is-empty{background:var(--gris); cursor:pointer;}
   .ig-feed-post .ig-post-card-actions,
@@ -1076,12 +1085,14 @@
   .ig-website-input::placeholder{color:var(--ink-soft); font-weight:400;}
   .ig-displayname-input:hover, .ig-username-input:hover, .ig-bio-input:hover, .ig-website-input:hover{border-bottom-color:var(--line);}
   .ig-displayname-input:focus, .ig-username-input:focus, .ig-bio-input:focus, .ig-website-input:focus{outline:none; border-bottom-color:var(--lavande);}
-  .ig-grid-tabs{display:flex; justify-content:center; border-top:1px solid #efefef; margin-top:6px;}
+  /* Onglets du profil (publications / reels / identifications) : icônes, l'onglet actif souligné. */
+  .ig-grid-tabs{display:flex; border-bottom:1px solid #efefef; margin:8px -16px 0;}
   .ig-grid-tab{
-    padding:10px 0; font-size:0.66rem; font-weight:700; letter-spacing:0.04em; color:var(--ink-soft);
-    border-top:1px solid transparent;
+    flex:1; display:flex; justify-content:center; padding:10px 0 9px; color:#8e8e8e;
+    border-bottom:1.5px solid transparent; margin-bottom:-1px;
   }
-  .ig-grid-tab.active{color:#262626; border-top-color:#262626; margin-top:-1px;}
+  .ig-grid-tab .ig-svg{width:22px; height:22px;}
+  .ig-grid-tab.active{color:#262626; border-bottom-color:#262626;}
   .ig-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; margin-top:2px;}
   /* Le cadre garde désormais toujours la hauteur d'un vrai écran de téléphone (voir .ig-phone,
      dont la hauteur ne dépend plus du contenu) : plus besoin de forcer une hauteur minimale ici
@@ -1099,8 +1110,12 @@
   .ig-grid-multi{position:absolute; top:6px; right:6px; width:18px; height:18px; pointer-events:none;
     filter:drop-shadow(0 1px 2px rgba(0,0,0,0.45));}
   .ig-grid-cell:hover{opacity:0.85;}
+  .ig-grid-cell{touch-action:none; user-select:none; -webkit-user-select:none;}
+  .ig-grid-cell img{-webkit-user-drag:none; pointer-events:none;}
+  .ig-grid-cell.dragging{opacity:0.4; outline:2px solid #0095f6; outline-offset:-2px;}
+  #igPostPills .scene-drag-handle{display:flex;}
   .ig-post-card-header{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
-  .ig-back-btn{flex:0 0 auto; border:none; background:none; font-size:1.1rem; cursor:pointer; color:#262626; padding:0 4px 0 0;}
+  .ig-back-btn{flex:0 0 auto; border:none; background:none; cursor:pointer; color:#262626; padding:0; width:26px; height:26px;}
   .ig-post-card-avatar{flex:0 0 32px; width:32px; height:32px; border-radius:50%; overflow:hidden; background:var(--gris);}
   .ig-post-card-avatar img{width:100%; height:100%; object-fit:cover; display:block;}
   .ig-post-card-username{flex:1; font-weight:700; font-size:0.82rem; color:#262626;}
@@ -1186,7 +1201,8 @@
   .ig-thumb-preview video{width:100%; height:100%; object-fit:cover; display:block;}
   #igThumbRange{width:100%; margin-top:12px; accent-color:var(--lavande);}
   .ig-thumb-time{font-size:0.72rem; color:var(--ink-soft); text-align:center; margin-top:2px;}
-  .ig-post-card-actions{display:flex; gap:12px; font-size:1.25rem; margin-bottom:6px;}
+  .ig-post-card-actions{display:flex; align-items:center; gap:14px; margin-bottom:6px; padding-top:4px; color:#262626;}
+  .ig-icon{width:24px; height:24px; flex:0 0 auto;}
   .ig-icon-save{margin-left:auto;}
   .ig-post-card-likes{font-weight:700; font-size:0.82rem; margin-bottom:4px; display:flex; align-items:center; gap:5px;}
   .ig-post-card-likes input{
@@ -1927,9 +1943,15 @@
         <div class="ig-editor-row">
           <div class="ig-phone" id="igPhone">
             <div class="ig-phone-topbar">
-              <span class="ig-phone-topbar-lock">🔒</span>
-              <span class="ig-phone-topbar-username" id="igTopbarUsername">ton_pseudo</span>
-              <span class="ig-phone-topbar-icon">☰</span>
+              <div class="ig-topbar-left">
+                <span class="ig-topbar-lock"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+                <span class="ig-phone-topbar-username" id="igTopbarUsername">ton_pseudo</span>
+                <span class="ig-topbar-chev"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+              </div>
+              <div class="ig-topbar-right">
+                <span class="ig-topbar-ico"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg></span>
+                <span class="ig-topbar-ico"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
+              </div>
             </div>
 
             <div id="igGridView">
@@ -1949,7 +1971,11 @@
               <textarea class="ig-bio-input" id="igBioInput" maxlength="150" placeholder="Bio (150 caractères max)" rows="1"></textarea>
               <input type="text" class="ig-website-input" id="igWebsiteInput" placeholder="Ajouter un lien">
 
-              <div class="ig-grid-tabs"><span class="ig-grid-tab active">⊞ PUBLICATIONS</span></div>
+              <div class="ig-grid-tabs">
+                <span class="ig-grid-tab active" title="Publications"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/></svg></span>
+                <span class="ig-grid-tab" title="Reels"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M3 8.5h18M8 3l3 5.5M14 3l3 5.5"/><path d="M10 12.5v5l4.3-2.5z" fill="currentColor" stroke="none"/></svg></span>
+                <span class="ig-grid-tab" title="Identifications"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="10" r="3"/><path d="M6.5 20a6 6 0 0 1 11 0"/></svg></span>
+              </div>
               <div class="ig-grid" id="igGrid"></div>
             </div>
 
@@ -1957,7 +1983,7 @@
                  de la grille sur Instagram (voir renderIgFeed). -->
             <div id="igDetailView" style="display:none;">
               <div class="ig-feed-topbar">
-                <button type="button" class="ig-back-btn" id="igBackBtn" title="Retour au profil">←</button>
+                <button type="button" class="ig-back-btn" id="igBackBtn" title="Retour au profil"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
                 <div class="ig-feed-title"><span id="igFeedTitleUser">TON_PSEUDO</span><b>Publications</b></div>
               </div>
               <div class="ig-feed" id="igFeed"></div>
@@ -1974,6 +2000,11 @@
           <!-- Outils du post sélectionné dans le fil : hors du téléphone, pour garder l'aperçu fidèle. -->
           <div class="ig-reflection-panel ig-post-edit-panel" id="igPostEditPanel" style="display:none;">
             <div class="ig-reflection-header"><h4 id="igEditPanelTitle">Post sélectionné</h4></div>
+            <div class="ig-slide-manager-title">Place dans la grille</div>
+            <div class="ig-slide-actions" style="margin-bottom:14px;">
+              <button type="button" id="igPostMoveEarlierBtn" title="Placer ce post plus haut / plus à gauche dans la grille (plus récent)">◀ Plus récent</button>
+              <button type="button" id="igPostMoveLaterBtn" title="Placer ce post plus bas / plus à droite dans la grille (plus ancien)">Plus ancien ▶</button>
+            </div>
             <div class="ig-slide-manager-title">Format du post</div>
             <div class="ig-ratio-picker" id="igRatioPicker"></div>
             <div class="ig-ratio-hint">Dans la grille du profil, Instagram affiche toujours les vignettes en 3:4, recadrées au centre.</div>
@@ -7046,9 +7077,80 @@
       </div>
     `).join('');
     igGridEl.querySelectorAll('.ig-grid-cell').forEach(cell=>{
-      cell.addEventListener('click', ()=> selectIgPost(cell.dataset.postId));
+      cell.addEventListener('click', ()=>{
+        if(igGridJustDragged){ igGridJustDragged = false; return; }
+        selectIgPost(cell.dataset.postId);
+      });
     });
   }
+
+  // ---------- ORDRE DES POSTS (24 novembre 2026) ----------
+  // Trois façons de changer l'ordre : glisser une vignette dans la grille du téléphone, glisser la
+  // poignée ⠿ dans le menu de gauche, ou les boutons du panneau "Post sélectionné".
+  let igGridJustDragged = false;
+
+  function applyIgPostOrder(newOrder){
+    igPosts = newOrder;
+    saveIgPosts();
+    renderIgGrid();
+    renderIgPostPills();
+    // Dans le fil, on reste sur le post sélectionné (il a pu changer de place).
+    if(igDetailVisible){ renderIgFeed(); selectIgPost(currentIgPostId); }
+  }
+
+  function moveIgPost(id, delta){
+    const i = igPosts.findIndex(x=> String(x.id) === String(id));
+    const j = i + delta;
+    if(i < 0 || j < 0 || j >= igPosts.length) return;
+    const order = igPosts.slice();
+    [order[i], order[j]] = [order[j], order[i]];
+    applyIgPostOrder(order);
+  }
+
+  // Glisser-déposer d'une vignette dans la grille : le glissement ne démarre qu'après quelques
+  // pixels de mouvement, un simple clic ouvre toujours le post.
+  (function enableIgGridDrag(){
+    let st = null; // {pointerId, x, y, cell, dragging}
+    igGridEl.addEventListener('pointerdown', (e)=>{
+      const cell = e.target.closest('.ig-grid-cell');
+      if(!cell || e.button > 0) return;
+      st = {pointerId: e.pointerId, x: e.clientX, y: e.clientY, cell, dragging: false};
+    });
+    document.addEventListener('pointermove', (e)=>{
+      if(!st || e.pointerId !== st.pointerId) return;
+      if(!st.dragging){
+        if(Math.hypot(e.clientX - st.x, e.clientY - st.y) < 8) return;
+        st.dragging = true;
+        st.cell.classList.add('dragging');
+      }
+      e.preventDefault();
+      const others = Array.from(igGridEl.querySelectorAll('.ig-grid-cell')).filter(c=> c !== st.cell);
+      let closest = null, best = Infinity;
+      others.forEach(c=>{
+        const r = c.getBoundingClientRect();
+        const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+        if(d < best){ best = d; closest = c; }
+      });
+      if(!closest) return;
+      const r = closest.getBoundingClientRect();
+      const after = e.clientX > r.left + r.width / 2;
+      igGridEl.insertBefore(st.cell, after ? closest.nextSibling : closest);
+    }, {passive: false});
+    const end = (e)=>{
+      if(!st || e.pointerId !== st.pointerId) return;
+      const s = st; st = null;
+      if(!s.dragging) return;
+      s.cell.classList.remove('dragging');
+      igGridJustDragged = true;
+      setTimeout(()=>{ igGridJustDragged = false; }, 300);
+      const keys = Array.from(igGridEl.querySelectorAll('.ig-grid-cell')).map(c=> String(c.dataset.postId));
+      const byId = new Map(igPosts.map(p=> [String(p.id), p]));
+      const newOrder = keys.map(k=> byId.get(k)).filter(Boolean);
+      if(newOrder.length === igPosts.length) applyIgPostOrder(newOrder);
+    };
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
+  })();
 
   function renderIgPostPills(){
     if(igPosts.length === 0){
@@ -7060,6 +7162,7 @@
       const active = igDetailVisible && String(p.id) === String(currentIgPostId);
       return `
         <div class="scene-pill-row" data-order-key="${p.id}">
+          <span class="scene-drag-handle" title="Glisser pour changer l'ordre">⠿</span>
           <button type="button" class="scene-pill ${active?'active':''}" data-idx="${p.id}">${escapeHtml(label)}</button>
           <div class="ig-pill-actions">
             <button type="button" class="scene-pill-rename" data-rename-key="${p.id}" title="Renommer ce post dans le menu">✎</button>
@@ -7220,15 +7323,16 @@
         <div class="ig-feed-post-header">
           <div class="ig-post-card-avatar">${igAvatarHtml()}</div>
           <div class="ig-post-card-username">${uname}</div>
-          <span class="ig-feed-more">⋯</span>
+          <span class="ig-feed-more"><svg class="ig-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
         </div>
         <div class="ig-post-card-image ig-feed-media" style="aspect-ratio:${igRatioOf(p).css};"></div>
         <div class="ig-post-card-actions">
-          <span class="ig-icon">♡</span>
-          <span class="ig-icon">💬</span>
-          <span class="ig-icon">📤</span>
+          <span class="ig-icon" title="J'aime"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.3s-7.6-4.6-9.2-9.3C1.7 7.6 3.9 4.5 7.2 4.5c2 0 3.5 1.1 4.8 2.9 1.3-1.8 2.8-2.9 4.8-2.9 3.3 0 5.5 3.1 4.4 6.5-1.6 4.7-9.2 9.3-9.2 9.3z"/></svg></span>
+          <span class="ig-icon" title="Commenter"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 16.4A9 9 0 1 0 17 20l4 1.2z"/></svg></span>
+          <span class="ig-icon" title="Republier"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/></svg></span>
+          <span class="ig-icon" title="Partager"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3L10 13.5"/><path d="M21.5 3l-6.8 18-4.7-7.5L2.5 9z"/></svg></span>
           <div class="ig-car-dots"></div>
-          <span class="ig-icon ig-icon-save">🔖</span>
+          <span class="ig-icon ig-icon-save" title="Enregistrer"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 21l-6.5-5.3L5.5 21V4.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1z"/></svg></span>
         </div>
         <div class="ig-post-card-likes">
           <input type="number" class="ig-feed-likes" min="0" value="${p.likes || 0}"> mentions J'aime
@@ -7480,6 +7584,9 @@
     igPostEditPanel.style.display = (igDetailVisible && p) ? '' : 'none';
     if(!igDetailVisible || !p) return;
     renderIgEditPanelTitle();
+    const pos = igPosts.indexOf(p);
+    document.getElementById('igPostMoveEarlierBtn').disabled = pos <= 0;
+    document.getElementById('igPostMoveLaterBtn').disabled = pos >= igPosts.length - 1;
     const current = igRatioOf(p).id;
     igRatioPickerEl.innerHTML = IG_RATIOS.map(r=>
       `<button type="button" class="ig-ratio-btn ${r.id === current ? 'active' : ''}" data-ratio="${r.id}" title="${r.hint}">
@@ -7767,6 +7874,8 @@
     // 0 sur un champ caché, voir refreshIgActiveTextareas).
     igGridViewEl.style.display = 'none';
     igDetailViewEl.style.display = '';
+    // Comme sur Instagram : la barre du profil laisse la place à la barre "← Publications".
+    document.getElementById('igPhone').classList.add('feed-open');
     if(!wasVisible || !igCardOf(p.id)) renderIgFeed();
     const card = igCardOf(p.id);
     if(card){
@@ -7782,6 +7891,7 @@
     igDetailVisible = false;
     igGridViewEl.style.display = '';
     igDetailViewEl.style.display = 'none';
+    document.getElementById('igPhone').classList.remove('feed-open');
     renderIgEditPanel();
     renderIgPostPills();
     // La bio (dans la vue grille) redevient visible : recalculer sa hauteur.
@@ -7854,6 +7964,9 @@
   });
 
   document.getElementById('igBackBtn').addEventListener('click', showIgGridView);
+  enableDragReorder(igPostPillsEl, ()=> igPosts, applyIgPostOrder);
+  document.getElementById('igPostMoveEarlierBtn').addEventListener('click', ()=> moveIgPost(currentIgPostId, -1));
+  document.getElementById('igPostMoveLaterBtn').addEventListener('click', ()=> moveIgPost(currentIgPostId, 1));
   document.getElementById('addIgPostBtn').addEventListener('click', ()=>{
     // Nouveau post : format portrait 4:5, recommandé par Instagram depuis 2025.
     const p = {id: Date.now()+Math.random(), image:null, caption:'', likes:0, createdAt: Date.now(), ratio:'4:5'};
