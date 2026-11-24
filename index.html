@@ -1204,6 +1204,13 @@
   .ig-thumb-time{font-size:0.72rem; color:var(--ink-soft); text-align:center; margin-top:2px;}
   .ig-post-card-actions{display:flex; align-items:center; gap:14px; margin-bottom:6px; padding-top:4px; color:#262626;}
   .ig-icon{width:24px; height:24px; flex:0 0 auto;}
+  /* Ligne "Aimé par moi-même et d'autres personnes" avec deux fausses photos de profil. */
+  .ig-feed-post .ig-liked-by{display:flex; align-items:center; gap:6px; padding:0 12px; margin:2px 0 4px; font-size:0.78rem; color:#262626;}
+  .ig-liked-by b{font-weight:700;}
+  .ig-liked-avatars{display:flex; flex:0 0 auto;}
+  .ig-fake-avatar{width:18px; height:18px; border-radius:50%; border:2px solid #fff; overflow:hidden; display:block; box-sizing:content-box;}
+  .ig-fake-avatar + .ig-fake-avatar{margin-left:-7px;}
+  .ig-fake-avatar svg{width:100%; height:100%; display:block; transform:translateY(2px);}
   .ig-action{display:flex; align-items:center; gap:4px; flex:0 0 auto;}
   .ig-feed-post .ig-post-card-actions{gap:12px;}
   .ig-count{
@@ -6996,7 +7003,7 @@
   // Pseudo affiché dans l'en-tête du post, la légende et la barre du haut : identique partout,
   // basé sur le profil (avec une valeur de repli tant qu'elle n'a rien renseigné).
   function renderIgAccountBadges(){
-    const uname = (igProfile.username || 'ton_pseudo').trim().replace(/^@/, '') || 'ton_pseudo';
+    const uname = igUsername();
     igTopbarUsername.textContent = uname;
     const feedTitleUser = document.getElementById('igFeedTitleUser');
     if(feedTitleUser) feedTitleUser.textContent = uname.toUpperCase();
@@ -7242,6 +7249,10 @@
   // Compteurs affichés à côté des 4 icônes d'un post (J'aime, commentaires, republications,
   // partages), modifiables d'un clic. 100 par défaut.
   const IG_COUNT_DEFAULT = 100;
+  // Fausses photos de profil pour la ligne "Aimé par moi-même et d'autres personnes" : simples
+  // silhouettes sur fond pastel, aucune vraie personne.
+  const IG_FAKE_AVATAR_A = `<span class="ig-fake-avatar" style="background:linear-gradient(135deg,#f6c9b4,#e9a6b8);"><svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><circle cx="12" cy="9.5" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0z"/></svg></span>`;
+  const IG_FAKE_AVATAR_B = `<span class="ig-fake-avatar" style="background:linear-gradient(135deg,#b9d4f0,#a9c9b4);"><svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><circle cx="12" cy="9.5" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0z"/></svg></span>`;
   function igCountOf(p, key){
     const c = p && p.counts;
     if(c && c[key] !== undefined && c[key] !== null && c[key] !== '') return c[key];
@@ -7255,8 +7266,13 @@
     const id = (p && p.ratio) || '1:1'; // anciens posts : images recadrées en carré
     return IG_RATIOS.find(r=> r.id === id) || IG_RATIOS[2];
   }
+  // Nom affiché en haut de chaque post, dans la légende et la barre du haut : le pseudo (@) s'il est
+  // rempli, sinon le nom affiché du profil, sinon "ton_pseudo".
   function igUsername(){
-    return (igProfile.username || 'ton_pseudo').trim().replace(/^@/, '') || 'ton_pseudo';
+    const u = (igProfile.username || '').trim().replace(/^@/, '');
+    if(u) return u;
+    const d = (igProfile.displayName || '').trim();
+    return d || 'ton_pseudo';
   }
   function igPostById(id){ return igPosts.find(x=> String(x.id) === String(id)); }
   function slideIdxOf(p){ return (p && igSlideIdx[String(p.id)]) || 0; }
@@ -7354,6 +7370,10 @@
           <span class="ig-action"><span class="ig-icon" title="Republier"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/></svg></span><input type="text" inputmode="numeric" class="ig-count" data-count="reposts" value="${igCountOf(p, 'reposts')}" style="width:${igCountWidth(igCountOf(p, 'reposts'))}" title="Nombre modifiable"></span>
           <span class="ig-action"><span class="ig-icon" title="Partager"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3L10 13.5"/><path d="M21.5 3l-6.8 18-4.7-7.5L2.5 9z"/></svg></span><input type="text" inputmode="numeric" class="ig-count" data-count="shares" value="${igCountOf(p, 'shares')}" style="width:${igCountWidth(igCountOf(p, 'shares'))}" title="Nombre modifiable"></span>
           <span class="ig-icon ig-icon-save" title="Enregistrer"><svg class="ig-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 21l-6.5-5.3L5.5 21V4.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1z"/></svg></span>
+        </div>
+        <div class="ig-liked-by">
+          <span class="ig-liked-avatars">${IG_FAKE_AVATAR_A}${IG_FAKE_AVATAR_B}</span>
+          <span>Aimé par <b>moi-même</b> et <b>d'autres personnes</b></span>
         </div>
         <div class="ig-post-card-caption">
           <b class="ig-feed-caption-user">${uname} </b><textarea class="ig-feed-caption" placeholder="Écris une légende..." rows="1">${escapeHtml(p.caption || '')}</textarea>
@@ -7954,6 +7974,7 @@
   igDisplayNameInput.addEventListener('input', ()=>{
     igProfile.displayName = igDisplayNameInput.value;
     saveIgProfile();
+    renderIgAccountBadges();
   });
   igBioInput.addEventListener('input', ()=>{
     igProfile.bio = igBioInput.value;
