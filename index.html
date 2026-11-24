@@ -1023,6 +1023,27 @@
      d'accueil) ; overflow-y:auto fait défiler le contenu s'il dépasse, sans jamais faire grandir
      le cadre lui-même. */
   #igGridView, #igDetailView{flex:1 1 auto; overflow-y:auto; padding:16px;}
+  /* Fil des publications : les posts occupent toute la largeur de l'écran, comme sur Instagram. */
+  #igDetailView{padding:0; position:relative;}
+  .ig-feed-topbar{
+    position:sticky; top:0; z-index:5; background:#fff; display:flex; align-items:center; gap:8px;
+    padding:8px 12px; border-bottom:1px solid #efefef;
+  }
+  .ig-feed-title{flex:1; display:flex; flex-direction:column; align-items:center; margin-right:24px; line-height:1.15;}
+  .ig-feed-title span{font-size:0.62rem; font-weight:600; color:var(--ink-soft); letter-spacing:0.04em;}
+  .ig-feed-title b{font-size:0.9rem;}
+  .ig-feed-post{padding-bottom:14px;}
+  .ig-feed-post-header{display:flex; align-items:center; gap:10px; padding:10px 12px;}
+  .ig-feed-more{font-weight:700; color:#262626; letter-spacing:1px;}
+  .ig-feed-post .ig-feed-media{border-radius:0; margin-bottom:6px; aspect-ratio:4/5;}
+  .ig-feed-post .ig-feed-media.is-empty{background:var(--gris); cursor:pointer;}
+  .ig-feed-post .ig-post-card-actions,
+  .ig-feed-post .ig-post-card-likes,
+  .ig-feed-post .ig-post-card-caption,
+  .ig-feed-post .ig-post-card-date{padding-left:12px; padding-right:12px;}
+  .ig-feed-post .ig-post-card-date{margin-bottom:0;}
+  .ig-feed-post .ig-post-card-caption{display:flex; align-items:flex-start; gap:4px;}
+  .ig-feed-post .ig-post-card-caption b{flex:0 0 auto; margin-right:0; line-height:1.4;}
   /* Petite barre d'accueil en bas de l'écran, comme sur un vrai téléphone : purement décorative,
      mais aide à lire le cadre comme un téléphone plutôt qu'une simple carte. */
   .ig-phone-home-indicator{flex:0 0 auto; width:120px; height:4px; margin:6px auto 10px; border-radius:2px; background:#dbdbdb;}
@@ -1069,7 +1090,7 @@
     grid-column:1/-1; text-align:center; padding:60px 20px;
   }
   .ig-grid-cell{
-    aspect-ratio:1/1; background:var(--gris); cursor:pointer; overflow:hidden;
+    aspect-ratio:3/4; background:var(--gris); cursor:pointer; overflow:hidden;
     display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:1.3rem;
   }
   .ig-grid-cell img{width:100%; height:100%; object-fit:cover; display:block;}
@@ -1136,6 +1157,19 @@
   .ig-slide-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
   .ig-slide-actions button:disabled{opacity:0.4; cursor:default;}
   .ig-slide-actions .ig-slide-remove:hover:not(:disabled){color:var(--rose); border-color:var(--rose);}
+  /* Choix du format du post */
+  .ig-ratio-picker{display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;}
+  .ig-ratio-btn{
+    display:flex; align-items:center; gap:8px; padding:7px 9px; border:1px solid var(--line); border-radius:10px;
+    background:var(--panel); cursor:pointer; text-align:left; font-family:'Plus Jakarta Sans', sans-serif; color:var(--ink);
+  }
+  .ig-ratio-btn b{font-size:0.78rem;}
+  .ig-ratio-btn small{display:block; font-size:0.6rem; color:var(--ink-soft); font-weight:500; line-height:1.2;}
+  .ig-ratio-btn:hover{border-color:var(--ink-soft);}
+  .ig-ratio-btn.active{border-color:#0095f6; background:#eef7ff;}
+  .ig-ratio-shape{flex:0 0 auto; width:16px; border:1.5px solid currentColor; border-radius:2px; max-height:22px;}
+  .ig-ratio-btn.active .ig-ratio-shape{color:#0095f6;}
+  .ig-ratio-hint{font-size:0.68rem; color:var(--ink-soft); margin-top:6px; line-height:1.35;}
   .ig-slide-status{font-size:0.72rem; font-weight:600; color:var(--lavande); margin:-2px 0 8px;}
   .ig-slide-video-badge{position:absolute; right:3px; top:2px; font-size:0.55rem; color:#fff; text-shadow:0 0 3px rgba(0,0,0,0.8);}
   .ig-car-slide{position:relative; background:#000;}
@@ -1148,7 +1182,7 @@
   .ig-car-play:hover{background:rgba(0,0,0,0.65);}
   /* Fenêtre de choix de la miniature */
   .ig-thumb-hint{font-size:0.8rem; color:var(--ink-soft); margin:4px 0 12px;}
-  .ig-thumb-preview{width:100%; aspect-ratio:1/1; background:#000; border-radius:10px; overflow:hidden;}
+  .ig-thumb-preview{width:100%; max-height:50vh; aspect-ratio:4/5; background:#000; border-radius:10px; overflow:hidden;}
   .ig-thumb-preview video{width:100%; height:100%; object-fit:cover; display:block;}
   #igThumbRange{width:100%; margin-top:12px; accent-color:var(--lavande);}
   .ig-thumb-time{font-size:0.72rem; color:var(--ink-soft); text-align:center; margin-top:2px;}
@@ -1185,8 +1219,10 @@
      quand la place manque (voir la media query plus bas), le bloc de réflexion passant alors
      sous le téléphone plutôt qu'à côté. */
   .ig-editor-row{display:flex; gap:22px; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
+  /* Colonne de droite : panneau du post sélectionné (quand le fil est ouvert) + brouillons de profil. */
+  .ig-side-col{flex:1 1 260px; max-width:340px; min-width:220px; display:flex; flex-direction:column; gap:16px; align-self:stretch;}
   .ig-reflection-panel{
-    flex:1 1 260px; max-width:340px; min-width:220px; align-self:stretch;
+    flex:1 1 auto;
     background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
     box-shadow:var(--shadow-sm); padding:16px;
   }
@@ -1917,48 +1953,14 @@
               <div class="ig-grid" id="igGrid"></div>
             </div>
 
+            <!-- Fil des publications : tous les posts à la suite, comme quand on touche une vignette
+                 de la grille sur Instagram (voir renderIgFeed). -->
             <div id="igDetailView" style="display:none;">
-              <div class="ig-post-card-header">
-                <button type="button" class="ig-back-btn" id="igBackBtn" title="Retour à la grille">←</button>
-                <div class="ig-post-card-avatar" id="igPostCardAvatar"></div>
-                <div class="ig-post-card-username" id="igPostCardUsername"></div>
+              <div class="ig-feed-topbar">
+                <button type="button" class="ig-back-btn" id="igBackBtn" title="Retour au profil">←</button>
+                <div class="ig-feed-title"><span id="igFeedTitleUser">TON_PSEUDO</span><b>Publications</b></div>
               </div>
-              <div class="ig-post-card-image" id="igPostImageBox">
-                <span class="placeholder-txt" id="igPostImagePlaceholder">+ Image</span>
-              </div>
-              <!-- igPostImageInput : remplacer l'image affichée ; igPostSlidesInput : ajouter une ou
-                   plusieurs images au carrousel (sélection multiple). -->
-              <input type="file" id="igPostImageInput" accept="image/*,video/*" style="display:none;">
-              <input type="file" id="igPostSlidesInput" accept="image/*,video/*" multiple style="display:none;">
-              <div class="ig-post-card-actions">
-                <span class="ig-icon">♡</span>
-                <span class="ig-icon">💬</span>
-                <span class="ig-icon">📤</span>
-                <div class="ig-car-dots" id="igCarouselDots"></div>
-                <span class="ig-icon ig-icon-save">🔖</span>
-              </div>
-              <div class="ig-post-card-likes">
-                <input type="number" id="igPostLikesInput" min="0" value="0"> mentions J'aime
-              </div>
-              <div class="ig-post-card-caption">
-                <b id="igPostCaptionUsername"></b>
-                <textarea id="igPostCaptionInput" placeholder="Écris une légende..." rows="2"></textarea>
-              </div>
-              <div class="ig-post-card-date" id="igPostDateLabel"></div>
-              <div class="ig-post-card-comment-placeholder">Ajouter un commentaire...</div>
-              <div class="ig-slide-manager" id="igSlideManager">
-                <div class="ig-slide-manager-title">Images et vidéos du post (carrousel)</div>
-                <div class="ig-slide-strip" id="igSlideStrip"></div>
-                <div class="ig-slide-status" id="igSlideStatus" style="display:none;"></div>
-                <div class="ig-slide-actions" id="igSlideActions">
-                  <button type="button" id="igSlideMoveLeftBtn" title="Déplacer cette image vers la gauche">◀ Déplacer</button>
-                  <button type="button" id="igSlideMoveRightBtn" title="Déplacer cette image vers la droite">Déplacer ▶</button>
-                  <button type="button" id="igSlideReplaceBtn" title="Remplacer cette diapo par une image ou une vidéo">🔄 Remplacer</button>
-                  <button type="button" id="igSlideThumbBtn" title="Choisir une autre miniature pour cette vidéo" style="display:none;">🖼 Miniature</button>
-                  <button type="button" class="ig-slide-remove" id="igSlideRemoveBtn" title="Retirer cette diapo du carrousel">✕ Retirer</button>
-                </div>
-              </div>
-              <button type="button" class="ig-delete-post-btn" id="igDeletePostBtn">✕ Supprimer ce post</button>
+              <div class="ig-feed" id="igFeed"></div>
             </div>
 
             <div class="ig-phone-home-indicator"></div>
@@ -1968,12 +1970,36 @@
                reprenant chacun les trois champs de l'en-tête (nom du compte, @ et descriptif) pour
                comparer des combinaisons complètes avant de choisir, sans que ça touche au vrai
                profil tant que rien n'est recopié dedans. -->
+          <div class="ig-side-col">
+          <!-- Outils du post sélectionné dans le fil : hors du téléphone, pour garder l'aperçu fidèle. -->
+          <div class="ig-reflection-panel ig-post-edit-panel" id="igPostEditPanel" style="display:none;">
+            <div class="ig-reflection-header"><h4 id="igEditPanelTitle">Post sélectionné</h4></div>
+            <div class="ig-slide-manager-title">Format du post</div>
+            <div class="ig-ratio-picker" id="igRatioPicker"></div>
+            <div class="ig-ratio-hint">Dans la grille du profil, Instagram affiche toujours les vignettes en 3:4, recadrées au centre.</div>
+            <div class="ig-slide-manager-title" style="margin-top:14px;">Images et vidéos (carrousel)</div>
+            <div class="ig-slide-strip" id="igSlideStrip"></div>
+            <div class="ig-slide-status" id="igSlideStatus" style="display:none;"></div>
+            <div class="ig-slide-actions" id="igSlideActions">
+              <button type="button" id="igSlideMoveLeftBtn" title="Déplacer cette diapo vers la gauche">◀ Déplacer</button>
+              <button type="button" id="igSlideMoveRightBtn" title="Déplacer cette diapo vers la droite">Déplacer ▶</button>
+              <button type="button" id="igSlideReplaceBtn" title="Remplacer cette diapo par une image ou une vidéo">🔄 Remplacer</button>
+              <button type="button" id="igSlideThumbBtn" title="Choisir une autre miniature pour cette vidéo" style="display:none;">🖼 Miniature</button>
+              <button type="button" class="ig-slide-remove" id="igSlideRemoveBtn" title="Retirer cette diapo du carrousel">✕ Retirer</button>
+            </div>
+            <!-- igPostImageInput : remplacer la diapo affichée ; igPostSlidesInput : ajouter une ou
+                 plusieurs images / vidéos (sélection multiple). -->
+            <input type="file" id="igPostImageInput" accept="image/*,video/*" style="display:none;">
+            <input type="file" id="igPostSlidesInput" accept="image/*,video/*" multiple style="display:none;">
+            <button type="button" class="ig-delete-post-btn" id="igDeletePostBtn" style="margin-top:14px;">✕ Supprimer ce post</button>
+          </div>
           <div class="ig-reflection-panel" id="igReflectionPanel">
             <div class="ig-reflection-header">
               <h4>Brouillons de profil</h4>
               <button type="button" class="btn-add-subtab" id="addIgBioDraftBtn">+ Ajouter une option</button>
             </div>
             <div class="ig-bio-draft-list" id="igBioDraftList"></div>
+          </div>
           </div>
         </div>
         </div>
@@ -2385,7 +2411,7 @@
     <button class="close-x" id="closeIgThumbModal">✕</button>
     <h3>Miniature de la vidéo</h3>
     <p class="ig-thumb-hint">Fais glisser le curseur jusqu'à l'image de ton choix, ou importe une autre image.</p>
-    <div class="ig-thumb-preview"><video id="igThumbVideo" muted playsinline preload="auto"></video></div>
+    <div class="ig-thumb-preview" id="igThumbPreview"><video id="igThumbVideo" muted playsinline preload="auto"></video></div>
     <input type="range" id="igThumbRange" min="0" max="1" step="0.04" value="0">
     <div class="ig-thumb-time" id="igThumbTime">0:00</div>
     <div style="display:flex; gap:8px; margin-top:12px;">
@@ -6893,15 +6919,6 @@
   const igGridEl = document.getElementById('igGrid');
   const igGridViewEl = document.getElementById('igGridView');
   const igDetailViewEl = document.getElementById('igDetailView');
-  const igPostImageBox = document.getElementById('igPostImageBox');
-  const igPostImagePlaceholder = document.getElementById('igPostImagePlaceholder');
-  const igPostImageInput = document.getElementById('igPostImageInput');
-  const igPostLikesInput = document.getElementById('igPostLikesInput');
-  const igPostCaptionInput = document.getElementById('igPostCaptionInput');
-  const igPostCaptionUsernameEl = document.getElementById('igPostCaptionUsername');
-  const igPostCardAvatar = document.getElementById('igPostCardAvatar');
-  const igPostCardUsername = document.getElementById('igPostCardUsername');
-  const igPostDateLabel = document.getElementById('igPostDateLabel');
   const igTopbarUsername = document.getElementById('igTopbarUsername');
   const igBioDraftListEl = document.getElementById('igBioDraftList');
   const addIgBioDraftBtnEl = document.getElementById('addIgBioDraftBtn');
@@ -6932,7 +6949,7 @@
   // le champ paraît "coupé" dès la première ligne, même une fois l'onglet réaffiché.
   function refreshIgActiveTextareas(){
     autoResizeTextarea(igBioInput);
-    if(igDetailVisible) autoResizeTextarea(igPostCaptionInput);
+    if(igDetailVisible) document.querySelectorAll('#igFeed .ig-feed-caption').forEach(autoResizeTextarea);
     igBioDraftListEl.querySelectorAll('.ig-draft-bio-input').forEach(autoResizeTextarea);
   }
 
@@ -6940,14 +6957,15 @@
   // basé sur le profil (avec une valeur de repli tant qu'elle n'a rien renseigné).
   function renderIgAccountBadges(){
     const uname = (igProfile.username || 'ton_pseudo').trim().replace(/^@/, '') || 'ton_pseudo';
-    igPostCardUsername.textContent = uname;
-    igPostCaptionUsernameEl.textContent = uname + ' ';
     igTopbarUsername.textContent = uname;
-    const existing = igPostCardAvatar.querySelector('img');
-    if(igProfile.avatar){
-      if(existing) existing.src = igProfile.avatar;
-      else igPostCardAvatar.insertAdjacentHTML('afterbegin', `<img src="${igProfile.avatar}" alt="">`);
-    } else if(existing) existing.remove();
+    const feedTitleUser = document.getElementById('igFeedTitleUser');
+    if(feedTitleUser) feedTitleUser.textContent = uname.toUpperCase();
+    // Nom et photo dans chaque post du fil.
+    document.querySelectorAll('#igFeed .ig-post-card-username').forEach(el=>{ el.textContent = uname; });
+    document.querySelectorAll('#igFeed .ig-feed-caption-user').forEach(el=>{ el.textContent = uname + ' '; });
+    document.querySelectorAll('#igFeed .ig-post-card-avatar').forEach(el=>{
+      el.innerHTML = igProfile.avatar ? `<img src="${igProfile.avatar}" alt="">` : '';
+    });
   }
 
   function renderIgProfile(){
@@ -7077,24 +7095,55 @@
     });
   }
 
-  // ---------- CARROUSEL + VIDÉOS (24 novembre 2026) ----------
-  // Un post peut avoir plusieurs "diapos", comme un carrousel Instagram : des images et des vidéos.
-  // - La 1ʳᵉ image reste dans p.image (couverture affichée dans la grille, comme avant : les anciens
-  //   posts n'ont rien à migrer) ; les suivantes sont dans p.extraImages. Côté Firestore, chaque
-  //   image a son propre document : "{postId}" pour la 1ʳᵉ, "{postId}__s2", "__s3"... ensuite.
-  // - Une diapo vidéo garde aussi une image : sa MINIATURE (choisie dans la vidéo ou importée), à la
-  //   même place que les images ; p.slideVideos (aligné sur les diapos) donne l'identifiant de la
-  //   vidéo, ou null pour une simple image.
-  // - Une vidéo est trop lourde pour un document Firestore (1 Mo max) : elle est découpée en
-  //   morceaux de ~900 Ko dans users/{id}/igPostVideos (voir __rg_uploadIgVideo, plus bas dans le
-  //   <script type="module">), et n'est téléchargée qu'au moment où on la lance.
+  // ---------- POSTS : CARROUSEL, VIDÉOS, FIL DE PUBLICATIONS (24 novembre 2026) ----------
+  // Fonctionnement calqué sur Instagram (normes 2025-2026) :
+  // - Grille du profil : vignettes 3:4 (plus hautes que larges), recadrées au centre.
+  // - Clic sur une vignette : ouvre le FIL des publications (tous les posts à la suite), placé sur
+  //   le post cliqué — et non plus un post seul en gros plan.
+  // - Chaque post a son format : 4:5 portrait (recommandé, par défaut pour les nouveaux posts), 3:4,
+  //   1:1 carré (anciens posts, dont les images avaient été recadrées en carré) ou 1,91:1 paysage.
+  //   Les images sont maintenant gardées entières (sans recadrage) : changer de format ne perd rien.
+  // - Les outils d'édition (format, images/vidéos du carrousel, suppression) sont à droite du
+  //   téléphone, dans le panneau "Post sélectionné", pour garder l'aperçu fidèle.
+  //
+  // Stockage des diapos (inchangé) :
+  // - La 1ʳᵉ image reste dans p.image (couverture) ; les suivantes dans p.extraImages. Côté
+  //   Firestore, chaque image a son propre document : "{postId}", puis "{postId}__s2", "__s3"...
+  // - Une diapo vidéo garde aussi une image : sa MINIATURE, à la même place que les images ;
+  //   p.slideVideos (aligné sur les diapos) donne l'identifiant de la vidéo, ou null.
+  // - Une vidéo est découpée en morceaux de ~900 Ko dans users/{id}/igPostVideos (voir
+  //   __rg_uploadIgVideo dans le <script type="module">) et téléchargée seulement quand on la lance.
   const IG_MAX_SLIDES = 20;
   const IG_MAX_VIDEO_MB = 30;
+  const IG_RATIOS = [
+    {id:'4:5', css:'4 / 5', label:'4:5', hint:'Portrait (recommandé)'},
+    {id:'3:4', css:'3 / 4', label:'3:4', hint:'Portrait haut, = grille'},
+    {id:'1:1', css:'1 / 1', label:'1:1', hint:'Carré'},
+    {id:'1.91:1', css:'1.91 / 1', label:'1,91:1', hint:'Paysage'}
+  ];
   const IG_MULTI_ICON_SVG = `<svg class="ig-grid-multi" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M19 2H9a3 3 0 0 0-3 3v1H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1h1a3 3 0 0 0 3-3V5a3 3 0 0 0-3-3Zm-3 17a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1Zm4-4a1 1 0 0 1-1 1h-1V9a3 3 0 0 0-3-3H8V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1Z"/></svg>`;
   const IG_VIDEO_ICON_SVG = `<svg class="ig-grid-multi" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.53.85l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 7 4.5Z"/></svg>`;
-  let igSlideIndex = 0;
-  let igCarouselSwiped = false;
+  const igSlideIdx = {};      // postId → diapo affichée dans le fil
   const igVideoUrlCache = {}; // videoId → URL locale (blob:) déjà téléchargée ou tout juste importée
+  let igSwipedPostId = null;  // post dont le média vient d'être "glissé" (ce n'est pas un clic)
+
+  function igRatioOf(p){
+    const id = (p && p.ratio) || '1:1'; // anciens posts : images recadrées en carré
+    return IG_RATIOS.find(r=> r.id === id) || IG_RATIOS[2];
+  }
+  function igUsername(){
+    return (igProfile.username || 'ton_pseudo').trim().replace(/^@/, '') || 'ton_pseudo';
+  }
+  function igPostById(id){ return igPosts.find(x=> String(x.id) === String(id)); }
+  function slideIdxOf(p){ return (p && igSlideIdx[String(p.id)]) || 0; }
+  function setSlideIdx(p, i){ igSlideIdx[String(p.id)] = i; }
+
+  // Compression des images de post : sans recadrage (proportions d'origine), 1080 px de large max.
+  function igPostCompress(file){
+    return window.__rg_igImagesSeparate
+      ? compressImageForEditor(file, {targetKB:180, startWidth:1080, minWidth:300})
+      : compressImageForEditor(file, {targetKB:10, startWidth:300, minWidth:72});
+  }
 
   function igSlides(p){
     if(!p || !p.image) return [];
@@ -7118,7 +7167,6 @@
     if(vids.some(Boolean)) p.slideVideos = vids;
     else delete p.slideVideos;
   }
-  function igPostHasVideo(p){ return igSlideItems(p).some(it=> it.video); }
   function igGridBadge(p){
     const items = igSlideItems(p);
     if(items.length > 1) return IG_MULTI_ICON_SVG;
@@ -7144,8 +7192,12 @@
     return url;
   }
 
+  const igFeedEl = document.getElementById('igFeed');
+  const igPostImageInput = document.getElementById('igPostImageInput');
   const igPostSlidesInput = document.getElementById('igPostSlidesInput');
-  const igCarouselDotsEl = document.getElementById('igCarouselDots');
+  const igPostEditPanel = document.getElementById('igPostEditPanel');
+  const igEditPanelTitle = document.getElementById('igEditPanelTitle');
+  const igRatioPickerEl = document.getElementById('igRatioPicker');
   const igSlideStripEl = document.getElementById('igSlideStrip');
   const igSlideActionsEl = document.getElementById('igSlideActions');
   const igSlideStatusEl = document.getElementById('igSlideStatus');
@@ -7156,82 +7208,127 @@
     igSlideStatusEl.style.display = text ? '' : 'none';
   }
 
-  function renderIgPostImage(p){
-    const items = igSlideItems(p);
-    if(igSlideIndex >= items.length) igSlideIndex = Math.max(0, items.length - 1);
+  // ---------- Fil de publications (dans le téléphone) ----------
+  function igAvatarHtml(){
+    return igProfile.avatar ? `<img src="${igProfile.avatar}" alt="">` : '';
+  }
 
+  function igFeedCardHtml(p){
+    const uname = escapeHtml(igUsername());
+    return `
+      <article class="ig-feed-post" data-post-id="${p.id}">
+        <div class="ig-feed-post-header">
+          <div class="ig-post-card-avatar">${igAvatarHtml()}</div>
+          <div class="ig-post-card-username">${uname}</div>
+          <span class="ig-feed-more">⋯</span>
+        </div>
+        <div class="ig-post-card-image ig-feed-media" style="aspect-ratio:${igRatioOf(p).css};"></div>
+        <div class="ig-post-card-actions">
+          <span class="ig-icon">♡</span>
+          <span class="ig-icon">💬</span>
+          <span class="ig-icon">📤</span>
+          <div class="ig-car-dots"></div>
+          <span class="ig-icon ig-icon-save">🔖</span>
+        </div>
+        <div class="ig-post-card-likes">
+          <input type="number" class="ig-feed-likes" min="0" value="${p.likes || 0}"> mentions J'aime
+        </div>
+        <div class="ig-post-card-caption">
+          <b class="ig-feed-caption-user">${uname} </b><textarea class="ig-feed-caption" placeholder="Écris une légende..." rows="1">${escapeHtml(p.caption || '')}</textarea>
+        </div>
+        <div class="ig-post-card-date">${formatIgPostDate(p.createdAt)}</div>
+      </article>`;
+  }
+
+  function igCardOf(postId){
+    return igFeedEl.querySelector(`.ig-feed-post[data-post-id="${CSS.escape(String(postId))}"]`);
+  }
+
+  // Média d'un post dans le fil (images / vidéos en carrousel).
+  function renderIgCardMedia(card, p){
+    const box = card.querySelector('.ig-feed-media');
+    const dots = card.querySelector('.ig-car-dots');
+    const items = igSlideItems(p);
+    if(slideIdxOf(p) >= items.length) setSlideIdx(p, Math.max(0, items.length - 1));
+    box.style.aspectRatio = igRatioOf(p).css;
     if(!items.length){
-      igPostImageBox.innerHTML = `<span class="placeholder-txt">+ Images / vidéos</span>`;
-      igPostImageBox.title = "Ajouter une ou plusieurs images ou vidéos";
+      box.innerHTML = `<span class="placeholder-txt">+ Images / vidéos</span>`;
+      box.classList.add('is-empty');
+      box.title = 'Ajouter une ou plusieurs images ou vidéos';
     } else {
-      igPostImageBox.innerHTML = `
+      box.classList.remove('is-empty');
+      box.removeAttribute('title');
+      box.innerHTML = `
         <div class="ig-car-track">${items.map((it, i)=> it.video
           ? `<div class="ig-car-slide is-video" data-slide-i="${i}" data-video-id="${escapeHtml(it.video)}"><img src="${it.img}" alt=""><button type="button" class="ig-car-play" title="Lire la vidéo">▶</button></div>`
           : `<div class="ig-car-slide" data-slide-i="${i}"><img src="${it.img}" alt=""></div>`).join('')}</div>
         ${items.length > 1 ? `
           <div class="ig-car-counter"></div>
           <button type="button" class="ig-car-arrow ig-car-prev" data-car-dir="-1" title="Diapo précédente">‹</button>
-          <button type="button" class="ig-car-arrow ig-car-next" data-car-dir="1" title="Diapo suivante">›</button>` : ''}
-      `;
+          <button type="button" class="ig-car-arrow ig-car-next" data-car-dir="1" title="Diapo suivante">›</button>` : ''}`;
     }
-    igCarouselDotsEl.innerHTML = items.length > 1 ? items.map(()=>'<span class="ig-car-dot"></span>').join('') : '';
-    igSlideStripEl.innerHTML = items.map((it, i)=>
-      `<button type="button" class="ig-slide-thumb" data-slide-idx="${i}" title="${it.video ? 'Vidéo' : 'Image'} ${i+1}"><img src="${it.img}" alt="">${it.video ? '<span class="ig-slide-video-badge">▶</span>' : ''}<span class="ig-slide-num">${i+1}</span></button>`
-    ).join('') + (items.length < IG_MAX_SLIDES
-      ? `<button type="button" class="ig-slide-add" id="igSlideAddBtn" title="Ajouter des images ou des vidéos">+</button>` : '');
-    igSlideActionsEl.style.display = items.length ? '' : 'none';
-    updateIgCarouselPosition(false);
+    dots.innerHTML = items.length > 1 ? items.map(()=> '<span class="ig-car-dot"></span>').join('') : '';
+    updateIgCardCarousel(card, p, false);
   }
 
-  function pauseIgVideos(){
-    igPostImageBox.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
-  }
-
-  // Met à jour la position du carrousel (diapo affichée, flèches, compteur, points, vignette
-  // active, boutons) sans tout redessiner — pour un défilement fluide.
-  function updateIgCarouselPosition(animate = true){
-    const p = currentIgPost();
-    const items = igSlideItems(p);
-    const n = items.length;
-    const track = igPostImageBox.querySelector('.ig-car-track');
-    // Le navigateur peut faire défiler la boîte tout seul (focus sur un bouton caché) : on la recale.
-    igPostImageBox.scrollLeft = 0;
+  // Met à jour la position du carrousel d'un post (diapo, flèches, compteur, points) sans tout
+  // redessiner — pour un défilement fluide.
+  function updateIgCardCarousel(card, p, animate = true){
+    if(!card) return;
+    const n = igSlideItems(p).length;
+    const idx = slideIdxOf(p);
+    const box = card.querySelector('.ig-feed-media');
+    box.scrollLeft = 0; // le navigateur peut faire défiler la boîte tout seul (focus d'un bouton caché)
+    const track = box.querySelector('.ig-car-track');
     if(track){
       track.classList.toggle('no-anim', !animate);
-      track.style.transform = `translateX(-${igSlideIndex * 100}%)`;
+      track.style.transform = `translateX(-${idx * 100}%)`;
     }
-    const prev = igPostImageBox.querySelector('.ig-car-prev');
-    const next = igPostImageBox.querySelector('.ig-car-next');
-    if(prev) prev.style.display = igSlideIndex > 0 ? '' : 'none';
-    if(next) next.style.display = igSlideIndex < n - 1 ? '' : 'none';
-    const counter = igPostImageBox.querySelector('.ig-car-counter');
-    if(counter) counter.textContent = `${igSlideIndex + 1}/${n}`;
-    igCarouselDotsEl.querySelectorAll('.ig-car-dot').forEach((d, i)=> d.classList.toggle('active', i === igSlideIndex));
-    igSlideStripEl.querySelectorAll('.ig-slide-thumb').forEach((t, i)=> t.classList.toggle('active', i === igSlideIndex));
-    document.getElementById('igSlideMoveLeftBtn').disabled = igSlideIndex <= 0;
-    document.getElementById('igSlideMoveRightBtn').disabled = igSlideIndex >= n - 1;
-    igSlideThumbBtn.style.display = (items[igSlideIndex] && items[igSlideIndex].video) ? '' : 'none';
+    const prev = box.querySelector('.ig-car-prev');
+    const next = box.querySelector('.ig-car-next');
+    if(prev) prev.style.display = idx > 0 ? '' : 'none';
+    if(next) next.style.display = idx < n - 1 ? '' : 'none';
+    const counter = box.querySelector('.ig-car-counter');
+    if(counter) counter.textContent = `${idx + 1}/${n}`;
+    card.querySelectorAll('.ig-car-dot').forEach((d, i)=> d.classList.toggle('active', i === idx));
+    if(String(p.id) === String(currentIgPostId)) updateIgEditPanelPosition();
   }
 
-  function goToIgSlide(i){
-    const n = igSlideItems(currentIgPost()).length;
+  function goToIgSlide(p, i){
+    const n = igSlideItems(p).length;
     if(!n) return;
-    pauseIgVideos();
-    igSlideIndex = Math.max(0, Math.min(n - 1, i));
-    updateIgCarouselPosition(true);
+    const card = igCardOf(p.id);
+    if(card) card.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
+    setSlideIdx(p, Math.max(0, Math.min(n - 1, i)));
+    updateIgCardCarousel(card, p, true);
   }
 
+  function renderIgFeed(){
+    const scrollTop = igDetailViewEl.scrollTop;
+    igFeedEl.innerHTML = igPosts.map(igFeedCardHtml).join('');
+    igPosts.forEach(p=>{
+      const card = igCardOf(p.id);
+      if(card) renderIgCardMedia(card, p);
+    });
+    igFeedEl.querySelectorAll('.ig-feed-caption').forEach(autoResizeTextarea);
+    igDetailViewEl.scrollTop = scrollTop;
+  }
+
+  // Après une modification des diapos d'un post : met à jour ce post dans le fil, la grille et le
+  // panneau d'édition.
   function commitIgSlides(p, items){
     igSetSlideItems(p, items);
     saveIgPosts();
-    renderIgPostImage(p);
+    const card = igCardOf(p.id);
+    if(card) renderIgCardMedia(card, p);
     renderIgGrid();
+    if(String(p.id) === String(currentIgPostId)) renderIgEditPanel();
   }
 
   // Lance la vidéo d'une diapo : téléchargement à la demande, puis lecture sur place.
-  async function playIgVideoSlide(slideEl){
+  async function playIgVideoSlide(p, slideEl){
     const slideI = parseInt(slideEl.dataset.slideI, 10);
-    if(!isNaN(slideI) && slideI !== igSlideIndex) goToIgSlide(slideI);
+    if(!isNaN(slideI) && slideI !== slideIdxOf(p)) goToIgSlide(p, slideI);
     const videoId = slideEl.dataset.videoId;
     const existing = slideEl.querySelector('video');
     if(existing){ existing.paused ? existing.play() : existing.pause(); return; }
@@ -7254,64 +7351,189 @@
     }
   }
 
-  // Flèches et bouton ▶ (délégation : le contenu de la boîte est redessiné à chaque changement).
-  igPostImageBox.addEventListener('click', (e)=>{
+  // Flèches, bouton ▶, lecteur vidéo (phase de capture : avant la sélection du post).
+  igFeedEl.addEventListener('click', (e)=>{
+    const card = e.target.closest('.ig-feed-post');
+    if(!card) return;
+    const p = igPostById(card.dataset.postId);
+    if(!p) return;
     const arrow = e.target.closest('[data-car-dir]');
     if(arrow){
       e.stopPropagation();
-      goToIgSlide(igSlideIndex + parseInt(arrow.dataset.carDir, 10));
+      selectIgPostInFeed(p.id);
+      goToIgSlide(p, slideIdxOf(p) + parseInt(arrow.dataset.carDir, 10));
       return;
     }
     const play = e.target.closest('.ig-car-play');
     if(play){
       e.stopPropagation();
-      playIgVideoSlide(play.closest('.ig-car-slide'));
-      return;
+      selectIgPostInFeed(p.id);
+      playIgVideoSlide(p, play.closest('.ig-car-slide'));
     }
-    // Clic dans le lecteur vidéo (barre de contrôle...) : on laisse le lecteur gérer.
-    if(e.target.closest('video')) e.stopPropagation();
   }, true);
 
-  // Glisser du doigt / de la souris pour faire défiler, comme sur Instagram.
+  // Clic ailleurs dans un post : il devient le post sélectionné (panneau de droite). Sur un média
+  // vide : ajouter des images / vidéos ; sur une vidéo : la lire / la mettre en pause.
+  igFeedEl.addEventListener('click', (e)=>{
+    const card = e.target.closest('.ig-feed-post');
+    if(!card) return;
+    const p = igPostById(card.dataset.postId);
+    if(!p) return;
+    selectIgPostInFeed(p.id);
+    const media = e.target.closest('.ig-feed-media');
+    if(!media || e.target.closest('video')) return;
+    if(igSwipedPostId === String(p.id)){ igSwipedPostId = null; return; }
+    const items = igSlideItems(p);
+    if(!items.length){ igPostSlidesInput.click(); return; }
+    const it = items[slideIdxOf(p)];
+    if(it && it.video){
+      const slideEl = media.querySelectorAll('.ig-car-slide')[slideIdxOf(p)];
+      if(slideEl) playIgVideoSlide(p, slideEl);
+    }
+  });
+  igFeedEl.addEventListener('focusin', (e)=>{
+    const card = e.target.closest('.ig-feed-post');
+    if(card) selectIgPostInFeed(card.dataset.postId);
+  });
+
+  // Légende et "J'aime" modifiables directement dans le post, comme avant.
+  igFeedEl.addEventListener('input', (e)=>{
+    const card = e.target.closest('.ig-feed-post');
+    if(!card) return;
+    const p = igPostById(card.dataset.postId);
+    if(!p) return;
+    if(e.target.classList.contains('ig-feed-caption')){
+      p.caption = e.target.value;
+      autoResizeTextarea(e.target);
+      saveIgPosts();
+      renderIgPostPills();
+      if(String(p.id) === String(currentIgPostId)) renderIgEditPanelTitle();
+    } else if(e.target.classList.contains('ig-feed-likes')){
+      p.likes = parseInt(e.target.value, 10) || 0;
+      saveIgPosts();
+    }
+  });
+
+  // Glisser du doigt / de la souris pour faire défiler un carrousel, comme sur Instagram.
   (function enableIgSwipe(){
-    let startX = null, startY = null, pointerId = null;
-    igPostImageBox.addEventListener('pointerdown', (e)=>{
-      if(e.target.closest('[data-car-dir], video')) return;
-      startX = e.clientX; startY = e.clientY; pointerId = e.pointerId;
-      igCarouselSwiped = false;
+    let start = null; // {x, y, pointerId, postId, box}
+    igFeedEl.addEventListener('pointerdown', (e)=>{
+      const box = e.target.closest('.ig-feed-media');
+      if(!box || e.target.closest('[data-car-dir], video')) return;
+      const card = box.closest('.ig-feed-post');
+      start = {x: e.clientX, y: e.clientY, pointerId: e.pointerId, postId: card.dataset.postId, box, moved: false};
     });
-    igPostImageBox.addEventListener('pointermove', (e)=>{
-      if(startX === null || e.pointerId !== pointerId) return;
-      const dx = e.clientX - startX;
-      const track = igPostImageBox.querySelector('.ig-car-track');
-      if(!track || Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(e.clientY - startY)) return;
-      igCarouselSwiped = true;
+    igFeedEl.addEventListener('pointermove', (e)=>{
+      if(!start || e.pointerId !== start.pointerId) return;
+      const dx = e.clientX - start.x;
+      const track = start.box.querySelector('.ig-car-track');
+      if(!track || Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(e.clientY - start.y)) return;
+      start.moved = true;
+      const p = igPostById(start.postId);
       track.classList.add('no-anim');
-      track.style.transform = `translateX(calc(-${igSlideIndex * 100}% + ${dx}px))`;
+      track.style.transform = `translateX(calc(-${slideIdxOf(p) * 100}% + ${dx}px))`;
     });
     const end = (e)=>{
-      if(startX === null || e.pointerId !== pointerId) return;
-      const dx = e.clientX - startX;
-      startX = null;
-      if(!igCarouselSwiped) return;
-      if(dx < -40) goToIgSlide(igSlideIndex + 1);
-      else if(dx > 40) goToIgSlide(igSlideIndex - 1);
-      else updateIgCarouselPosition(true);
+      if(!start || e.pointerId !== start.pointerId) return;
+      const s = start; start = null;
+      if(!s.moved) return;
+      igSwipedPostId = String(s.postId);
+      const p = igPostById(s.postId);
+      if(!p) return;
+      const dx = e.clientX - s.x;
+      if(dx < -40) goToIgSlide(p, slideIdxOf(p) + 1);
+      else if(dx > 40) goToIgSlide(p, slideIdxOf(p) - 1);
+      else updateIgCardCarousel(igCardOf(p.id), p, true);
     };
-    igPostImageBox.addEventListener('pointerup', end);
-    igPostImageBox.addEventListener('pointercancel', end);
-    igPostImageBox.addEventListener('pointerleave', end);
+    igFeedEl.addEventListener('pointerup', end);
+    igFeedEl.addEventListener('pointercancel', end);
+    igFeedEl.addEventListener('pointerleave', end);
   })();
 
+  // En faisant défiler le fil, le post au milieu de l'écran devient le post sélectionné.
+  let igFeedScrollRaf = null;
+  igDetailViewEl.addEventListener('scroll', ()=>{
+    if(igFeedScrollRaf) return;
+    igFeedScrollRaf = requestAnimationFrame(()=>{
+      igFeedScrollRaf = null;
+      const viewTop = igDetailViewEl.getBoundingClientRect().top;
+      const probe = viewTop + igDetailViewEl.clientHeight * 0.4;
+      const card = Array.from(igFeedEl.querySelectorAll('.ig-feed-post')).find(c=>{
+        const r = c.getBoundingClientRect();
+        return r.top <= probe && r.bottom > probe;
+      });
+      if(card && String(card.dataset.postId) !== String(currentIgPostId)) selectIgPostInFeed(card.dataset.postId);
+    });
+  });
+
+  // ---------- Panneau "Post sélectionné" (à droite du téléphone) ----------
+  function renderIgEditPanelTitle(){
+    const p = currentIgPost();
+    if(!p) return;
+    const i = igPosts.indexOf(p);
+    const label = (p.menuName || '').trim() || (p.caption || '').trim().slice(0, 40) || '(sans légende)';
+    igEditPanelTitle.textContent = `Post ${i + 1} — ${label}`;
+  }
+
+  function renderIgEditPanel(){
+    const p = currentIgPost();
+    igPostEditPanel.style.display = (igDetailVisible && p) ? '' : 'none';
+    if(!igDetailVisible || !p) return;
+    renderIgEditPanelTitle();
+    const current = igRatioOf(p).id;
+    igRatioPickerEl.innerHTML = IG_RATIOS.map(r=>
+      `<button type="button" class="ig-ratio-btn ${r.id === current ? 'active' : ''}" data-ratio="${r.id}" title="${r.hint}">
+        <span class="ig-ratio-shape" style="aspect-ratio:${r.css};"></span><span><b>${r.label}</b><small>${r.hint}</small></span>
+      </button>`).join('');
+    const items = igSlideItems(p);
+    if(slideIdxOf(p) >= items.length) setSlideIdx(p, Math.max(0, items.length - 1));
+    igSlideStripEl.innerHTML = items.map((it, i)=>
+      `<button type="button" class="ig-slide-thumb" data-slide-idx="${i}" title="${it.video ? 'Vidéo' : 'Image'} ${i+1}"><img src="${it.img}" alt="">${it.video ? '<span class="ig-slide-video-badge">▶</span>' : ''}<span class="ig-slide-num">${i+1}</span></button>`
+    ).join('') + (items.length < IG_MAX_SLIDES
+      ? `<button type="button" class="ig-slide-add" id="igSlideAddBtn" title="Ajouter des images ou des vidéos">+</button>` : '');
+    igSlideActionsEl.style.display = items.length ? '' : 'none';
+    updateIgEditPanelPosition();
+  }
+
+  // Vignette active et boutons, selon la diapo affichée du post sélectionné.
+  function updateIgEditPanelPosition(){
+    const p = currentIgPost();
+    if(!p) return;
+    const items = igSlideItems(p);
+    const idx = slideIdxOf(p);
+    igSlideStripEl.querySelectorAll('.ig-slide-thumb').forEach((t, i)=> t.classList.toggle('active', i === idx));
+    document.getElementById('igSlideMoveLeftBtn').disabled = idx <= 0;
+    document.getElementById('igSlideMoveRightBtn').disabled = idx >= items.length - 1;
+    igSlideThumbBtn.style.display = (items[idx] && items[idx].video) ? '' : 'none';
+  }
+
+  igRatioPickerEl.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-ratio]');
+    const p = currentIgPost();
+    if(!btn || !p) return;
+    p.ratio = btn.dataset.ratio;
+    saveIgPosts();
+    const card = igCardOf(p.id);
+    if(card) renderIgCardMedia(card, p);
+    renderIgEditPanel();
+  });
+
+  igSlideStripEl.addEventListener('click', (e)=>{
+    const p = currentIgPost(); if(!p) return;
+    const thumb = e.target.closest('[data-slide-idx]');
+    if(thumb){ goToIgSlide(p, parseInt(thumb.dataset.slideIdx, 10)); return; }
+    if(e.target.closest('#igSlideAddBtn')) igPostSlidesInput.click();
+  });
+
   // ---------- Choix de la miniature d'une vidéo ----------
-  // Fenêtre avec la vidéo et un curseur : on choisit l'instant qui servira de miniature (recadré
-  // en carré comme les images), ou on importe une autre image. Renvoie l'image (data URL), ou null
-  // si on annule.
+  // Fenêtre avec la vidéo et un curseur : on choisit l'instant qui servira de miniature, ou on
+  // importe une autre image. L'aperçu a le format du post. Renvoie l'image (data URL) ou null.
   const igThumbOverlay = document.getElementById('igVideoThumbOverlay');
   const igThumbVideo = document.getElementById('igThumbVideo');
   const igThumbRange = document.getElementById('igThumbRange');
   const igThumbTime = document.getElementById('igThumbTime');
   const igThumbImportInput = document.getElementById('igThumbImportInput');
+  const igThumbPreview = document.getElementById('igThumbPreview');
   let igThumbResolve = null;
 
   function formatVideoTime(t){
@@ -7329,9 +7551,10 @@
     if(r) r(result || null);
   }
 
-  function chooseIgVideoThumbnail(videoUrl){
+  function chooseIgVideoThumbnail(videoUrl, ratioCss){
     return new Promise(resolve=>{
       igThumbResolve = resolve;
+      igThumbPreview.style.aspectRatio = ratioCss || '4 / 5';
       igThumbRange.value = 0;
       igThumbRange.max = 1;
       igThumbTime.textContent = '0:00';
@@ -7355,18 +7578,19 @@
     igThumbTime.textContent = formatVideoTime(t) + ' / ' + formatVideoTime(igThumbVideo.duration);
   });
 
+  // Capture l'image entière de la vidéo (sans recadrage : le post l'affiche à son format).
   document.getElementById('igThumbUseFrameBtn').addEventListener('click', async ()=>{
     const v = igThumbVideo;
     if(!v.videoWidth){ alert("La vidéo n'est pas encore prête, réessaie dans un instant."); return; }
-    const side = Math.min(v.videoWidth, v.videoHeight);
+    const scale = Math.min(1, 1080 / v.videoWidth);
     const canvas = document.createElement('canvas');
-    canvas.width = side; canvas.height = side;
-    canvas.getContext('2d').drawImage(v, (v.videoWidth - side) / 2, (v.videoHeight - side) / 2, side, side, 0, 0, side, side);
+    canvas.width = Math.round(v.videoWidth * scale);
+    canvas.height = Math.round(v.videoHeight * scale);
+    canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise(res=> canvas.toBlob(res, 'image/jpeg', 0.92));
     if(!blob){ alert("Impossible de capturer cette image de la vidéo."); return; }
     try{
-      const dataUrl = await compressImageSquare(new File([blob], 'miniature.jpg', {type:'image/jpeg'}), igPostCompressOpts());
-      closeIgThumbModal(dataUrl);
+      closeIgThumbModal(await igPostCompress(new File([blob], 'miniature.jpg', {type:'image/jpeg'})));
     }catch(err){
       console.error('Miniature vidéo :', err);
       alert("Impossible de capturer cette image de la vidéo.");
@@ -7377,18 +7601,16 @@
     const file = igThumbImportInput.files[0];
     igThumbImportInput.value = '';
     if(!file) return;
-    try{ closeIgThumbModal(await compressImageSquare(file, igPostCompressOpts())); }
+    try{ closeIgThumbModal(await igPostCompress(file)); }
     catch(err){ console.error('Miniature importée :', err); }
   });
   document.getElementById('closeIgThumbModal').addEventListener('click', ()=> closeIgThumbModal(null));
   igThumbOverlay.addEventListener('click', e=>{ if(e.target === igThumbOverlay) closeIgThumbModal(null); });
 
-  // ---------- Ajout d'images / de vidéos ----------
-  // Images : compressées puis ajoutées. Vidéos : choix de la miniature, puis envoi dans le cloud
-  // (la progression s'affiche sous les vignettes).
+  // ---------- Ajout / remplacement d'images et de vidéos ----------
   // Prépare une diapo vidéo : vérifie la taille, fait choisir la miniature, envoie la vidéo dans le
   // cloud. Renvoie {img, video}, ou null si annulé / impossible.
-  async function prepareIgVideoSlide(file){
+  async function prepareIgVideoSlide(file, p){
     if(file.size > IG_MAX_VIDEO_MB * 1024 * 1024){
       alert(`« ${file.name} » fait ${(file.size / 1048576).toFixed(0)} Mo : la limite est de ${IG_MAX_VIDEO_MB} Mo par vidéo. Raccourcis-la ou exporte-la en qualité plus légère (ex. 720p) puis réessaie.`);
       return null;
@@ -7398,7 +7620,7 @@
       return null;
     }
     const localUrl = URL.createObjectURL(file);
-    const thumb = await chooseIgVideoThumbnail(localUrl);
+    const thumb = await chooseIgVideoThumbnail(localUrl, igRatioOf(p).css);
     if(!thumb){ URL.revokeObjectURL(localUrl); return null; }
     setIgSlideStatus(`Envoi de la vidéo… 0 %`);
     try{
@@ -7411,39 +7633,29 @@
   }
 
   async function addIgSlidesFromFiles(files){
-    const p = currentIgPost(); if(!p) return;
-    const postId = p.id;
+    const p0 = currentIgPost(); if(!p0) return;
+    const postId = p0.id;
     let list = Array.from(files || []);
-    const room = IG_MAX_SLIDES - igSlideItems(p).length;
+    const room = IG_MAX_SLIDES - igSlideItems(p0).length;
     if(list.length > room){
       alert(`Un carrousel peut contenir ${IG_MAX_SLIDES} diapos au maximum : seules les ${Math.max(0, room)} premières ont été ajoutées.`);
       list = list.slice(0, Math.max(0, room));
     }
     let firstNew = null;
     for(const file of list){
-      const post = igPosts.find(x=> String(x.id) === String(postId));
-      if(!post) return;
       const isVideo = (file.type || '').startsWith('video/');
       try{
-        if(!isVideo){
-          const img = await compressImageSquare(file, igPostCompressOpts());
-          const items = igSlideItems(post);
-          items.push({img, video:null});
-          if(firstNew === null) firstNew = items.length - 1;
-          igSlideIndex = firstNew;
-          commitIgSlides(post, items);
-          continue;
-        }
-        const slide = await prepareIgVideoSlide(file);
+        const p = igPostById(postId);
+        if(!p) return;
+        const slide = isVideo ? await prepareIgVideoSlide(file, p) : {img: await igPostCompress(file), video: null};
         if(!slide) continue;
-        const post2 = igPosts.find(x=> String(x.id) === String(postId));
-        if(!post2){ cleanupIgVideos([slide.video]); return; }
-        const items = igSlideItems(post2);
+        const post = igPostById(postId);
+        if(!post){ if(slide.video) cleanupIgVideos([slide.video]); return; }
+        const items = igSlideItems(post);
         items.push(slide);
         if(firstNew === null) firstNew = items.length - 1;
-        igSlideIndex = firstNew;
-        if(String(currentIgPostId) === String(postId)) commitIgSlides(post2, items);
-        else { igSetSlideItems(post2, items); saveIgPosts(); renderIgGrid(); }
+        setSlideIdx(post, firstNew);
+        commitIgSlides(post, items);
       }catch(err){
         console.error('Ajout au carrousel :', err);
         setIgSlideStatus('');
@@ -7460,19 +7672,36 @@
     await addIgSlidesFromFiles(files);
   });
 
-  igSlideStripEl.addEventListener('click', (e)=>{
-    const thumb = e.target.closest('[data-slide-idx]');
-    if(thumb){ goToIgSlide(parseInt(thumb.dataset.slideIdx, 10)); return; }
-    if(e.target.closest('#igSlideAddBtn')) igPostSlidesInput.click();
+  // Remplacer la diapo affichée par une image ou une vidéo (une vidéo remplacée est supprimée du cloud).
+  igPostImageInput.addEventListener('change', async ()=>{
+    const file = igPostImageInput.files[0];
+    igPostImageInput.value = '';
+    if(!file) return;
+    const p = currentIgPost(); if(!p) return;
+    const idx = slideIdxOf(p);
+    const isVideo = (file.type || '').startsWith('video/');
+    try{
+      const slide = isVideo ? await prepareIgVideoSlide(file, p) : {img: await igPostCompress(file), video: null};
+      if(!slide) return;
+      const items = igSlideItems(p);
+      let oldVideo = null;
+      if(items[idx]){ oldVideo = items[idx].video; items[idx] = slide; setSlideIdx(p, idx); }
+      else items.push(slide);
+      commitIgSlides(p, items);
+      if(oldVideo) cleanupIgVideos([oldVideo]);
+    }catch(err){
+      console.error('Remplacement de diapo :', err);
+      alert(isVideo ? "L'envoi de la vidéo a échoué (connexion ou droits d'accès au cloud). Réessaie ; si ça recommence, dis-le à Claude." : "Impossible d'utiliser cette image.");
+    }
   });
 
   function moveIgSlide(delta){
     const p = currentIgPost(); if(!p) return;
     const items = igSlideItems(p);
-    const j = igSlideIndex + delta;
+    const i = slideIdxOf(p), j = i + delta;
     if(j < 0 || j >= items.length) return;
-    [items[igSlideIndex], items[j]] = [items[j], items[igSlideIndex]];
-    igSlideIndex = j;
+    [items[i], items[j]] = [items[j], items[i]];
+    setSlideIdx(p, j);
     commitIgSlides(p, items);
   }
   document.getElementById('igSlideMoveLeftBtn').addEventListener('click', ()=> moveIgSlide(-1));
@@ -7482,24 +7711,24 @@
     const p = currentIgPost(); if(!p) return;
     const items = igSlideItems(p);
     if(!items.length) return;
-    const it = items[igSlideIndex];
+    const idx = slideIdxOf(p);
+    const it = items[idx];
     const what = it.video ? 'cette vidéo' : 'cette image';
-    if(!confirm(items.length > 1 ? `Retirer ${what} (diapo ${igSlideIndex + 1}) du carrousel ?` : `Retirer ${what} ?`)) return;
-    items.splice(igSlideIndex, 1);
+    if(!confirm(items.length > 1 ? `Retirer ${what} (diapo ${idx + 1}) du carrousel ?` : `Retirer ${what} ?`)) return;
+    items.splice(idx, 1);
     commitIgSlides(p, items);
     if(it.video) cleanupIgVideos([it.video]);
   });
   igSlideThumbBtn.addEventListener('click', async ()=>{
     const p = currentIgPost(); if(!p) return;
-    const items = igSlideItems(p);
-    const it = items[igSlideIndex];
+    const idx = slideIdxOf(p);
+    const it = igSlideItems(p)[idx];
     if(!it || !it.video) return;
-    const idx = igSlideIndex;
     try{
       setIgSlideStatus('Chargement de la vidéo…');
       const url = await getIgVideoUrl(it.video);
       setIgSlideStatus('');
-      const thumb = await chooseIgVideoThumbnail(url);
+      const thumb = await chooseIgVideoThumbnail(url, igRatioOf(p).css);
       if(!thumb) return;
       const fresh = igSlideItems(p);
       if(fresh[idx] && fresh[idx].video === it.video){ fresh[idx].img = thumb; commitIgSlides(p, fresh); }
@@ -7510,55 +7739,78 @@
     }
   });
 
+  // ---------- Navigation grille ↔ fil ----------
   function renderIgDetailView(){
-    const p = currentIgPost();
-    if(!p) return;
-    renderIgPostImage(p);
-    igPostLikesInput.value = p.likes || 0;
-    igPostCaptionInput.value = p.caption || '';
-    autoResizeTextarea(igPostCaptionInput);
-    igPostDateLabel.textContent = formatIgPostDate(p.createdAt);
-    renderIgAccountBadges();
+    if(!igDetailVisible) return;
+    if(!currentIgPost()){ showIgGridView(); return; }
+    renderIgFeed();
+    renderIgEditPanel();
   }
 
-  function selectIgPost(id){
-    const p = igPosts.find(x=>String(x.id)===String(id));
-    if(!p) return;
-    if(String(currentIgPostId) !== String(p.id)) igSlideIndex = 0;
+  // Sélectionne un post déjà visible dans le fil (clic, défilement) sans faire défiler.
+  function selectIgPostInFeed(id){
+    const p = igPostById(id);
+    if(!p || String(currentIgPostId) === String(p.id)) return;
     currentIgPostId = p.id;
+    renderIgEditPanel();
+    renderIgPostPills();
+  }
+
+  // Ouvre le fil sur un post (clic dans la grille ou dans le menu de gauche).
+  function selectIgPost(id){
+    const p = igPostById(id);
+    if(!p) return;
+    currentIgPostId = p.id;
+    const wasVisible = igDetailVisible;
     igDetailVisible = true;
-    // La vue détail doit déjà être visible (display) avant de calculer la hauteur de la légende :
-    // scrollHeight vaut 0 sur un champ caché, ce qui écraserait sa hauteur (voir renderAll).
+    // Le fil doit déjà être visible avant de calculer la hauteur des légendes (scrollHeight vaut
+    // 0 sur un champ caché, voir refreshIgActiveTextareas).
     igGridViewEl.style.display = 'none';
     igDetailViewEl.style.display = '';
-    renderIgDetailView();
+    if(!wasVisible || !igCardOf(p.id)) renderIgFeed();
+    const card = igCardOf(p.id);
+    if(card){
+      const topbar = igDetailViewEl.querySelector('.ig-feed-topbar');
+      igDetailViewEl.scrollTop = card.offsetTop - (topbar ? topbar.offsetHeight : 0);
+    }
+    renderIgEditPanel();
     renderIgPostPills();
   }
 
   function showIgGridView(){
+    igDetailViewEl.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });
     igDetailVisible = false;
     igGridViewEl.style.display = '';
     igDetailViewEl.style.display = 'none';
+    renderIgEditPanel();
     renderIgPostPills();
-    // La bio (dans la vue grille) redevient visible : recalculer sa hauteur, sinon elle reste
-    // coincée à ~0 si elle avait été (re)calculée pendant qu'un post était ouvert (voir
-    // refreshIgActiveTextareas, qui ne la recalcule pas tant que la vue détail est affichée).
+    // La bio (dans la vue grille) redevient visible : recalculer sa hauteur.
     autoResizeTextarea(igBioInput);
   }
 
   function deleteIgPost(id){
-    const p = igPosts.find(x=>String(x.id)===String(id));
+    const p = igPostById(id);
     if(!p) return;
     if(!confirm('Supprimer ce post ?')) return;
     const videos = igSlideItems(p).map(it=> it.video).filter(Boolean);
-    igPosts = igPosts.filter(x=>String(x.id)!==String(id));
+    const index = igPosts.indexOf(p);
+    igPosts = igPosts.filter(x=> String(x.id) !== String(id));
     saveIgPosts();
     if(videos.length) cleanupIgVideos(videos);
-    if(String(currentIgPostId) === String(id)) showIgGridView();
+    if(String(currentIgPostId) === String(id)){
+      const next = igPosts[Math.min(index, igPosts.length - 1)];
+      currentIgPostId = next ? next.id : null;
+    }
     renderIgGrid();
-    renderIgPostPills();
     renderIgProfile();
+    if(igDetailVisible){
+      if(igPosts.length) renderIgDetailView();
+      else showIgGridView();
+    }
+    renderIgPostPills();
   }
+
+  document.getElementById('igDeletePostBtn').addEventListener('click', ()=> deleteIgPost(currentIgPostId));
 
   igUsernameInput.addEventListener('input', ()=>{
     igProfile.username = igUsernameInput.value.replace(/\s/g, '');
@@ -7601,66 +7853,15 @@
     }
   });
 
-  igPostLikesInput.addEventListener('input', ()=>{
-    const p = currentIgPost(); if(!p) return;
-    p.likes = parseInt(igPostLikesInput.value, 10) || 0;
-    saveIgPosts();
-  });
-  igPostCaptionInput.addEventListener('input', ()=>{
-    const p = currentIgPost(); if(!p) return;
-    p.caption = igPostCaptionInput.value;
-    autoResizeTextarea(igPostCaptionInput);
-    saveIgPosts();
-    renderIgPostPills();
-  });
-  // Clic sur la diapo : post vide → ajouter des images / vidéos ; vidéo → la lire ; image → la
-  // remplacer. Un glissement (défilement du carrousel) n'est pas un clic.
-  igPostImageBox.addEventListener('click', (e)=>{
-    if(igCarouselSwiped){ igCarouselSwiped = false; return; }
-    const items = igSlideItems(currentIgPost());
-    if(!items.length){ igPostSlidesInput.click(); return; }
-    const slideEl = e.target.closest('.ig-car-slide');
-    if(items[igSlideIndex] && items[igSlideIndex].video){
-      const el = slideEl || igPostImageBox.querySelectorAll('.ig-car-slide')[igSlideIndex];
-      if(el) playIgVideoSlide(el);
-      return;
-    }
-    igPostImageInput.click();
-  });
-  // Remplacer la diapo affichée par une image ou une vidéo (une vidéo remplacée est supprimée du cloud).
-  igPostImageInput.addEventListener('change', async ()=>{
-    const file = igPostImageInput.files[0];
-    igPostImageInput.value = '';
-    if(!file) return;
-    const p = currentIgPost(); if(!p) return;
-    const idx = igSlideIndex;
-    const isVideo = (file.type || '').startsWith('video/');
-    try{
-      const slide = isVideo
-        ? await prepareIgVideoSlide(file)
-        : {img: await compressImageSquare(file, igPostCompressOpts()), video: null};
-      if(!slide) return;
-      const items = igSlideItems(p);
-      let oldVideo = null;
-      if(items[idx]){ oldVideo = items[idx].video; items[idx] = slide; igSlideIndex = idx; }
-      else items.push(slide);
-      commitIgSlides(p, items);
-      if(oldVideo) cleanupIgVideos([oldVideo]);
-    }catch(err){
-      console.error('Remplacement de diapo :', err);
-      alert(isVideo ? "L'envoi de la vidéo a échoué (connexion ou droits d'accès au cloud). Réessaie ; si ça recommence, dis-le à Claude." : "Impossible d'utiliser cette image.");
-    }
-  });
-
   document.getElementById('igBackBtn').addEventListener('click', showIgGridView);
-  document.getElementById('igDeletePostBtn').addEventListener('click', ()=> deleteIgPost(currentIgPostId));
   document.getElementById('addIgPostBtn').addEventListener('click', ()=>{
-    const p = {id: Date.now()+Math.random(), image:null, caption:'', likes:0, createdAt: Date.now()};
+    // Nouveau post : format portrait 4:5, recommandé par Instagram depuis 2025.
+    const p = {id: Date.now()+Math.random(), image:null, caption:'', likes:0, createdAt: Date.now(), ratio:'4:5'};
     igPosts.unshift(p);
     saveIgPosts();
     renderIgGrid();
-    renderIgPostPills();
     renderIgProfile();
+    if(igDetailVisible) renderIgFeed();
     selectIgPost(p.id);
   });
 
@@ -8433,7 +8634,7 @@
   const IW_SQUARE_SCENE = {targetKB:13, startSize:420, minSize:72, square:true};
   const IW_INLINE = {targetKB:30, startSize:760, minSize:160, square:false};
   const IW_AVATAR = {targetKB:12, startSize:260, minSize:72, square:true};
-  const IW_IG_POST = {targetKB:10, startSize:300, minSize:72, square:true};
+  const IW_IG_POST = {targetKB:10, startSize:300, minSize:72, square:false};
   // Notes personnalisées du Bloc-notes (document séparé, budget allégé — voir
   // CUSTOM_TAB_INLINE_COMPRESS_OPTS / CUSTOM_TAB_SQUARE_COMPRESS_OPTS) : mêmes seuils ici, pour que
   // l'indicateur de poids ne les signale pas à tort comme "à compresser" et que son bouton Compresser
@@ -8559,7 +8760,7 @@
           label: 'Instagram — post ' + (i + 1) + (slides.length > 1 ? ', image ' + (k + 1) : ''),
           bytes: base64ImageBytes(img),
           config: window.__rg_igImagesSeparate
-            ? {...IG_POST_RELAXED_COMPRESS_OPTS, square:true}
+            ? {targetKB:180, startSize:1080, minSize:300, square:false}
             : IW_IG_POST,
           getDataUrl: () => k === 0 ? p.image : (p.extraImages || [])[k - 1],
           setDataUrl: (v) => { if(k === 0) p.image = v; else if(p.extraImages) p.extraImages[k - 1] = v; },
@@ -9209,7 +9410,7 @@
   } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, getDocFromServer, setDoc, serverTimestamp,
-    collection, getDocs, getDocsFromServer, deleteDoc, deleteField
+    collection, getDocs, getDocsFromServer, deleteDoc, deleteField, runTransaction
   } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -9247,6 +9448,27 @@
   let syncPending = false;
   let applyingRemoteState = false;
 
+  // ---------- PROTECTION CONTRE L'ÉCRASEMENT ENTRE FENÊTRES (24 novembre 2026) ----------
+  // Chaque fenêtre de JKME (onglet, appli du Dock, téléphone...) garde toutes les données en
+  // mémoire et réécrit le document ENTIER à chaque modification. Avec deux fenêtres ouvertes, la
+  // fenêtre "en retard" effaçait donc ce que l'autre venait d'ajouter (un post, un post-it...).
+  // Désormais chaque document porte un numéro de version (_rev) : avant d'écrire, on vérifie (dans
+  // une transaction) que personne d'autre n'a écrit depuis notre dernier chargement/enregistrement.
+  // Si c'est le cas, cette fenêtre arrête d'enregistrer et demande de recharger la page, au lieu
+  // d'effacer le travail fait ailleurs.
+  let mainRev = 0;
+  let writeConflict = false;
+  class WriteConflictError extends Error {}
+
+  function handleWriteConflict(){
+    if(writeConflict) return;
+    writeConflict = true;
+    setSyncStatus('error', 'Modifié ailleurs : recharge la page');
+    const reload = confirm("JKME a été modifié depuis une autre fenêtre ou un autre appareil.\n\nPour ne pas effacer ce qui a été fait là-bas, cette fenêtre n'enregistre plus rien.\n\nOK : recharger maintenant pour récupérer la dernière version (ce que tu viens de faire dans cette fenêtre depuis quelques secondes ne sera pas gardé).\nAnnuler : rester ici pour copier ton texte d'abord, puis recharger la page (Cmd+Maj+R).");
+    if(reload) location.reload();
+  }
+  window.__rg_isWriteLocked = () => writeConflict;
+
   function setSyncStatus(state, label){
     syncStatus.classList.remove('saving','error');
     if(state==='saving'){ syncStatus.classList.add('saving'); syncStatusLabel.textContent = 'Enregistrement…'; }
@@ -9259,18 +9481,36 @@
   // sauvegarde réussit à nouveau.
   let oversizeAlertShown = false;
 
-  async function performSync(){
+  // Les enregistrements d'une même fenêtre passent l'un après l'autre (jamais deux en même temps) :
+  // sinon le 2ᵉ verrait le numéro de version déjà augmenté par le 1ᵉʳ et se croirait en conflit.
+  let mainSyncChain = Promise.resolve();
+  function performSync(){
     clearTimeout(syncTimer);
     syncTimer = null;
-    if(!userDocRef || applyingRemoteState) return;
+    const run = mainSyncChain.then(()=> performSyncNow());
+    mainSyncChain = run.catch(()=>{});
+    return run;
+  }
+
+  async function performSyncNow(){
+    if(!userDocRef || applyingRemoteState || writeConflict) return;
     syncPending = false;
     setSyncStatus('saving');
     try{
       const state = window.__rg_getState();
-      await setDoc(userDocRef, { ...state, updatedAt: serverTimestamp() });
+      const ref = userDocRef;
+      const newRev = await runTransaction(db, async (t)=>{
+        const snap = await t.get(ref);
+        const serverRev = snap.exists() ? (snap.data()._rev || 0) : 0;
+        if(serverRev !== mainRev) throw new WriteConflictError('main');
+        t.set(ref, { ...state, _rev: serverRev + 1, updatedAt: serverTimestamp() });
+        return serverRev + 1;
+      });
+      mainRev = newRev;
       setSyncStatus('idle');
       oversizeAlertShown = false;
     }catch(err){
+      if(err instanceof WriteConflictError){ handleWriteConflict(); return; }
       console.error('Erreur Firestore :', err);
       // Le document partagé est plafonné à 1 Mo côté Firestore. Le dépassement arrive le plus
       // souvent à cause d'une image collée directement (Cmd/Ctrl+V) sans passer par la compression
@@ -9476,7 +9716,9 @@
       if(window.__rg_igImagesSeparate && Array.isArray(data.igPosts)){
         data.igPosts = data.igPosts.map(({image, extraImages, ...rest}) => rest);
       }
-      await setDoc(userDocRef, { ...data, updatedAt: serverTimestamp() });
+      delete data._rev;
+      mainRev = Date.now();
+      await setDoc(userDocRef, { ...data, _rev: mainRev, updatedAt: serverTimestamp() });
       await setDoc(sharedAgendaJkmeRef, { days: restoredEvents, updatedAt: serverTimestamp() });
       // Réécrit chaque note personnalisée restaurée dans sa propre place au quotidien (pas
       // seulement en mémoire), et supprime celles qui n'existent plus dans cette sauvegarde (une
@@ -9484,6 +9726,8 @@
       const currentTabsSnap = await getDocsFromServer(collection(db, 'users', uid, 'customTabData'));
       const writes = [];
       Object.keys(restoredCustomTabData).forEach(tabId=>{
+        const restoredRev = Date.now();
+        restoredCustomTabData[tabId]._rev = restoredRev;
         writes.push(setDoc(customTabDataRef(tabId), restoredCustomTabData[tabId]));
       });
       currentTabsSnap.forEach(d=>{
@@ -9675,10 +9919,17 @@
   let customTabSyncPending = {};
   let customTabOversizeAlertShown = {};
 
-  async function performCustomTabSync(tabId){
+  const customTabSyncChains = {};
+  function performCustomTabSync(tabId){
     clearTimeout(customTabSyncTimers[tabId]);
     customTabSyncTimers[tabId] = null;
-    if(!userDocRef || applyingRemoteState) return;
+    const run = (customTabSyncChains[tabId] || Promise.resolve()).then(()=> performCustomTabSyncNow(tabId));
+    customTabSyncChains[tabId] = run.catch(()=>{});
+    return run;
+  }
+
+  async function performCustomTabSyncNow(tabId){
+    if(!userDocRef || applyingRemoteState || writeConflict) return;
     customTabSyncPending[tabId] = false;
     setSyncStatus('saving');
     try{
@@ -9689,10 +9940,22 @@
         setSyncStatus('idle');
         return;
       }
-      await setDoc(customTabDataRef(tabId), data);
+      // Même protection que pour le document principal (voir mainRev) : data._rev est la version
+      // de cette note connue par cette fenêtre.
+      const ref = customTabDataRef(tabId);
+      const knownRev = data._rev || 0;
+      const newRev = await runTransaction(db, async (t)=>{
+        const snap = await t.get(ref);
+        const serverRev = snap.exists() ? (snap.data()._rev || 0) : 0;
+        if(serverRev !== knownRev) throw new WriteConflictError('tab');
+        t.set(ref, { ...data, _rev: serverRev + 1 });
+        return serverRev + 1;
+      });
+      data._rev = newRev;
       setSyncStatus('idle');
       customTabOversizeAlertShown[tabId] = false;
     }catch(err){
+      if(err instanceof WriteConflictError){ handleWriteConflict(); return; }
       console.error('Erreur Firestore (note personnalisée ' + tabId + ') :', err);
       const msg = String((err && err.message) || '');
       const isOversize = /longer than|exceeds|1,?048,?576|maximum.*size|too large/i.test(msg);
@@ -9812,7 +10075,7 @@
   async function performIgImagesSync(){
     clearTimeout(igImagesSyncTimer);
     igImagesSyncTimer = null;
-    if(!userDocRef || applyingRemoteState || !window.__rg_igImagesSeparate) return;
+    if(!userDocRef || applyingRemoteState || !window.__rg_igImagesSeparate || writeConflict) return;
     igImagesSyncPending = false;
     const current = window.__rg_getIgPostImages ? window.__rg_getIgPostImages() : {};
     const ops = [];
@@ -9967,6 +10230,8 @@
       if(snap.exists()){
         applyingRemoteState = true;
         const mainData = snap.data();
+        mainRev = mainData._rev || 0;
+        delete mainData._rev;
         // Notes personnalisées : chacune vit maintenant dans son propre document (voir plus haut).
         // On les charge séparément, et si rien n'existe encore là-bas mais que le document principal
         // contient encore l'ancien format embarqué, on migre une seule fois (voir
