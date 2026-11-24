@@ -1040,7 +1040,13 @@
   .ig-feed-title{flex:1; display:flex; flex-direction:column; align-items:center; margin-right:24px; line-height:1.15;}
   .ig-feed-title span{font-size:0.62rem; font-weight:600; color:var(--ink-soft); letter-spacing:0.04em;}
   .ig-feed-title b{font-size:0.9rem;}
-  .ig-feed-post{padding-bottom:14px;}
+  .ig-feed-post{padding-bottom:18px;}
+  .ig-media-user{
+    position:absolute; top:10px; right:10px; z-index:2; display:flex; align-items:center; gap:6px;
+    max-width:70%; pointer-events:none; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.55);
+  }
+  .ig-media-user .ig-post-card-avatar{flex:0 0 24px; width:24px; height:24px; border:1.5px solid #fff; background:rgba(255,255,255,0.35);}
+  .ig-media-user .ig-post-card-username{font-size:0.78rem; font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .ig-feed-post-header{display:flex; align-items:center; gap:10px; padding:10px 12px;}
   .ig-feed-more{width:20px; height:20px; color:#262626; flex:0 0 auto;}
   .ig-feed-post-header .ig-post-card-username{font-size:0.82rem;}
@@ -1050,7 +1056,7 @@
   .ig-feed-post .ig-post-card-likes,
   .ig-feed-post .ig-post-card-caption,
   .ig-feed-post .ig-post-card-date{padding-left:12px; padding-right:12px;}
-  .ig-feed-post .ig-post-card-date{margin-bottom:0; font-size:0.56rem; letter-spacing:0.02em; margin-top:2px;}
+  .ig-feed-post .ig-post-card-date{margin-bottom:0; font-size:0.62rem; margin-top:2px;}
   .ig-feed-post .ig-post-card-caption{display:flex; align-items:flex-start; gap:4px;}
   .ig-feed-post .ig-post-card-caption b{flex:0 0 auto; margin-right:0; line-height:1.4;}
   /* Petite barre d'accueil en bas de l'écran, comme sur un vrai téléphone : purement décorative,
@@ -1141,7 +1147,7 @@
   .ig-car-prev{left:8px;}
   .ig-car-next{right:8px;}
   .ig-car-counter{
-    position:absolute; top:10px; right:10px; z-index:2; background:rgba(38,38,38,0.72); color:#fff;
+    position:absolute; top:10px; left:10px; z-index:2; background:rgba(38,38,38,0.72); color:#fff;
     font-size:0.68rem; font-weight:600; padding:3px 8px; border-radius:12px; pointer-events:none;
   }
   .ig-post-card-actions{position:relative;}
@@ -1235,7 +1241,7 @@
     line-height:1.4; color:#262626; padding:0; min-height:1.4em; background:none;
   }
   .ig-post-card-caption textarea:focus{outline:none;}
-  .ig-post-card-date{font-size:0.68rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:10px;}
+  .ig-post-card-date{font-size:0.68rem; color:var(--ink-soft); margin-bottom:10px;}
   .ig-post-card-comment-placeholder{
     font-size:0.8rem; color:var(--ink-soft); border-top:1px solid #efefef; padding-top:10px; margin-bottom:14px;
   }
@@ -6977,7 +6983,8 @@
 
   function formatIgPostDate(ts){
     if(!ts) return '';
-    return new Date(ts).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'}).toUpperCase();
+    // Comme sur Instagram : "24 novembre", en minuscules et sans l'année.
+    return new Date(ts).toLocaleDateString('fr-FR', {day:'numeric', month:'long'});
   }
 
   // Ajuste la hauteur d'un textarea à son contenu (pas de resize manuel, pas de scroll interne) :
@@ -7357,11 +7364,6 @@
     const uname = escapeHtml(igUsername());
     return `
       <article class="ig-feed-post" data-post-id="${p.id}">
-        <div class="ig-feed-post-header">
-          <div class="ig-post-card-avatar">${igAvatarHtml()}</div>
-          <div class="ig-post-card-username">${uname}</div>
-          <span class="ig-feed-more"><svg class="ig-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
-        </div>
         <div class="ig-post-card-image ig-feed-media" style="aspect-ratio:${igRatioOf(p).css};"></div>
         <div class="ig-car-dots"></div>
         <div class="ig-post-card-actions">
@@ -7393,8 +7395,10 @@
     const items = igSlideItems(p);
     if(slideIdxOf(p) >= items.length) setSlideIdx(p, Math.max(0, items.length - 1));
     box.style.aspectRatio = igRatioOf(p).css;
+    // Nom du compte (et petite photo) incrusté en haut à droite de l'image, comme sur Instagram.
+    const userOverlay = `<div class="ig-media-user"><span class="ig-post-card-avatar">${igAvatarHtml()}</span><span class="ig-post-card-username">${escapeHtml(igUsername())}</span></div>`;
     if(!items.length){
-      box.innerHTML = `<span class="placeholder-txt">+ Images / vidéos</span>`;
+      box.innerHTML = `<span class="placeholder-txt">+ Images / vidéos</span>${userOverlay}`;
       box.classList.add('is-empty');
       box.title = 'Ajouter une ou plusieurs images ou vidéos';
     } else {
@@ -7407,7 +7411,8 @@
         ${items.length > 1 ? `
           <div class="ig-car-counter"></div>
           <button type="button" class="ig-car-arrow ig-car-prev" data-car-dir="-1" title="Diapo précédente">‹</button>
-          <button type="button" class="ig-car-arrow ig-car-next" data-car-dir="1" title="Diapo suivante">›</button>` : ''}`;
+          <button type="button" class="ig-car-arrow ig-car-next" data-car-dir="1" title="Diapo suivante">›</button>` : ''}
+        ${userOverlay}`;
     }
     dots.innerHTML = items.length > 1 ? items.map(()=> '<span class="ig-car-dot"></span>').join('') : '';
     updateIgCardCarousel(card, p, false);
